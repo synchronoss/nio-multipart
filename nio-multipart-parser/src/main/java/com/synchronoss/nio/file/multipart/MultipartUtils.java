@@ -1,4 +1,4 @@
-package com.suncronoss.nio.file.multipart;
+package com.synchronoss.nio.file.multipart;
 
 import java.util.Locale;
 

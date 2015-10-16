@@ -1,4 +1,4 @@
-package com.suncronoss.nio.file.multipart;
+package com.synchronoss.nio.file.multipart;
 
 import org.apache.commons.fileupload.*;
 import org.slf4j.Logger;

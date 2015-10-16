@@ -1,4 +1,4 @@
-package com.suncronoss.nio.file.multipart;
+package com.synchronoss.nio.file.multipart;
 
 /**
  * <p>
@@ -39,5 +39,14 @@ public class MultipartContext {
 
     public String getCharEncoding() {
         return charEncoding;
+    }
+
+    @Override
+    public String toString() {
+        return "MultipartContext{" +
+                "contentType='" + contentType + '\'' +
+                ", contentLength=" + contentLength +
+                ", charEncoding='" + charEncoding + '\'' +
+                '}';
     }
 }
