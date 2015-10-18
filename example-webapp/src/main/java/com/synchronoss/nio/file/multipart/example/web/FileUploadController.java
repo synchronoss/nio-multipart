@@ -96,8 +96,8 @@ public class FileUploadController {
             }
 
             @Override
-            public void onError(String message, Throwable t) {
-                log.error("ERROR", t);
+            public void onError(String message, Throwable cause) {
+                log.error("ERROR", cause);
             }
         };
 

@@ -2,7 +2,7 @@ package com.synchronoss.nio.file.multipart;
 
 /**
  * <p>
- *     Multipart context:
+ *     Multipart context containing:
  *     <ul>
  *         <li>Content Type</li>
  *         <li>Content Length</li>

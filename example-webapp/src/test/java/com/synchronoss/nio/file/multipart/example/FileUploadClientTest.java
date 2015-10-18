@@ -14,16 +14,22 @@ public class FileUploadClientTest {
     @Test
     //@Ignore
     public void testNioUpload() throws Exception {
-
         FileUploadClient fileUploadClient = new FileUploadClient();
-        FileUploadClient.Metadata metadata = new FileUploadClient.Metadata("Hawaii.jpg");
-        fileUploadClient.uploadFile(getTestFile(), metadata, "http://localhost:8080/example-webapp/nio/multipart");
-
+        FileUploadClient.Metadata metadata = new FileUploadClient.Metadata("malibu.jpeg");
+        fileUploadClient.uploadFile(getTestFile("/malibu.jpeg"), metadata, "http://localhost:8080/example-webapp/nio/multipart");
     }
 
-    static String getTestFile(){
+    @Test
+    //@Ignore
+    public void testNioUpload1() throws Exception {
+        FileUploadClient fileUploadClient = new FileUploadClient();
+        FileUploadClient.Metadata metadata = new FileUploadClient.Metadata("test.txt");
+        fileUploadClient.uploadFile(getTestFile("/test.txt"), metadata, "http://localhost:8080/example-webapp/nio/multipart");
+    }
+
+    static String getTestFile(final String fileName){
         try {
-            URL resourceUrl = FileUploadClientTest.class.getResource("/malibu.jpeg");
+            URL resourceUrl = FileUploadClientTest.class.getResource(fileName);
             Path resourcePath = Paths.get(resourceUrl.toURI());
             return resourcePath.toFile().getAbsolutePath();
         }catch (Exception e){
