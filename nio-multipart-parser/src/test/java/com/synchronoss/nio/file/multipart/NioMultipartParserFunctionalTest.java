@@ -1,6 +1,8 @@
 package com.synchronoss.nio.file.multipart;
 
 import com.google.common.base.Joiner;
+import com.synchronoss.nio.file.multipart.testutil.ChunksFileReader;
+import com.synchronoss.nio.file.multipart.testutil.TestFiles;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -13,9 +15,9 @@ import java.util.Map;
 /**
  * Created by sriz0001 on 19/10/2015.
  */
-public class NioMultipartParserImplTest {
+public class NioMultipartParserFunctionalTest {
 
-    private static final Logger log = LoggerFactory.getLogger(NioMultipartParserImplTest.class);
+    private static final Logger log = LoggerFactory.getLogger(NioMultipartParserFunctionalTest.class);
 
     @Test
     @Ignore
@@ -44,11 +46,8 @@ public class NioMultipartParserImplTest {
             }
         };
 
-        //String fileName = "/samples/multipart-body-with-boundary-segments.txt";
-        String fileName = "/samples/simple.txt";
-        TestUtils.ChunksFileReader chunksFileReader = new TestUtils.ChunksFileReader(TestUtils.getTestFile(fileName), 5, 10);
-        String contentType = TestUtils.getContentTypeForTestFile(fileName);
-        MultipartContext multipartContext = new MultipartContext(contentType,-1,"UTF-8");
+        ChunksFileReader chunksFileReader = new ChunksFileReader(TestFiles.TEXT_SIMPLE, 5, 10);
+        MultipartContext multipartContext = new MultipartContext(TestFiles.TEXT_SIMPLE.getContentType(), TestFiles.TEXT_SIMPLE.getContentLength(), TestFiles.TEXT_SIMPLE.getCharEncoding());
         NioMultipartParserImpl parser = new NioMultipartParserImpl(multipartContext, listener);
 
         byte[] chunk;
