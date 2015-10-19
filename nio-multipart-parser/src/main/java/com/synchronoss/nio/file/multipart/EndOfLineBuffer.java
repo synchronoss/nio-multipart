@@ -33,7 +33,7 @@ public class EndOfLineBuffer {
      * </p>
      * @param size The size of the buffer. Must be greater than the bigger end of line sequence
      * @param endOfLineSequences The end of line sequences. A map with the named sequences of bytes that the buffer will watch for.
-     * @param flushOutputStream The {@link OutputStream} where to flush the data when the buffer is full.
+     * @param flushOutputStream The {@link OutputStream} where to flush the data when the buffer is full. If set to null the buffer can be used to skip bytes until a separator.
      */
     public EndOfLineBuffer(final int size, final Map<String, byte[]> endOfLineSequences, final OutputStream flushOutputStream) {
 
@@ -107,6 +107,9 @@ public class EndOfLineBuffer {
     }
 
     void flush(){
+        if (flushOutputStream == null){
+            return;
+        }
         try {
             if (circularBuffer.getAvailableDataLength() > 0) {
                 if (endOfLineSequences.maxMatching > 0) {

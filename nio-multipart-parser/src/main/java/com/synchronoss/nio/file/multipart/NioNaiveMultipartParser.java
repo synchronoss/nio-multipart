@@ -115,7 +115,7 @@ public class NioNaiveMultipartParser implements NioMultipartParser, Closeable {
             outputStream.write(receivedBytes, indexStart, indexEnd);
         }catch (Exception e){
             cleanUpTempFile();
-            nioMultipartParserListener.onError("Unable to write to the temp file",e);
+            nioMultipartParserListener.onError("Unable to write to the temp file", e);
         }
     }
 

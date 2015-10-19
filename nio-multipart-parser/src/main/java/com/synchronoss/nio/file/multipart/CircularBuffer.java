@@ -58,7 +58,6 @@ public class CircularBuffer {
         buffer[nextAvailablePosition] = data;
         nextAvailablePosition = forwards(nextAvailablePosition);
 
-
         if (availableReadLength > 0 && nextAvailablePosition == startValidDataIndex + 1){
             // buffer is full
             startValidDataIndex = forwards(startValidDataIndex);

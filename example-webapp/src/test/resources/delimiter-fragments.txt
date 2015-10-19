@@ -1,0 +1,7 @@
+This content contains some delimiter fragments
+to verify the parser is not identifying them as delimiters...
+A part delimiter is
+--aaaaa (pluas another 'a' at the end)
+while a close delimiter is
+--aaaaaa- (plus another DASH at the end.)
+The parser should continue reading the body until here!

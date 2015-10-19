@@ -41,13 +41,28 @@ public class FileUploadClient {
     }
 
     public void uploadFile(final String filePath, final Metadata metadata, final String endpoint){
+        uploadFile(filePath, metadata, endpoint, null);
+    }
+
+    public void uploadFile(final String filePath, final Metadata metadata, final String endpoint, final String boundary){
 
         final File fileToUpload =  new File(filePath);
         final HttpPost httpPost = new HttpPost(endpoint);
-        final HttpEntity httpEntity = MultipartEntityBuilder.create()
-                .addPart("metadata", new StringBody(gson.toJson(metadata), ContentType.APPLICATION_JSON))
-                .addPart("bin", new FileBody(fileToUpload))
-                .build();
+        final HttpEntity httpEntity;
+
+        if (boundary != null && boundary.length() > 0){
+            httpEntity = MultipartEntityBuilder.create()
+                    .setBoundary(boundary)
+                    .addPart("metadata", new StringBody(gson.toJson(metadata), ContentType.APPLICATION_JSON))
+                    .addPart("bin", new FileBody(fileToUpload))
+                    .build();
+        }else{
+            httpEntity = MultipartEntityBuilder.create()
+                    .addPart("metadata", new StringBody(gson.toJson(metadata), ContentType.APPLICATION_JSON))
+                    .addPart("bin", new FileBody(fileToUpload))
+                    .build();
+        }
+
         httpPost.setEntity(httpEntity);
 
         CloseableHttpResponse response = null;

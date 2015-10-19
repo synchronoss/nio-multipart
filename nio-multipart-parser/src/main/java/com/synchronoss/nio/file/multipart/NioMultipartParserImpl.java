@@ -38,7 +38,7 @@ import java.util.*;
  *
  * Created by sriz0001 on 15/10/2015.
  */
-public class NioMultipartParserImpl implements NioMultipartParser, Closeable{
+public class NioMultipartParserImpl implements NioMultipartParser, Closeable {
 
     private static final Logger log = LoggerFactory.getLogger(NioMultipartParserImpl.class);
 
@@ -49,7 +49,7 @@ public class NioMultipartParserImpl implements NioMultipartParser, Closeable{
     public static final int DEFAULT_BUFFER_SIZE = 16000;//16kb, Enough for separator and a full header line.
     public static final String CLOSE_DELIMITER_NAME = "Close-Delimiter";
     public static final String DELIMITER_NAME = "Delimiter";
-    public static final String HEADER_DELIMITER_NAME = "Header-Separator";
+    public static final String HEADER_DELIMITER_NAME = "Header-Delimiter";
     public static final byte[] HEADER_DELIMITER = {CR, LF};
 
     protected enum State {
@@ -67,35 +67,51 @@ public class NioMultipartParserImpl implements NioMultipartParser, Closeable{
     // Current state of the ASF
     State currentState = State.SKIP_PREAMBLE;
 
-    // Current output stream where to flush the data.
-    // - SKIP_PREAMBLE -> NullOutputStream
-    // - HEADERS -> ByteArrayOutputStream
-    // - BODY -> bodyStreamFactory.getOutputStream(...)
+    // Current output stream where to flush the body data.
+    // It will be instantiated for each part via {@link BodyStreamFactory#getOutputStream(Map, int)} )}
     OutputStream outputStream = null;
+
+    // Stream where to flush the header data. will be reset every time an header is parsed.
+    ByteArrayOutputStream headerOutputStream = new ByteArrayOutputStream();
 
     // The current headers.
     Map<String, List<String>> headers = null;
 
-    public NioMultipartParserImpl(final MultipartContext multipartContext, final NioMultipartParserListener nioMultipartParserListener ) {
-        this(multipartContext, nioMultipartParserListener, DEFAULT_BUFFER_SIZE);
+    // ------------
+    // Constructors
+    // ------------
+    public NioMultipartParserImpl(final MultipartContext multipartContext, final NioMultipartParserListener nioMultipartParserListener) {
+        this(multipartContext, nioMultipartParserListener, null, DEFAULT_BUFFER_SIZE);
+    }
+
+    public NioMultipartParserImpl(final MultipartContext multipartContext, final NioMultipartParserListener nioMultipartParserListener, final BodyStreamFactory bodyStreamFactory) {
+        this(multipartContext, nioMultipartParserListener, bodyStreamFactory, DEFAULT_BUFFER_SIZE);
     }
 
     public NioMultipartParserImpl(final MultipartContext multipartContext, final NioMultipartParserListener nioMultipartParserListener, final int bufferSize) {
+        this(multipartContext, nioMultipartParserListener, null, bufferSize);
+    }
+
+    public NioMultipartParserImpl(final MultipartContext multipartContext, final NioMultipartParserListener nioMultipartParserListener, final BodyStreamFactory bodyStreamFactory, final int bufferSize) {
         this.multipartContext = multipartContext;
         this.nioMultipartParserListener = nioMultipartParserListener;
-        this.bodyStreamFactory = new TempFileBodyStreamFactory();
+
         this.preambleDelimiters = getPreambleDelimiters(multipartContext.getContentType());
         this.delimiters = getMultipartDelimiters(multipartContext.getContentType());
         this.headersDelimiter = new HashMap<String, byte[]>(1);
         this.headersDelimiter.put(HEADER_DELIMITER_NAME, HEADER_DELIMITER);
-        this.buffer = new EndOfLineBuffer(bufferSize, this.preambleDelimiters, new OutputStream() {
-            @Override
-            public void write(int b) throws IOException {
-                // This is the OutputStream for the preamble. Do nothing...
-            }
-        });
 
-        debug = bodyStreamFactory.getOutputStream(new HashMap<String, List<String>>(),0);
+        if (bodyStreamFactory != null){
+            this.bodyStreamFactory = bodyStreamFactory;
+        }else{
+            // By default use a temporary file where to save the body data.
+            this.bodyStreamFactory = new TempFileBodyStreamFactory();
+        }
+
+        // At the beginning set up the buffer to skip the preamble.
+        this.buffer = new EndOfLineBuffer(bufferSize, this.preambleDelimiters, null);
+
+        debug = this.bodyStreamFactory.getOutputStream(new HashMap<String, List<String>>(),0);
     }
 
     @Override
@@ -147,7 +163,6 @@ public class NioMultipartParserImpl implements NioMultipartParser, Closeable{
                     currentIndex = indexEnd + 1; // To Exit the while...
                     logDebugFile();
                     break;
-
             }
         }
     }
@@ -174,8 +189,8 @@ public class NioMultipartParserImpl implements NioMultipartParser, Closeable{
 
     void getReadyForHeaders(){
         currentState = State.HEADERS;
-        this.outputStream = new ByteArrayOutputStream();
-        buffer.reset(headersDelimiter, this.outputStream);
+        headerOutputStream.reset();
+        buffer.reset(headersDelimiter, headerOutputStream);
         headers = new HashMap<String, List<String>>();
     }
 

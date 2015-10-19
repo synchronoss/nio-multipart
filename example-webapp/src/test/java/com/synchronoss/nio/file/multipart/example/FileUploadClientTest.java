@@ -27,6 +27,14 @@ public class FileUploadClientTest {
         fileUploadClient.uploadFile(getTestFile("/test.txt"), metadata, "http://localhost:8080/example-webapp/nio/multipart");
     }
 
+    @Test
+    //@Ignore
+    public void testNioUpload2() throws Exception {
+        FileUploadClient fileUploadClient = new FileUploadClient();
+        FileUploadClient.Metadata metadata = new FileUploadClient.Metadata("delimiter-fragments.txt");
+        fileUploadClient.uploadFile(getTestFile("/delimiter-fragments.txt"), metadata, "http://localhost:8080/example-webapp/nio/multipart");
+    }
+
     static String getTestFile(final String fileName){
         try {
             URL resourceUrl = FileUploadClientTest.class.getResource(fileName);

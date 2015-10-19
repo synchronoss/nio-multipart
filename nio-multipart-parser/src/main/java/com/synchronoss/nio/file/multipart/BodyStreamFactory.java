@@ -7,7 +7,7 @@ import java.util.Map;
 
 /**
  * <p>
- *     Factory for the part body stream.
+ *     Factory for the part body streams.
  * </p>
  * Created by sriz0001 on 18/10/2015.
  */
@@ -15,7 +15,8 @@ public interface BodyStreamFactory {
 
     /**
      * <p>
-     *     A part {@link OutputStream}. Essentially a named {@link OutputStream}
+     *     A part {@link OutputStream}. Essentially a named {@link OutputStream}.<br/>
+     *     The name will be used to retrieve the correspondent {@link InputStream} by calling {@link BodyStreamFactory#getInputStream(String)}
      * </p>
      */
     abstract class PartOutputStream extends OutputStream {

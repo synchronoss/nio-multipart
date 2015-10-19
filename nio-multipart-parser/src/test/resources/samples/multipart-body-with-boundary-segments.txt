@@ -1,0 +1,13 @@
+--aaaaaa
+
+This is implicitly typed plain ASCII text.
+It does NOT end with a linebreak.
+--aaaaaa
+Content-type: text/plain; charset=us-ascii
+
+This is the first part that started with a boundary
+--aaaaa (pluas another 'a' at the end)
+The next boundary is --aaaaaa- (plus another DASH at the end.)
+
+--aaaaaa--
+This is the epilogue.  It is also to be ignored.
