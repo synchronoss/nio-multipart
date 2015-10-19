@@ -1,7 +1,7 @@
 package com.synchronoss.nio.file.multipart;
 
 import com.synchronoss.nio.file.multipart.BodyStreamFactory.PartOutputStream;
-import org.apache.commons.fileupload.ParameterParser;
+import com.synchronoss.nio.file.multipart.util.ParameterParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,9 +32,9 @@ import java.util.*;
  * </code>
  *
  * Have a look at:
- * {@link org.glassfish.grizzly.http.multipart.MultipartScanner}
- * {@link org.glassfish.grizzly.http.multipart.MultipartReadHandler}
- * {@link org.apache.commons.fileupload.MultipartStream}
+ * org.glassfish.grizzly.http.multipart.MultipartScanner
+ * org.glassfish.grizzly.http.multipart.MultipartReadHandler
+ * org.apache.commons.fileupload.MultipartStream
  *
  * Created by sriz0001 on 15/10/2015.
  */
@@ -223,26 +223,50 @@ public class NioMultipartParserImpl implements NioMultipartParser, Closeable {
     int readHeadersByte(final byte[] receivedBytes, int currentIndex, final int indexEnd){
         for (; currentIndex < indexEnd; currentIndex++) {
             if (buffer.write(receivedBytes[currentIndex])) {
-
-                String header = new String(headerOutputStream.toByteArray());// TODO - encoding
-                if (header.trim().length() == 0){
+                final String header = headerToString();
+                if (header.length() == 0){
                     // Got an empty value, it means the header section is finished.
                     currentState = State.GET_READY_FOR_BODY;
                 }else{
-                    // Parse header
-                    String[] headerComponents = header.split(":");
-                    List<String> headerValues = new ArrayList<String>();
-                    if (headerComponents.length > 1){
-                        Collections.addAll(headerValues, headerComponents[1].split(","));
-                    }
-                    headers.put(headerComponents[0], headerValues);
-                    headerOutputStream.reset();
-                    buffer.reset(headersDelimiter, headerOutputStream);
+                    // Add the header to the current headers map...
+                    addHeader(header);
                 }
                 return ++currentIndex;
             }
         }
         return ++currentIndex;
+    }
+
+    void addHeader(final String header){
+
+        final String[] headerComponents = header.trim().split(":");
+
+        if(headerComponents.length < 1){
+            return;
+        }
+
+        final String headerName = headerComponents[0].trim();
+        List<String> headerValues = headers.get(headerName);
+        if (headerValues == null){
+            headerValues = new ArrayList<String>();
+            headers.put(headerName, headerValues);
+        }
+        if (headerComponents.length > 1){
+            for(String headerValue: headerComponents[1].split(",")){
+                headerValues.add(headerValue.trim());
+            }
+        }
+
+        headerOutputStream.reset();
+        buffer.reset(headersDelimiter, headerOutputStream);
+    }
+
+    String headerToString(){
+        try{
+            return headerOutputStream.toString(multipartContext.getCharEncoding()).trim();
+        }catch (Exception e){
+            return headerOutputStream.toString().trim();
+        }
     }
 
     void getReadyForBody(final int partIndex){
@@ -274,7 +298,6 @@ public class NioMultipartParserImpl implements NioMultipartParser, Closeable {
         currentState = State.SKIP_EPILOGUE;
     }
 
-    // TODO - get rid of the commons fileupload dependency
     byte[] getBoundary(final String contentType) {
         ParameterParser parser = new ParameterParser();
         parser.setLowerCaseNames(true);
@@ -349,10 +372,8 @@ public class NioMultipartParserImpl implements NioMultipartParser, Closeable {
     }
 
 
-    // ================
-    // Just for testing
-    // ================
-    private static final boolean DEBUG = true;
+    // Just for testing. It enables the possibility to capture the full multipart body into a file.
+    private static final boolean DEBUG = false;
     PartOutputStream debug;
     void writeForDebug(final byte[] receivedBytes, final int indexStart, final int indexEnd){
         if (DEBUG){

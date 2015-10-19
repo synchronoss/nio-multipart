@@ -1,5 +1,9 @@
+apply plugin: 'org.akhikhl.gretty'
+apply plugin: 'war'
+
 buildscript {
     repositories {
+        mavenCentral()
         jcenter()
     }
     dependencies {
@@ -7,40 +11,69 @@ buildscript {
     }
 }
 
-apply plugin: 'java'
-apply plugin: 'java'
-apply plugin: 'war'
-apply plugin: 'org.akhikhl.gretty'// https://github.com/akhikhl/gretty
-
-sourceCompatibility = 1.6
-version 'unspecified'
-
 repositories {
-    mavenCentral()
+    jcenter()
 }
 
-dependencies {
+buildDir = new File(project.projectDir, "/target/gradle")
 
-    providedCompile 'javax.servlet:javax.servlet-api:3.1.0'
+task assemble(overwrite: true, type: Exec){
+    description 'Overwrite Assembles the outputs of this project.'
+    commandLine 'mvn', 'package'
+}
 
-    compile project(':nio-multipart-parser')
+task buildDependents(overwrite: true, type: Exec){
+    description 'Overwrite Assembles and tests this project and all projects that depend on it.'
+    commandLine 'echo', 'buildDependents'
+}
+task buildNeeded(overwrite: true, type: Exec){
+    description 'Overwrite Assembles and tests this project and all projects it depends on.'
+    commandLine 'echo', 'buildNeeded'
+}
+task classes(overwrite: true, type: Exec){
+    description 'Overwrite Assembles classes "main".'
+    commandLine 'echo', 'classes'
+}
+task clean(overwrite: true, type: Exec){
+    description 'Overwrite Deletes the build directory.'
+    commandLine 'mvn', 'clean'
+}
+task jar(overwrite: true, type: Exec){
+    description 'Overwrite Assembles a jar archive containing the main classes.'
+    commandLine 'mvn', 'package'
+}
+task testClasses(overwrite: true, type: Exec){
+    description 'Overwrite Assembles classes "test".'
+    commandLine 'echo', 'testClasses'
+}
 
-    compile 'ch.qos.logback:logback-classic:1.1.3'
-    compile 'org.springframework:spring-webmvc:4.2.1.RELEASE'
-    compile 'org.slf4j:slf4j-api:1.7.12'
-    compile 'com.google.code.gson:gson:2.2.4'
-    compile 'com.google.guava:guava:18.0'
+//task build(overwrite: true, type: Exec){
+//    description 'Overwrite Assembles and tests this project.'
+//    commandLine 'mvn', 'build'
+//}
 
-    testCompile 'org.apache.httpcomponents:httpclient:4.5.1'
-    testCompile 'org.apache.httpcomponents:httpmime:4.5.1'
-    testCompile 'org.springframework:spring-test:4.2.1.RELEASE'
-    testCompile ('junit:junit:4.12'){
-        exclude group: 'org.hamcrest', module: 'hamcrest-core'
-    }
-    testCompile 'org.mockito:mockito-core:1.10.19'
-    testCompile 'com.jayway.jsonpath:json-path:2.0.0'
-    testCompile 'com.jayway.jsonpath:json-path-assert:2.0.0'
+//def archive = "target/example-webapp-0.0.1-SNAPSHOT.war"
+//task war(overwrite: true){
+//    description 'Overwrite Generates a war archive with all the compiled classes, the web-app content and the libraries.'
+//    archivePath = archive
+//}
 
+war {
+    //from 'src/rootContent' // adds a file-set to the root of the archive
+    webInf { from 'target/example-webapp-0.0.1-SNAPSHOT/WEB-INF' } // adds a file-set to the WEB-INF dir.
+    //classpath fileTree('target/example-webapp-0.0.1-SNAPSHOT/WEB-INF/classes') // adds a file-set to the WEB-INF/lib dir.
+    //classpath fileTree('target/example-webapp-0.0.1-SNAPSHOT/WEB-INF/lib') // adds a configuration to the WEB-INF/lib dir.
+    //webXml = file('target/example-webapp-0.0.1-SNAPSHOT/WEB-INF/web.xml') // copies a file to WEB-INF/web.xml
+}
+
+task check(overwrite: true, type: Exec){
+    description 'Overwrite Runs all checks'
+    commandLine 'echo', 'check'
+}
+
+task test(overwrite: true, type: Exec){
+    description 'Overwrite Runs the unit tests.'
+    commandLine 'mvn', 'test'
 }
 
 gretty {
@@ -48,4 +81,8 @@ gretty {
     // 'jetty7', 'jetty8', 'jetty9', 'tomcat7', 'tomcat8'
     servletContainer = 'tomcat8'
     //servletContainer = 'jetty9'
+}
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '2.7'
 }

@@ -1,6 +1,5 @@
 package com.synchronoss.nio.file.multipart;
 
-import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -142,7 +141,7 @@ public class TestUtils {
 
         @Override
         public void close() throws IOException {
-            IOUtils.closeQuietly(this);
+            input.close();
         }
     }
 

@@ -18,6 +18,14 @@ public class MultipartContext {
     private final int contentLength;
     private final String charEncoding;
 
+    /**
+     * <p>
+     *     Constructor
+     * </p>
+     * @param contentType The content type of the request
+     * @param contentLength The content length of the request
+     * @param charEncoding The request char encoding.
+     */
     public MultipartContext(final String contentType, final int contentLength, final String charEncoding) {
 
         if (!MultipartUtils.isMultipart(contentType)){

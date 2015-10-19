@@ -1,5 +1,6 @@
 package com.synchronoss.nio.file.multipart.example;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.net.URL;
@@ -12,7 +13,7 @@ import java.nio.file.Paths;
 public class FileUploadClientTest {
 
     @Test
-    //@Ignore
+    @Ignore
     public void testNioUpload() throws Exception {
         FileUploadClient fileUploadClient = new FileUploadClient();
         FileUploadClient.Metadata metadata = new FileUploadClient.Metadata("malibu.jpeg");
@@ -20,7 +21,7 @@ public class FileUploadClientTest {
     }
 
     @Test
-    //@Ignore
+    @Ignore
     public void testNioUpload1() throws Exception {
         FileUploadClient fileUploadClient = new FileUploadClient();
         FileUploadClient.Metadata metadata = new FileUploadClient.Metadata("test.txt");
@@ -28,7 +29,7 @@ public class FileUploadClientTest {
     }
 
     @Test
-    //@Ignore
+    @Ignore
     public void testNioUpload2() throws Exception {
         FileUploadClient fileUploadClient = new FileUploadClient();
         FileUploadClient.Metadata metadata = new FileUploadClient.Metadata("delimiter-fragments.txt");
