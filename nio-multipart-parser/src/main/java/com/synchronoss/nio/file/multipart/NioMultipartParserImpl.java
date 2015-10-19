@@ -53,7 +53,7 @@ public class NioMultipartParserImpl implements NioMultipartParser, Closeable {
     public static final byte[] HEADER_DELIMITER = {CR, LF};
 
     protected enum State {
-        SKIP_PREAMBLE, GET_READY_FOR_HEADERS, HEADERS, GET_READY_FOR_BODY, BODY, END
+        SKIP_PREAMBLE, GET_READY_FOR_HEADERS, HEADERS, GET_READY_FOR_BODY, BODY, ALL_PARTS_READ, SKIP_EPILOGUE
     }
 
     final MultipartContext multipartContext;
@@ -119,12 +119,30 @@ public class NioMultipartParserImpl implements NioMultipartParser, Closeable {
         // TODO - DO I need to release some resources?
     }
 
+    /*
+     * This method implements a state machine. At each written byte the state can change if a end of line is found.
+     *
+     */
     @Override
     public void handleBytesReceived(byte[] receivedBytes, int indexStart, int indexEnd) {
 
-        writeForDebug(receivedBytes, indexStart, indexEnd);
+        if (receivedBytes.length == 0){
+            return;
+        }
 
-        // This method implements a state machine. At each written byte the state can change if a end of line is found.
+        if (indexEnd < indexStart){
+            throw new IllegalArgumentException("End index cannot be lower that the start index. End index: " + indexEnd + ", Start index: " + indexStart);
+        }
+
+        if (indexStart > receivedBytes.length){
+            throw new IllegalArgumentException("The start index cannot be greater than the size of the data. Start index: " + indexStart + ", Data length: " + receivedBytes.length);
+        }
+
+        if (indexEnd > receivedBytes.length){
+            throw new IllegalArgumentException("The end index cannot be greater than the size of the data. End index: " + indexEnd + ", Data length: " + receivedBytes.length);
+        }
+
+        writeForDebug(receivedBytes, indexStart, indexEnd);
 
         int partIndex = 0;
         int currentIndex = indexStart;
@@ -157,12 +175,20 @@ public class NioMultipartParserImpl implements NioMultipartParser, Closeable {
                     currentIndex = readBodyByte(receivedBytes, currentIndex, indexEnd);
                     break;
 
-                case END:
-                    if (log.isDebugEnabled())log.info("End");
-                    nioMultipartParserListener.onAllPartsRead();
-                    currentIndex = indexEnd + 1; // To Exit the while...
-                    logDebugFile();
+                case ALL_PARTS_READ:
+                    if (log.isDebugEnabled())log.info("All parts read");
+                    allPartsRead();
                     break;
+
+                case SKIP_EPILOGUE:
+                    if (log.isDebugEnabled())log.info("Skip epilogue");
+                    currentIndex ++;
+                    // Do nothing...
+                    break;
+
+                default:
+                    throw new IllegalStateException("Unknown state");
+
             }
         }
     }
@@ -176,7 +202,7 @@ public class NioMultipartParserImpl implements NioMultipartParser, Closeable {
                     return ++currentIndex;
 
                 } else if(CLOSE_DELIMITER_NAME.equals(buffer.getEndOfLineName())) {
-                    currentState = State.END;
+                    currentState = State.ALL_PARTS_READ;
                     return ++currentIndex;
 
                 } else {
@@ -197,12 +223,11 @@ public class NioMultipartParserImpl implements NioMultipartParser, Closeable {
     int readHeadersByte(final byte[] receivedBytes, int currentIndex, final int indexEnd){
         for (; currentIndex < indexEnd; currentIndex++) {
             if (buffer.write(receivedBytes[currentIndex])) {
-                ByteArrayOutputStream headersOutputStream = (ByteArrayOutputStream)outputStream;
-                String header = new String(headersOutputStream.toByteArray());// TODO - encoding
+
+                String header = new String(headerOutputStream.toByteArray());// TODO - encoding
                 if (header.trim().length() == 0){
                     // Got an empty value, it means the header section is finished.
                     currentState = State.GET_READY_FOR_BODY;
-
                 }else{
                     // Parse header
                     String[] headerComponents = header.split(":");
@@ -211,8 +236,8 @@ public class NioMultipartParserImpl implements NioMultipartParser, Closeable {
                         Collections.addAll(headerValues, headerComponents[1].split(","));
                     }
                     headers.put(headerComponents[0], headerValues);
-                    headersOutputStream.reset();
-                    buffer.reset(headersDelimiter, this.outputStream);
+                    headerOutputStream.reset();
+                    buffer.reset(headersDelimiter, headerOutputStream);
                 }
                 return ++currentIndex;
             }
@@ -232,7 +257,7 @@ public class NioMultipartParserImpl implements NioMultipartParser, Closeable {
                 if (DELIMITER_NAME.equals(buffer.getEndOfLineName())){
                     currentState = State.GET_READY_FOR_HEADERS;
                 }else{
-                    currentState = State.END;
+                    currentState = State.ALL_PARTS_READ;
                 }
                 final String name = ((PartOutputStream)outputStream).getName();
                 final InputStream partBodyInputStream =  bodyStreamFactory.getInputStream(name);
@@ -241,6 +266,12 @@ public class NioMultipartParserImpl implements NioMultipartParser, Closeable {
             }
         }
         return ++currentIndex;
+    }
+
+    void allPartsRead(){
+        nioMultipartParserListener.onAllPartsRead();
+        logDebugFile();
+        currentState = State.SKIP_EPILOGUE;
     }
 
     // TODO - get rid of the commons fileupload dependency

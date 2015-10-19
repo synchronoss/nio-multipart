@@ -37,7 +37,7 @@ public class TempFileBodyStreamFactory implements BodyStreamFactory {
     @Override
     public PartOutputStream getOutputStream(final Map<String, List<String>> headers, int partIndex) {
         try {
-            final File tempFile = new File(tempFolder, String.format("nio-body-%d-%s.tmp", partIndex, UUID.randomUUID().toString()));
+            final File tempFile = new File(tempFolder, String.format("nio-body-%d-%s.tmp", partIndex, UUID.randomUUID().toString()));// TODO - is this random enough?
             return new PartOutputStream(tempFile.getAbsolutePath()) {
 
                 final FileOutputStream fos = new FileOutputStream(tempFile);
