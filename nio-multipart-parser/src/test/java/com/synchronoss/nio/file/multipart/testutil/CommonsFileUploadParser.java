@@ -8,6 +8,10 @@ import java.io.IOException;
 import java.io.InputStream;
 
 /**
+ * <p>
+ *     Parses a multipart body using the commons file upload lib.
+ *     Used in the functional test to verify the nio multipart parser is compliant
+ * </p>
  * Created by sriz0001 on 19/10/2015.
  */
 public class CommonsFileUploadParser {
@@ -15,10 +19,12 @@ public class CommonsFileUploadParser {
     public static FileItemIterator parse(final TestFiles.TestFile testFile){
 
         final FileUpload fileUpload = new FileUpload();
-        final TempFileRequestContext tempFileRequestContext = new TempFileRequestContext(testFile.getInputStream(),
+        final TempFileRequestContext tempFileRequestContext = new TempFileRequestContext(
+                testFile.getInputStream(),
                 testFile.getCharEncoding(),
                 testFile.getContentLength(),
-                testFile.getContentType());
+                testFile.getContentType()
+        );
 
         try {
             return fileUpload.getItemIterator(tempFileRequestContext);

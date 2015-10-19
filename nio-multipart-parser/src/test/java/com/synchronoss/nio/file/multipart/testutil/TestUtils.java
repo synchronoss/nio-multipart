@@ -1,12 +1,18 @@
 package com.synchronoss.nio.file.multipart.testutil;
 
-import com.synchronoss.nio.file.multipart.CircularBuffer;
-import com.synchronoss.nio.file.multipart.EndOfLineBuffer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.URL;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
 /**
- * Created by mele on 17/10/2015.
+ * <p>
+ *     Test utilities
+ * </p>
+ *
+ * Created by sriz0001 on 17/10/2015.
  */
 public class TestUtils {
 
@@ -33,21 +39,14 @@ public class TestUtils {
         return String.format("0x%02x", b & 0xff);
     }
 
-    public static void writeDataToCircularBuffer(final CircularBuffer circularBuffer, final byte[] data){
-        for (byte aData : data) {
-            circularBuffer.write(aData);
+    static String getTestFileFullPath(final String fileName){
+        try {
+            URL resourceUrl = TestUtils.class.getResource(fileName);
+            Path resourcePath = Paths.get(resourceUrl.toURI());
+            return resourcePath.toFile().getAbsolutePath();
+        }catch (Exception e){
+            throw new IllegalStateException("Cannot find the test file", e);
         }
-    }
-
-    public static void writeDataToEndOfLineBuffer(final EndOfLineBuffer endOfLineBuffer, final byte[] data){
-        for (byte aData : data) {
-            endOfLineBuffer.write(aData);
-        }
-    }
-
-
-    public static String getContentTypeForBoundary(final String boundary){
-        return String.format("multipart/mixed; boundary=%s", boundary);
     }
 
 }

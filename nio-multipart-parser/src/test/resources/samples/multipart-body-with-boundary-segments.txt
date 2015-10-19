@@ -1,4 +1,6 @@
 --aaaaaa
+Content-Disposition: form-data; name="bin"; filename="test.txt"
+Content-type: text/plain; charset=us-ascii
 
 This is implicitly typed plain ASCII text.
 It does NOT end with a linebreak.
@@ -7,6 +9,8 @@ Content-type: text/plain; charset=us-ascii
 
 This is the first part that started with a boundary
 --aaaaa (pluas another 'a' at the end)
+Content-type: text/plain; charset=us-ascii
+
 The next boundary is --aaaaaa- (plus another DASH at the end.)
 
 --aaaaaa--

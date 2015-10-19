@@ -245,7 +245,7 @@ public class NioMultipartParserImpl implements NioMultipartParser, Closeable {
             return;
         }
 
-        final String headerName = headerComponents[0].trim();
+        final String headerName = headerComponents[0].trim().toLowerCase();// Header names are case insensitive
         List<String> headerValues = headers.get(headerName);
         if (headerValues == null){
             headerValues = new ArrayList<String>();

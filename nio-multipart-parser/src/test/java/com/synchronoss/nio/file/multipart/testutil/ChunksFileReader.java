@@ -3,6 +3,10 @@ package com.synchronoss.nio.file.multipart.testutil;
 import java.io.*;
 
 /**
+ * <p>
+ *     An utility class to read a file in chunks.
+ *     This is to emulate the servlet 3.1 onDataAvailable(...)
+ * </p>
  * Created by sriz0001 on 19/10/2015.
  */
 public class ChunksFileReader implements Closeable{

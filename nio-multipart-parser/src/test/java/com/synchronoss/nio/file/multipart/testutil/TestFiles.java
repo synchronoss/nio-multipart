@@ -7,6 +7,9 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
+ * <p>
+ *     Set of test files containing a multipart body
+ * </p>
  * Created by sriz0001 on 19/10/2015.
  */
 public class TestFiles {
@@ -28,12 +31,12 @@ public class TestFiles {
         }
 
         public File getFile(){
-            return new File(path);
+            return new File(TestUtils.getTestFileFullPath(path));
         }
 
         public InputStream getInputStream() {
             try {
-                return new FileInputStream(path);
+                return new FileInputStream(getFile());
             }catch (Exception e){
                 throw new IllegalStateException("Unable to create the input stream for the file " + path, e);
             }
@@ -65,7 +68,7 @@ public class TestFiles {
             "aaaaaa",
             354,
             "UTF-8",
-            "multipart/mixed"
+            "multipart/mixed;boundary=aaaaaa"
             );
 
     public static TestFile JSON_AND_IMAGE = new TestFile(
@@ -73,15 +76,15 @@ public class TestFiles {
             "MUEYT2qJT0_ZzYUvVQLy_DlrLeADyxzmsA",
             7547,
             "UTF-8",
-            "multipart/mixed"
+            "multipart/mixed;boundary=MUEYT2qJT0_ZzYUvVQLy_DlrLeADyxzmsA"
     );
 
     public static TestFile TEXT_WITH_PREAMBLE = new TestFile(
             "/samples/multipart-with-preamble.txt",
-            "simple boundary",
+            "MUEYT2qJT0_ZzYUvVQLy_DlrLeADyxzmsA",
             452,
             "UTF-8",
-            "multipart/mixed"
+            "multipart/mixed;boundary=MUEYT2qJT0_ZzYUvVQLy_DlrLeADyxzmsA"
     );
 
     public static TestFile TEXT_SIMPLE = new TestFile(
@@ -89,7 +92,7 @@ public class TestFiles {
             "BBBBB",
             336,
             "UTF-8",
-            "multipart/mixed"
+            "multipart/mixed;boundary=BBBBB"
     );
 
     public static List<TestFile> TEST_FILES = Arrays.asList(
