@@ -15,26 +15,35 @@ import java.io.OutputStream;
  */
 public class EndOfLineBuffer {
 
+    @SuppressWarnings("unused")
     private static final Logger log = LoggerFactory.getLogger(EndOfLineBuffer.class);
 
     // Underlying circular buffer.
     final CircularBuffer circularBuffer;
 
-    // The output stream where to flush the buffer when full
+    // The output stream where to flush the buffer when full or when an enf of line sequence has been found
     OutputStream flushOutputStream;
 
     // The end of line sequence
     byte[] endOfLineSequence;
+
+    // How many bytes are currently matching the end of line sequence
     int endOfLineSequenceMatchingLength;
+
     /**
      * <p>
      *     Constructor
      * </p>
      * @param size The size of the buffer. Must be greater than the bigger end of line sequence
      * @param endOfLineSequence The end of line sequence. The {@link #write(byte)} method will return true when the end of line sequence is encountered
-     * @param flushOutputStream The {@link OutputStream} where to flush the data when the buffer is full. If set to null the buffer can be used to skip bytes until a separator.
+     * @param flushOutputStream The {@link OutputStream} where to flush the data when the buffer is full. If set to null the buffer can be used to skip bytes until an end of line marker.
      */
     public EndOfLineBuffer(final int size, byte[] endOfLineSequence, final OutputStream flushOutputStream) {
+
+        if (endOfLineSequence.length >= size){
+            throw new IllegalArgumentException("The end of line sequence cannot be larger than the buffer size. End of line sequence length: " + endOfLineSequence.length + ", buffer size: " + size);
+        }
+
         this.circularBuffer = new CircularBuffer(size);
         this.flushOutputStream = flushOutputStream;
         this.endOfLineSequence = endOfLineSequence;
@@ -73,6 +82,7 @@ public class EndOfLineBuffer {
         }
 
         if (circularBuffer.isFull()){
+            // Still full after flushing should never happen...
             throw new IllegalStateException("Unexpected error. Buffer is full after a flush.");
         }
 
@@ -125,5 +135,4 @@ public class EndOfLineBuffer {
             throw new IllegalStateException("Error flushing the buffer data.", e);
         }
     }
-
 }

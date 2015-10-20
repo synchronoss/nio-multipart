@@ -15,6 +15,7 @@ import java.io.OutputStream;
  */
 public class CircularBuffer {
 
+    @SuppressWarnings("unused")
     private static final Logger log = LoggerFactory.getLogger(CircularBuffer.class);
 
     // Capacity of the buffer.
@@ -107,7 +108,7 @@ public class CircularBuffer {
                     " Available data: " + availableReadLength + ", Requested chunk size: " + chunkSize);
         }
 
-        if (isEmpty()){
+        if (chunkSize <= 0 ){
             return;
         }
 
@@ -223,4 +224,5 @@ public class CircularBuffer {
             availableReadLength = size - startValidDataIndex + nextAvailablePosition;
         }
     }
+
 }
