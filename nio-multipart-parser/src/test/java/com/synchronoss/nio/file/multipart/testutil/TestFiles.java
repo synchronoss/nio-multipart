@@ -17,21 +17,21 @@ public class TestFiles {
     public static class TestFile{
 
         final String path;
+        final File file;
         final String boundary;
-        final int contentLength;
         final String charEncoding;
         final String contentType;
 
-        public TestFile(String path, String boundary, int contentLength, String charEncoding, String contentType) {
+        public TestFile(String path, String boundary, String charEncoding, String contentType) {
             this.path = path;
+            this.file = new File(TestUtils.getTestFileFullPath(path));
             this.boundary = boundary;
-            this.contentLength = contentLength;
             this.charEncoding = charEncoding;
             this.contentType = contentType;
         }
 
         public File getFile(){
-            return new File(TestUtils.getTestFileFullPath(path));
+            return file;
         }
 
         public InputStream getInputStream() {
@@ -51,7 +51,11 @@ public class TestFiles {
         }
 
         public int getContentLength() {
-            return contentLength;
+            if (file.length() > Integer.MAX_VALUE){
+                throw new IllegalStateException("File too big. Size in bytes: " + file.length());
+            }else{
+                return (int)file.length();
+            }
         }
 
         public String getCharEncoding() {
@@ -63,43 +67,39 @@ public class TestFiles {
         }
     }
 
-    public static TestFile TEXT_WITH_BOUNDARY_SEGMENTS_IN_BODY = new TestFile(
-            "/samples/multipart-body-with-boundary-segments.txt",
-            "aaaaaa",
-            354,
+    public static TestFile TEST_0001 = new TestFile(
+            "/samples/test0001.txt",
+            "MUEYT2qJT0_ZzYUvVQLy_DlrLeADyxzmsA",
             "UTF-8",
-            "multipart/mixed;boundary=aaaaaa"
+            "multipart/form-data;boundary=MUEYT2qJT0_ZzYUvVQLy_DlrLeADyxzmsA"
+    );
+
+    public static TestFile TEST_0002 = new TestFile(
+            "/samples/test0002.txt",
+            "MUEYT2qJT0_ZzYUvVQLy_DlrLeADyxzmsA",
+            "UTF-8",
+            "multipart/form-data;boundary=MUEYT2qJT0_ZzYUvVQLy_DlrLeADyxzmsA"
+    );
+
+    public static TestFile TEST_0003 = new TestFile(
+            "/samples/test0003.txt",
+            "MUEYT2qJT0_ZzYUvVQLy_DlrLeADyxzmsA",
+            "UTF-8",
+            "multipart/mixed;boundary=MUEYT2qJT0_ZzYUvVQLy_DlrLeADyxzmsA"
+    );
+
+    public static TestFile TEST_0004 = new TestFile(
+            "/samples/test0004.txt",
+            "MUEYT2qJT0_ZzYUvVQLy_DlrLeADyxzmsA",
+            "UTF-8",
+            "multipart/mixed;boundary=MUEYT2qJT0_ZzYUvVQLy_DlrLeADyxzmsA"
             );
 
-    public static TestFile JSON_AND_IMAGE = new TestFile(
-            "/samples/multipart-jpeg.txt",
-            "MUEYT2qJT0_ZzYUvVQLy_DlrLeADyxzmsA",
-            7547,
-            "UTF-8",
-            "multipart/mixed;boundary=MUEYT2qJT0_ZzYUvVQLy_DlrLeADyxzmsA"
-    );
-
-    public static TestFile TEXT_WITH_PREAMBLE = new TestFile(
-            "/samples/multipart-with-preamble.txt",
-            "MUEYT2qJT0_ZzYUvVQLy_DlrLeADyxzmsA",
-            452,
-            "UTF-8",
-            "multipart/mixed;boundary=MUEYT2qJT0_ZzYUvVQLy_DlrLeADyxzmsA"
-    );
-
-    public static TestFile TEXT_SIMPLE = new TestFile(
-            "/samples/simple.txt",
-            "BBBBB",
-            336,
-            "UTF-8",
-            "multipart/mixed;boundary=BBBBB"
-    );
-
-    public static List<TestFile> TEST_FILES = Arrays.asList(
-            TEXT_WITH_BOUNDARY_SEGMENTS_IN_BODY,
-            JSON_AND_IMAGE,
-            TEXT_WITH_PREAMBLE,
-            TEXT_SIMPLE
+    public static List<TestFile> ALL_TEST_FILES = Arrays.asList(
+            TEST_0004,
+            TEST_0003,
+            TEST_0002,
+            TEST_0001
     );
 
 }

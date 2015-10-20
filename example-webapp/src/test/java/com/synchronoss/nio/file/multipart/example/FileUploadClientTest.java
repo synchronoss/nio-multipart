@@ -24,8 +24,8 @@ public class FileUploadClientTest {
     @Ignore
     public void testNioUpload1() throws Exception {
         FileUploadClient fileUploadClient = new FileUploadClient();
-        FileUploadClient.Metadata metadata = new FileUploadClient.Metadata("test.txt");
-        fileUploadClient.uploadFile(getTestFile("/test.txt"), metadata, "http://localhost:8080/example-webapp/nio/multipart");
+        FileUploadClient.Metadata metadata = new FileUploadClient.Metadata("simple.txt");
+        fileUploadClient.uploadFile(getTestFile("/simple.txt"), metadata, "http://localhost:8080/example-webapp/nio/multipart");
     }
 
     @Test
@@ -33,7 +33,7 @@ public class FileUploadClientTest {
     public void testNioUpload2() throws Exception {
         FileUploadClient fileUploadClient = new FileUploadClient();
         FileUploadClient.Metadata metadata = new FileUploadClient.Metadata("delimiter-fragments.txt");
-        fileUploadClient.uploadFile(getTestFile("/delimiter-fragments.txt"), metadata, "http://localhost:8080/example-webapp/nio/multipart");
+        fileUploadClient.uploadFile(getTestFile("/delimiter-fragments.txt"), metadata, "http://localhost:8080/example-webapp/nio/multipart", "MUEYT2qJT0_ZzYUvVQLy_DlrLeADyxzmsA");
     }
 
     static String getTestFile(final String fileName){

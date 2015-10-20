@@ -1,5 +1,6 @@
 package com.synchronoss.nio.file.multipart;
 
+import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import com.synchronoss.nio.file.multipart.testutil.ChunksFileReader;
 import com.synchronoss.nio.file.multipart.testutil.CommonsFileUploadParser;
@@ -7,6 +8,7 @@ import com.synchronoss.nio.file.multipart.testutil.TestFiles;
 import org.apache.commons.fileupload.FileItemHeaders;
 import org.apache.commons.fileupload.FileItemIterator;
 import org.apache.commons.fileupload.FileItemStream;
+import org.apache.commons.io.IOUtils;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -15,14 +17,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.InputStream;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static com.synchronoss.nio.file.multipart.testutil.TestFiles.TestFile;
 
 /**
+ * <p>
+ *     Functional test that verifies the library is compliant with the apache commons fileupload.
+ * </p>
  * Created by sriz0001 on 19/10/2015.
  */
 @RunWith(Parameterized.class)
@@ -37,7 +39,7 @@ public class NioMultipartParserFunctionalTest {
 
     @Parameterized.Parameters
     public static Collection data() {
-        return TestFiles.TEST_FILES;
+        return TestFiles.ALL_TEST_FILES;
     }
 
     @Test
@@ -46,11 +48,16 @@ public class NioMultipartParserFunctionalTest {
         log.info("File: " + testFile.getPath());
 
         final FileItemIterator fileItemIterator = CommonsFileUploadParser.parse(testFile);
-        final MultipartContext multipartContext = multipartContextForTestFile(testFile);
-        final ChunksFileReader chunksFileReader = new ChunksFileReader(testFile, 5, 10);
         final NioMultipartParserListener nioMultipartParserListener = nioMultipartParserListenerVerifier(fileItemIterator);
 
-        NioMultipartParserImpl parser = new NioMultipartParserImpl(multipartContext, nioMultipartParserListener);
+        // Comment out the FileItemIterator and NioMultipartParserListener above and uncomment the next two lines to
+        // skip validation and just print the parts as extracted by the 2 frameworks.
+        //dumpFileIterator(fileItemIterator);
+        //final NioMultipartParserListener nioMultipartParserListener = nioMultipartParserListenerDumper();
+
+        final MultipartContext multipartContext = multipartContextForTestFile(testFile);
+        final ChunksFileReader chunksFileReader = new ChunksFileReader(testFile, 5, 10);
+        final NioMultipartParserImpl parser = new NioMultipartParserImpl(multipartContext, nioMultipartParserListener);
 
         byte[] chunk;
         while(true){
@@ -66,6 +73,67 @@ public class NioMultipartParserFunctionalTest {
 
     MultipartContext multipartContextForTestFile(final TestFile testFile){
         return new MultipartContext(testFile.getContentType(), testFile.getContentLength(), testFile.getCharEncoding());
+    }
+
+    void dumpFileIterator(final FileItemIterator fileItemIterator){
+
+        int partIndex = 0;
+
+        try {
+            log.info("-- COMMONS FILE UPLOAD --");
+            while (fileItemIterator.hasNext()) {
+                log.info("-- Part " + partIndex++);
+                FileItemStream fileItemStream = fileItemIterator.next();
+
+                FileItemHeaders fileItemHeaders = fileItemStream.getHeaders();
+                Iterator<String> headerNames = fileItemHeaders.getHeaderNames();
+                while(headerNames.hasNext()){
+                    String headerName = headerNames.next();
+                    log.info("Header: " + headerName+ ": " + Joiner.on(',').join(fileItemHeaders.getHeaders(headerName)));
+                }
+                log.info("Body:\n" + IOUtils.toString(fileItemStream.openStream()));
+            }
+            log.info("-- ------------------- --");
+        }catch (Exception e){
+            log.error("Error dumping the FileItemIterator", e);
+        }
+
+    }
+
+    NioMultipartParserListener nioMultipartParserListenerDumper(){
+
+        return new NioMultipartParserListener() {
+
+            int partIndex = 0;
+
+            @Override
+            public void onPartComplete(InputStream partBodyInputStream, Map<String, List<String>> headersFromPart) {
+                log.info("-- NIO MULTIPART PARSER : On part complete " + (partIndex++));
+                log.info("-- Part " + (partIndex++));
+                for (Map.Entry<String, List<String>> headersEntry : headersFromPart.entrySet()){
+                    log.info("Header: " + headersEntry.getKey() + ": " + Joiner.on(',').join(headersEntry.getValue()));
+                }
+                try {
+                    log.info("Body:\n" + IOUtils.toString(partBodyInputStream));
+                }catch (Exception e){
+                    log.error("Cannot read the body into a string", e);
+                }
+
+            }
+
+            @Override
+            public void onAllPartsRead() {
+                log.info("-- NIO MULTIPART PARSER : On all parts read");
+                log.info("-- Number of parts: " + partIndex );
+            }
+
+            @Override
+            public void onError(String message, Throwable cause) {
+                log.info("-- NIO MULTIPART PARSER : On error");
+                log.error("Error: " + message, cause);
+            }
+        };
+
     }
 
     NioMultipartParserListener nioMultipartParserListenerVerifier(final FileItemIterator fileItemIterator){
@@ -140,7 +208,7 @@ public class NioMultipartParserFunctionalTest {
                     while (true) {
                         int bOne = fileItemInputStream.read();
                         int bTwo = partBodyInputStream.read();
-                        Assert.assertEquals(bOne, bTwo);
+                        Assert.assertEquals("Byte from commons file upload: " + bTwo + ", Byte from nio: " + bOne ,bOne, bTwo);
 
                         if (bOne == -1){
                             break;

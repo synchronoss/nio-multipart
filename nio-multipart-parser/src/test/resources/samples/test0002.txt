@@ -1,13 +1,15 @@
---BBBBB
+Preamble
+--MUEYT2qJT0_ZzYUvVQLy_DlrLeADyxzmsA
 Content-Disposition: form-data; name="metadata"
 Content-Type: application/json; charset=UTF-8
 Content-Transfer-Encoding: 8bit
 
 {"name":"test.txt"}
---BBBBB
+--MUEYT2qJT0_ZzYUvVQLy_DlrLeADyxzmsA
 Content-Disposition: form-data; name="bin"; filename="test.txt"
 Content-Type: application/octet-stream
 Content-Transfer-Encoding: binary
 
 test upload
---BBBBB--
+--MUEYT2qJT0_ZzYUvVQLy_DlrLeADyxzmsA--
+epilogue

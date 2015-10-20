@@ -1,7 +1,6 @@
 This content contains some delimiter fragments
 to verify the parser is not identifying them as delimiters...
-A part delimiter is
---aaaaa (pluas another 'a' at the end)
-while a close delimiter is
---aaaaaa- (plus another DASH at the end.)
+--MUEYT2qJT0_ZzYUvVQLy_DlrLeADyxzms
+This should still be part of the body
+--MUEYT2qJT0_ZzYUvVQLy_DlrLeADyxzms-
 The parser should continue reading the body until here!
