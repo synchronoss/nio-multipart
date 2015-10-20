@@ -16,6 +16,7 @@ import org.junit.runners.Parameterized;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
 
@@ -44,7 +45,7 @@ public class NioMultipartParserFunctionalTest {
     }
 
     @Test
-    public void parse(){
+    public void parse() throws IOException {
 
         log.info("File: " + testFile.getPath());
 
@@ -60,14 +61,18 @@ public class NioMultipartParserFunctionalTest {
         final ChunksFileReader chunksFileReader = new ChunksFileReader(testFile, 5, 10);
         final NioMultipartParserImpl parser = new NioMultipartParserImpl(multipartContext, nioMultipartParserListener);
 
-        byte[] chunk;
-        while(true){
+        try {
+            byte[] chunk;
+            while (true) {
 
-            chunk = chunksFileReader.readChunk();
-            if (chunk.length <= 0){
-                break;
+                chunk = chunksFileReader.readChunk();
+                if (chunk.length <= 0) {
+                    break;
+                }
+                parser.handleBytesReceived(chunk, 0, chunk.length);
             }
-            parser.handleBytesReceived(chunk, 0, chunk.length);
+        }finally {
+            parser.close();
         }
 
     }

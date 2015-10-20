@@ -391,7 +391,6 @@ public class NioMultipartParserImpl implements NioMultipartParser, Closeable {
         return delimiterPrefix;
     }
 
-
     // Just for testing. It enables the possibility to capture the full multipart body into a file.
     private static final boolean DEBUG = false;
     PartOutputStream debug;

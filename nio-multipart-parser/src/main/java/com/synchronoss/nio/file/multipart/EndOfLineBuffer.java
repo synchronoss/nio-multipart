@@ -77,19 +77,12 @@ public class EndOfLineBuffer {
             throw new IllegalStateException("Buffer is in an end of line state. You need to reset it before writing.");
         }
 
-        if (circularBuffer.isFull()){
-            flush();
-        }
-
-        if (circularBuffer.isFull()){
-            // Still full after flushing should never happen...
-            throw new IllegalStateException("Unexpected error. Buffer is full after a flush.");
-        }
+        flushIfNeeded();
 
         circularBuffer.write(data);
         boolean isEndOfLine = updateEndOfLineMatchingStatus(data);
         if (isEndOfLine){
-            flush();
+            flushIfNeeded();
         }
 
         return isEndOfLine;
@@ -101,7 +94,7 @@ public class EndOfLineBuffer {
      * </p>
      * @return true if an end of line sequence has been encountered, false otherwise
      */
-    public boolean isEndOfLine(){
+    public boolean isEndOfLine() {
         return endOfLineSequenceMatchingLength == endOfLineSequence.length;
     }
 
@@ -116,23 +109,30 @@ public class EndOfLineBuffer {
         return isEndOfLine();
     }
 
-    void flush(){
+    void flushIfNeeded(){
         if (flushOutputStream == null){
             return;
         }
-        try {
-            if (circularBuffer.getAvailableDataLength() > 0) {
-                if (endOfLineSequenceMatchingLength > 0) {
-                    // Need to flush a chunk
-                    int chunkSize = circularBuffer.availableReadLength - endOfLineSequenceMatchingLength;
-                    circularBuffer.readChunk(flushOutputStream, chunkSize);
-                } else {
-                    // flush all
-                    circularBuffer.readAll(flushOutputStream);
+        if (circularBuffer.isFull() || isEndOfLine()) {
+            try {
+                if (circularBuffer.getAvailableDataLength() > 0) {
+                    if (endOfLineSequenceMatchingLength > 0) {
+                        // Need to flush a chunk
+                        int chunkSize = circularBuffer.availableReadLength - endOfLineSequenceMatchingLength;
+                        circularBuffer.readChunk(flushOutputStream, chunkSize);
+                    } else {
+                        // flush all
+                        circularBuffer.readAll(flushOutputStream);
+                    }
                 }
+            } catch (Exception e) {
+                throw new IllegalStateException("Error flushing the buffer data.", e);
             }
-        }catch (Exception e){
-            throw new IllegalStateException("Error flushing the buffer data.", e);
+        }
+
+        if (circularBuffer.isFull()){
+            // Still full after flushing should never happen...
+            throw new IllegalStateException("Unexpected error. Buffer is full after a flush.");
         }
     }
 }

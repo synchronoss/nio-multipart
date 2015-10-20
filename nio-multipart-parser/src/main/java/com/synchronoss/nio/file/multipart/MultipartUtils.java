@@ -12,6 +12,8 @@ public class MultipartUtils {
 
     public static final String MULTIPART = "multipart/";
 
+    private MultipartUtils(){}// empty private constructor
+
     /**
      * <p>
      *     Checks if the Content-Type header defines a multipart request.
@@ -20,7 +22,7 @@ public class MultipartUtils {
      * @return true if the request is a multipart request, false otherwise.
      */
     public static boolean isMultipart(final String contentTypeHeaderValue){
-        return contentTypeHeaderValue.toLowerCase(Locale.ENGLISH).startsWith(MULTIPART);
+        return contentTypeHeaderValue!=null && contentTypeHeaderValue.toLowerCase(Locale.ENGLISH).startsWith(MULTIPART);
     }
 
 }
