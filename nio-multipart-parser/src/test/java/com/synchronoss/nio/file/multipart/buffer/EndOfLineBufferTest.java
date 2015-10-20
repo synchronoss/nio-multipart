@@ -1,4 +1,4 @@
-package com.synchronoss.nio.file.multipart;
+package com.synchronoss.nio.file.multipart.buffer;
 
 import com.synchronoss.nio.file.multipart.testutil.TestUtils;
 import org.junit.Assert;

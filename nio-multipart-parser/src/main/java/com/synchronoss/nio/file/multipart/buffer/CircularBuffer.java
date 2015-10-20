@@ -1,4 +1,4 @@
-package com.synchronoss.nio.file.multipart;
+package com.synchronoss.nio.file.multipart.buffer;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

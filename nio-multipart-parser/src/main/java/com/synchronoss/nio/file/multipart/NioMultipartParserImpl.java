@@ -1,6 +1,7 @@
 package com.synchronoss.nio.file.multipart;
 
 import com.synchronoss.nio.file.multipart.BodyStreamFactory.PartOutputStream;
+import com.synchronoss.nio.file.multipart.buffer.EndOfLineBuffer;
 import com.synchronoss.nio.file.multipart.util.ParameterParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
