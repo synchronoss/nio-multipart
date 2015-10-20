@@ -4,13 +4,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.OutputStream;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * <p>
  *     A reusable buffer that is watching for end of line sequences.
- *     Every time the buffer is full, it will be flushed to an {@link OutputStream}.
+ *     Every time the buffer is full or if an end of line is encountered the data (excluded the end of line sequence) will be flushed to an {@link OutputStream}.
+ *     After an end of line sequence has been found, the buffer is not writable anymore and {@link #reset(byte[], OutputStream)} must be call to reuse it.
  * </p>
  * Created by sriz0001 on 18/10/2015.
  */
@@ -21,49 +20,39 @@ public class EndOfLineBuffer {
     // Underlying circular buffer.
     final CircularBuffer circularBuffer;
 
-    // The end of line sequences
-    EndOfLineSequences endOfLineSequences;
-
     // The output stream where to flush the buffer when full
     OutputStream flushOutputStream;
 
+    // The end of line sequence
+    byte[] endOfLineSequence;
+    int endOfLineSequenceMatchingLength;
     /**
      * <p>
      *     Constructor
      * </p>
      * @param size The size of the buffer. Must be greater than the bigger end of line sequence
-     * @param endOfLineSequences The end of line sequences. A map with the named sequences of bytes that the buffer will watch for.
+     * @param endOfLineSequence The end of line sequence. The {@link #write(byte)} method will return true when the end of line sequence is encountered
      * @param flushOutputStream The {@link OutputStream} where to flush the data when the buffer is full. If set to null the buffer can be used to skip bytes until a separator.
      */
-    public EndOfLineBuffer(final int size, final Map<String, byte[]> endOfLineSequences, final OutputStream flushOutputStream) {
-
+    public EndOfLineBuffer(final int size, byte[] endOfLineSequence, final OutputStream flushOutputStream) {
         this.circularBuffer = new CircularBuffer(size);
-        this.endOfLineSequences = new EndOfLineSequences();
         this.flushOutputStream = flushOutputStream;
-
-        // Init the end of line sequences
-        for (Map.Entry<String, byte[]> entry : endOfLineSequences.entrySet()){
-            addEndOfLine(entry.getKey(), entry.getValue());
-        }
-
+        this.endOfLineSequence = endOfLineSequence;
+        this.endOfLineSequenceMatchingLength = 0;
     }
 
     /**
      * <p>
      *     Resets the buffer
      * </p>
-     * @param endOfLines The new end of line sequences.
+     * @param endOfLineSequence The new end of line sequence.
      * @param flushOutputStream The new {@link OutputStream} where to flush the data when the buffer is full.
      */
-    public void reset(final Map<String, byte[]> endOfLines, final OutputStream flushOutputStream){
-
+    public void reset(byte[] endOfLineSequence, final OutputStream flushOutputStream){
         this.circularBuffer.reset();
-        this.endOfLineSequences.reset();
         this.flushOutputStream = flushOutputStream;
-
-        for (Map.Entry<String, byte[]> entry : endOfLines.entrySet()){
-            addEndOfLine(entry.getKey(), entry.getValue());
-        }
+        this.endOfLineSequence = endOfLineSequence;
+        this.endOfLineSequenceMatchingLength = 0;
     }
 
     /**
@@ -75,7 +64,7 @@ public class EndOfLineBuffer {
      */
     public boolean write(final byte data){
 
-        if (endOfLineSequences.foundEndOfLine){
+        if (isEndOfLine()){
             throw new IllegalStateException("Buffer is in an end of line state. You need to reset it before writing.");
         }
 
@@ -88,22 +77,33 @@ public class EndOfLineBuffer {
         }
 
         circularBuffer.write(data);
-        endOfLineSequences.updateStatusAfterWrite(data);
-        if (endOfLineSequences.foundEndOfLine){
+        boolean isEndOfLine = updateEndOfLineMatchingStatus(data);
+        if (isEndOfLine){
             flush();
         }
 
-        return endOfLineSequences.foundEndOfLine;
+        return isEndOfLine;
     }
 
     /**
      * <p>
-     *     Returns the name of the end of line sequence encountered or null if none have been encountered.
+     *     Returns if an end of line has been encountered.
      * </p>
-     * @return The name of the end of line sequence encountered or null if none have been encountered.
+     * @return true if an end of line sequence has been encountered, false otherwise
      */
-    public String getEndOfLineName(){
-        return endOfLineSequences.foundEndOfLineName;
+    public boolean isEndOfLine(){
+        return endOfLineSequenceMatchingLength == endOfLineSequence.length;
+    }
+
+    boolean updateEndOfLineMatchingStatus(final byte b){
+        if (endOfLineSequence[endOfLineSequenceMatchingLength] == b){
+            endOfLineSequenceMatchingLength++;
+        }else if (endOfLineSequence[0] == b){
+            endOfLineSequenceMatchingLength = 1;
+        }else{
+            endOfLineSequenceMatchingLength = 0;
+        }
+        return isEndOfLine();
     }
 
     void flush(){
@@ -112,9 +112,9 @@ public class EndOfLineBuffer {
         }
         try {
             if (circularBuffer.getAvailableDataLength() > 0) {
-                if (endOfLineSequences.maxMatching > 0) {
+                if (endOfLineSequenceMatchingLength > 0) {
                     // Need to flush a chunk
-                    int chunkSize = circularBuffer.availableReadLength - endOfLineSequences.maxMatching;
+                    int chunkSize = circularBuffer.availableReadLength - endOfLineSequenceMatchingLength;
                     circularBuffer.readChunk(flushOutputStream, chunkSize);
                 } else {
                     // flush all
@@ -123,72 +123,6 @@ public class EndOfLineBuffer {
             }
         }catch (Exception e){
             throw new IllegalStateException("Error flushing the buffer data.", e);
-        }
-    }
-
-    void addEndOfLine(final String name, final byte[] endOfLineSequence){
-        if (endOfLineSequence.length > circularBuffer.size){
-            throw new IllegalArgumentException("End of line sequence too long. It must be less then the buffer size. " +
-                    "End of line sequence length: " + endOfLineSequence.length +
-                    ", Buffer size: " + circularBuffer.size);
-        }
-        endOfLineSequences.addEndOfLineSequence(name, endOfLineSequence);
-    }
-
-    // FIXME - Probably not the best structure. Maybe a tree is better...
-    static class EndOfLineSequence {
-
-        final byte[] eolSequence;
-        int matchingLength;
-
-        public EndOfLineSequence(final byte[] eolSequence) {
-            this.eolSequence = eolSequence;
-            this.matchingLength = 0;
-        }
-
-        void match(byte b){
-            if (eolSequence[matchingLength] == b){
-                matchingLength++;
-            }else{
-                matchingLength = 0;
-            }
-        }
-
-        boolean isEol(){
-            return matchingLength == eolSequence.length;
-        }
-    }
-
-    static class EndOfLineSequences {
-
-        final Map<String, EndOfLineSequence> endOfLines = new HashMap<String, EndOfLineSequence>();
-        boolean foundEndOfLine = false;
-        String foundEndOfLineName;
-        int maxMatching = 0;
-
-        public void addEndOfLineSequence(final String name, final byte[] endOfLineSequence){
-            endOfLines.put(name, new EndOfLineSequence(endOfLineSequence));
-        }
-
-        public void updateStatusAfterWrite(final byte b){
-            EndOfLineSequence endOfLineSequence;
-            for (Map.Entry<String, EndOfLineSequence> endOfLineEntry : endOfLines.entrySet()){
-                endOfLineSequence = endOfLineEntry.getValue();
-                endOfLineSequence.match(b);
-                foundEndOfLine = foundEndOfLine || endOfLineEntry.getValue().isEol();
-                maxMatching = Math.max(maxMatching, endOfLineEntry.getValue().matchingLength);
-                if (foundEndOfLine){
-                    foundEndOfLineName = endOfLineEntry.getKey();
-                    break;
-                }
-            }
-        }
-
-        public void reset(){
-            endOfLines.clear();
-            foundEndOfLineName = null;
-            foundEndOfLine = false;
-            maxMatching = 0;
         }
     }
 

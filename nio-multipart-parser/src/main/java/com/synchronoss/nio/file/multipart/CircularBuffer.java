@@ -8,7 +8,7 @@ import java.io.OutputStream;
 
 /**
  * <p>
- *     Circular buffer
+ *     A reusable circular buffer
  * </p>
  *
  * Created by sriz0001 on 15/10/2015.
@@ -82,7 +82,7 @@ public class CircularBuffer {
 
         int bytesToRead = availableReadLength;
         while (bytesToRead > 0){
-            // FIXME - Better way to compute the new index. See sun.plugin2.jvm.CircularByteBuffer
+            // XXX - If this becomes a problem there might be a better way to compute the new index. See sun.plugin2.jvm.CircularByteBuffer
             outputStream.write(buffer[startValidDataIndex]);
             startValidDataIndex = forwards(startValidDataIndex);
             bytesToRead --;
@@ -113,7 +113,7 @@ public class CircularBuffer {
 
         int bytesToRead = chunkSize;
         while (bytesToRead > 0){
-            // FIXME - Better way to compute the new index. See sun.plugin2.jvm.CircularByteBuffer
+            // XXX - If this becomes a problem there might be a better way to compute the new index. See sun.plugin2.jvm.CircularByteBuffer
             outputStream.write(buffer[startValidDataIndex]);
             startValidDataIndex = forwards(startValidDataIndex);
             bytesToRead --;

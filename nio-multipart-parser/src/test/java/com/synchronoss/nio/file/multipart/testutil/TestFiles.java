@@ -95,11 +95,27 @@ public class TestFiles {
             "multipart/mixed;boundary=MUEYT2qJT0_ZzYUvVQLy_DlrLeADyxzmsA"
             );
 
+    public static TestFile TEST_0005 = new TestFile(
+            "/samples/test0005.txt",
+            "MUEYT2qJT0_ZzYUvVQLy_DlrLeADyxzmsA",
+            "UTF-8",
+            "multipart/mixed;boundary=MUEYT2qJT0_ZzYUvVQLy_DlrLeADyxzmsA"
+    );
+
+    public static TestFile TEST_0006 = new TestFile(
+            "/samples/test0006.txt",
+            "MUEYT2qJT0_ZzYUvVQLy_DlrLeADyxzmsA",
+            "UTF-8",
+            "multipart/mixed;boundary=MUEYT2qJT0_ZzYUvVQLy_DlrLeADyxzmsA"
+    );
+
     public static List<TestFile> ALL_TEST_FILES = Arrays.asList(
-            TEST_0004,
-            TEST_0003,
-            TEST_0002,
             TEST_0001
+            ,TEST_0002
+            ,TEST_0003
+            ,TEST_0004
+            //TEST_0005// Not working with commons file upload because there is no headers.
+            ,TEST_0006
     );
 
 }

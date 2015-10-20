@@ -31,11 +31,6 @@ import java.util.*;
  *   body-data := &lt;arbitrary data&gt;<br>
  * </code>
  *
- * Have a look at:
- * org.glassfish.grizzly.http.multipart.MultipartScanner
- * org.glassfish.grizzly.http.multipart.MultipartReadHandler
- * org.apache.commons.fileupload.MultipartStream
- *
  * Created by sriz0001 on 15/10/2015.
  */
 public class NioMultipartParserImpl implements NioMultipartParser, Closeable {
@@ -47,22 +42,19 @@ public class NioMultipartParserImpl implements NioMultipartParser, Closeable {
     public static final byte LF = 0x0A;
 
     public static final int DEFAULT_BUFFER_SIZE = 16000;//16kb, Enough for separator and a full header line.
-    public static final String CLOSE_DELIMITER_NAME = "Close-Delimiter";
-    public static final String DELIMITER_NAME = "Delimiter";
-    public static final String HEADER_DELIMITER_NAME = "Header-Delimiter";
     public static final byte[] HEADER_DELIMITER = {CR, LF};
+    protected static final byte[] CLOSE_DELIMITER_SUFFIX = {DASH, DASH};
+    protected static final byte[] DELIMITER_SUFFIX = {CR, LF};
 
     protected enum State {
-        SKIP_PREAMBLE, GET_READY_FOR_HEADERS, HEADERS, GET_READY_FOR_BODY, BODY, ALL_PARTS_READ, SKIP_EPILOGUE
+        SKIP_PREAMBLE, IDENTIFY_DELIMITER, GET_READY_FOR_HEADERS, HEADERS, GET_READY_FOR_BODY, BODY, IDENTIFY_DELIMITER_AND_NOTIFY, ALL_PARTS_READ, SKIP_EPILOGUE, ERROR
     }
 
     final MultipartContext multipartContext;
     final NioMultipartParserListener nioMultipartParserListener;
     final BodyStreamFactory bodyStreamFactory;
     final EndOfLineBuffer buffer;
-    final Map<String, byte[]> preambleDelimiters;
-    final Map<String, byte[]> delimiters;
-    final Map<String, byte[]> headersDelimiter;
+    final byte[] delimiterPrefix;
 
     // Current state of the ASF
     State currentState = State.SKIP_PREAMBLE;
@@ -71,8 +63,11 @@ public class NioMultipartParserImpl implements NioMultipartParser, Closeable {
     // It will be instantiated for each part via {@link BodyStreamFactory#getOutputStream(Map, int)} )}
     OutputStream outputStream = null;
 
-    // Stream where to flush the header data. will be reset every time an header is parsed.
+    // Reusable output stream where to flush the header data. will be reset every time an header is parsed.
     ByteArrayOutputStream headerOutputStream = new ByteArrayOutputStream();
+
+    // Reusable output stream used to identify the delimiter type from the last two chars: close delimiter or delimiter.
+    ByteArrayOutputStream delimiterSuffixIdentifier = new ByteArrayOutputStream(2);
 
     // The current headers.
     Map<String, List<String>> headers = null;
@@ -95,11 +90,7 @@ public class NioMultipartParserImpl implements NioMultipartParser, Closeable {
     public NioMultipartParserImpl(final MultipartContext multipartContext, final NioMultipartParserListener nioMultipartParserListener, final BodyStreamFactory bodyStreamFactory, final int bufferSize) {
         this.multipartContext = multipartContext;
         this.nioMultipartParserListener = nioMultipartParserListener;
-
-        this.preambleDelimiters = getPreambleDelimiters(multipartContext.getContentType());
-        this.delimiters = getMultipartDelimiters(multipartContext.getContentType());
-        this.headersDelimiter = new HashMap<String, byte[]>(1);
-        this.headersDelimiter.put(HEADER_DELIMITER_NAME, HEADER_DELIMITER);
+        this.delimiterPrefix = getDelimiterPrefix(multipartContext.getContentType());
 
         if (bodyStreamFactory != null){
             this.bodyStreamFactory = bodyStreamFactory;
@@ -109,19 +100,21 @@ public class NioMultipartParserImpl implements NioMultipartParser, Closeable {
         }
 
         // At the beginning set up the buffer to skip the preamble.
-        this.buffer = new EndOfLineBuffer(bufferSize, this.preambleDelimiters, null);
+        this.buffer = new EndOfLineBuffer(bufferSize, getPreambleDelimiterPrefix(delimiterPrefix), null);
 
         debug = this.bodyStreamFactory.getOutputStream(new HashMap<String, List<String>>(),0);
     }
 
     @Override
     public void close() throws IOException {
-        // TODO - DO I need to release some resources?
+        if (outputStream != null){
+            outputStream.flush();
+            outputStream.close();
+        }
     }
 
     /*
      * This method implements a state machine. At each written byte the state can change if a end of line is found.
-     *
      */
     @Override
     public void handleBytesReceived(byte[] receivedBytes, int indexStart, int indexEnd) {
@@ -151,42 +144,46 @@ public class NioMultipartParserImpl implements NioMultipartParser, Closeable {
             switch (currentState) {
 
                 case SKIP_PREAMBLE:
-                    if (log.isDebugEnabled())log.info("Skip preamble");
                     currentIndex = readPreambleByte(receivedBytes, currentIndex, indexEnd);
                     break;
 
+                case IDENTIFY_DELIMITER:
+                    currentIndex = identifyDelimiterAndNotifyIfNeeded(receivedBytes, currentIndex, indexEnd);
+                    break;
+
                 case GET_READY_FOR_HEADERS:
-                    if (log.isDebugEnabled())log.info("Get ready for headers");
                     getReadyForHeaders();
                     break;
 
                 case HEADERS:
-                    if (log.isDebugEnabled())log.info("Parse headers");
                     currentIndex = readHeadersByte(receivedBytes, currentIndex, indexEnd);
                     break;
 
                 case GET_READY_FOR_BODY:
-                    if (log.isDebugEnabled())log.info("Get ready for body");
                     getReadyForBody(partIndex++);
                     break;
 
                 case BODY:
-                    if (log.isDebugEnabled())log.info("Read body");
                     currentIndex = readBodyByte(receivedBytes, currentIndex, indexEnd);
                     break;
 
+                case IDENTIFY_DELIMITER_AND_NOTIFY:
+                    currentIndex = identifyDelimiterAndNotifyIfNeeded(receivedBytes, currentIndex, indexEnd);
+                    break;
+
                 case ALL_PARTS_READ:
-                    if (log.isDebugEnabled())log.info("All parts read");
                     allPartsRead();
                     break;
 
                 case SKIP_EPILOGUE:
-                    if (log.isDebugEnabled())log.info("Skip epilogue");
                     currentIndex ++;
-                    // Do nothing...
                     break;
 
+                case ERROR:
+                    throw new IllegalStateException("Parser is in an error state.");
+
                 default:
+                    // This should never happen...
                     throw new IllegalStateException("Unknown state");
 
             }
@@ -194,38 +191,32 @@ public class NioMultipartParserImpl implements NioMultipartParser, Closeable {
     }
 
     int readPreambleByte(final byte[] receivedBytes, int currentIndex, final int indexEnd){
-        for (; currentIndex < indexEnd; currentIndex++) {
+        while (currentIndex < indexEnd) {
             if (buffer.write(receivedBytes[currentIndex])) {
-
-                if (DELIMITER_NAME.equals(buffer.getEndOfLineName())) {
-                    currentState = State.GET_READY_FOR_HEADERS;
-                    return ++currentIndex;
-
-                } else if(CLOSE_DELIMITER_NAME.equals(buffer.getEndOfLineName())) {
-                    currentState = State.ALL_PARTS_READ;
-                    return ++currentIndex;
-
-                } else {
-                    throw new IllegalStateException("Expected a delimiter after the preamble.");
-                }
+                if (log.isDebugEnabled())log.debug(currentState + " --> " + State.IDENTIFY_DELIMITER);
+                currentState = State.IDENTIFY_DELIMITER;
+                return ++currentIndex;
             }
+            currentIndex++;
         }
         return ++currentIndex;
     }
 
     void getReadyForHeaders(){
+        if (log.isDebugEnabled())log.debug(currentState + " --> " + State.HEADERS);
         currentState = State.HEADERS;
         headerOutputStream.reset();
-        buffer.reset(headersDelimiter, headerOutputStream);
+        buffer.reset(HEADER_DELIMITER, headerOutputStream);
         headers = new HashMap<String, List<String>>();
     }
 
     int readHeadersByte(final byte[] receivedBytes, int currentIndex, final int indexEnd){
-        for (; currentIndex < indexEnd; currentIndex++) {
+        while (currentIndex < indexEnd) {
             if (buffer.write(receivedBytes[currentIndex])) {
                 final String header = headerToString();
                 if (header.length() == 0){
                     // Got an empty value, it means the header section is finished.
+                    if (log.isDebugEnabled())log.debug(currentState + " --> " + State.GET_READY_FOR_BODY);
                     currentState = State.GET_READY_FOR_BODY;
                 }else{
                     // Add the header to the current headers map...
@@ -233,6 +224,7 @@ public class NioMultipartParserImpl implements NioMultipartParser, Closeable {
                 }
                 return ++currentIndex;
             }
+            currentIndex++;
         }
         return ++currentIndex;
     }
@@ -258,7 +250,7 @@ public class NioMultipartParserImpl implements NioMultipartParser, Closeable {
         }
 
         headerOutputStream.reset();
-        buffer.reset(headersDelimiter, headerOutputStream);
+        buffer.reset(HEADER_DELIMITER, headerOutputStream);
     }
 
     String headerToString(){
@@ -270,32 +262,74 @@ public class NioMultipartParserImpl implements NioMultipartParser, Closeable {
     }
 
     void getReadyForBody(final int partIndex){
+        if (log.isDebugEnabled())log.debug(currentState + " --> " + State.BODY);
         currentState = State.BODY;
         outputStream = bodyStreamFactory.getOutputStream(headers, partIndex);
-        buffer.reset(delimiters, outputStream);
+        buffer.reset(delimiterPrefix, outputStream);
     }
 
     int readBodyByte(final byte[] receivedBytes, int currentIndex, final int indexEnd){
-        for (; currentIndex < indexEnd; currentIndex++) {
+        while (currentIndex < indexEnd) {
             if (buffer.write(receivedBytes[currentIndex])) {
-                if (DELIMITER_NAME.equals(buffer.getEndOfLineName())){
-                    currentState = State.GET_READY_FOR_HEADERS;
-                }else{
-                    currentState = State.ALL_PARTS_READ;
-                }
-                final String name = ((PartOutputStream)outputStream).getName();
-                final InputStream partBodyInputStream =  bodyStreamFactory.getInputStream(name);
-                nioMultipartParserListener.onPartComplete(partBodyInputStream, headers);
+                if (log.isDebugEnabled())log.debug(currentState + " --> " + State.IDENTIFY_DELIMITER_AND_NOTIFY);
+                currentState = State.IDENTIFY_DELIMITER_AND_NOTIFY;
                 return ++currentIndex;
             }
+            currentIndex++;
+        }
+        return ++currentIndex;
+    }
+
+    int identifyDelimiterAndNotifyIfNeeded(final byte[] receivedBytes, int currentIndex, final int indexEnd){
+        while (currentIndex < indexEnd) {
+            delimiterSuffixIdentifier.write(receivedBytes[currentIndex]);
+            if (delimiterSuffixIdentifier.size() == 2){
+                byte[] suffix = delimiterSuffixIdentifier.toByteArray();
+
+                if (isDelimiterSuffix(suffix)){
+                    notifyPart();
+                    if (log.isDebugEnabled())log.debug(currentState + " --> " + State.GET_READY_FOR_HEADERS);
+                    currentState = State.GET_READY_FOR_HEADERS;
+                    delimiterSuffixIdentifier.reset();
+                    return ++currentIndex;
+                }else if (isCloseDelimiterSuffix(suffix)){
+                    notifyPart();
+                    if (log.isDebugEnabled())log.debug(currentState + " --> " + State.ALL_PARTS_READ);
+                    currentState = State.ALL_PARTS_READ;
+                    delimiterSuffixIdentifier.reset();
+                    return ++currentIndex;
+                }else{
+                    if (log.isDebugEnabled())log.debug(currentState + " --> " + State.ERROR);
+                    currentState = State.ERROR;
+                    delimiterSuffixIdentifier.reset();
+                    nioMultipartParserListener.onError("Unexpected characters follow a boundary", null);
+                    return ++currentIndex;
+                }
+            }
+            currentIndex++;
         }
         return ++currentIndex;
     }
 
     void allPartsRead(){
+        if (log.isDebugEnabled())log.debug(currentState + " --> " + State.SKIP_EPILOGUE);
+        currentState = State.SKIP_EPILOGUE;
         nioMultipartParserListener.onAllPartsRead();
         logDebugFile();
-        currentState = State.SKIP_EPILOGUE;
+    }
+
+    void notifyPart(){
+        if (currentState == State.IDENTIFY_DELIMITER_AND_NOTIFY){
+            try {
+                outputStream.flush();
+                outputStream.close();
+            }catch (Exception e){
+                nioMultipartParserListener.onError("Error flushing and closing the body part output stream", e);
+            }
+            final String name = ((PartOutputStream)outputStream).getName();
+            final InputStream partBodyInputStream =  bodyStreamFactory.getInputStream(name);
+            nioMultipartParserListener.onPartComplete(partBodyInputStream, headers);
+        }
     }
 
     byte[] getBoundary(final String contentType) {
@@ -317,58 +351,44 @@ public class NioMultipartParserImpl implements NioMultipartParser, Closeable {
         return boundary;
     }
 
-    Map<String, byte[]> getPreambleDelimiters(final String contentType){
-        byte[] boundary = getBoundary(contentType);
-
-        byte[] closeDelimiter = new byte[boundary.length + 4];
-        closeDelimiter[0] = DASH;
-        closeDelimiter[1] = DASH;
-        closeDelimiter[closeDelimiter.length - 1] = DASH;
-        closeDelimiter[closeDelimiter.length - 2] = DASH;
-        System.arraycopy(boundary, 0, closeDelimiter, 2, boundary.length);
-
-        byte[] delimiter = new byte[boundary.length + 4];
-        delimiter[0] = DASH;
-        delimiter[1] = DASH;
-        delimiter[delimiter.length - 2] = CR;
-        delimiter[delimiter.length - 1] = LF;
-        System.arraycopy(boundary, 0, delimiter, 2, boundary.length);
-
-        Map<String, byte[]> delimiters = new HashMap<String, byte[]>(2);
-        delimiters.put(CLOSE_DELIMITER_NAME, closeDelimiter);
-        delimiters.put(DELIMITER_NAME, delimiter);
-
-        return delimiters;
-
+    boolean isCloseDelimiterSuffix(final byte[] suffix){
+        return arrayEquals(CLOSE_DELIMITER_SUFFIX, suffix);
     }
 
-    Map<String, byte[]> getMultipartDelimiters(final String contentType){
+    boolean isDelimiterSuffix(final byte[] suffix){
+        return arrayEquals(DELIMITER_SUFFIX, suffix);
+    }
+
+    boolean arrayEquals(byte[] a, byte[] b) {
+        if (a.length != b.length){
+            return false;
+        }
+        for (int i = 0; i < a.length; i++) {
+            if (a[i] != b[i]) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    byte[] getPreambleDelimiterPrefix(final byte[] delimiterPrefix){
+
+        byte[] preambleDelimiterPrefix = new byte[delimiterPrefix.length-2];
+        System.arraycopy(delimiterPrefix, 2, preambleDelimiterPrefix, 0, delimiterPrefix.length -2);
+        return preambleDelimiterPrefix;
+    }
+
+    byte[] getDelimiterPrefix(final String contentType){
+
         byte[] boundary = getBoundary(contentType);
+        byte[] delimiterPrefix = new byte[boundary.length + 4];
+        delimiterPrefix[0] = CR;
+        delimiterPrefix[1] = LF;
+        delimiterPrefix[2] = DASH;
+        delimiterPrefix[3] = DASH;
+        System.arraycopy(boundary, 0, delimiterPrefix, 4, boundary.length);
 
-        byte[] closeDelimiter = new byte[boundary.length + 6];
-        closeDelimiter[0] = CR;
-        closeDelimiter[1] = LF;
-        closeDelimiter[2] = DASH;
-        closeDelimiter[3] = DASH;
-        closeDelimiter[closeDelimiter.length - 1] = DASH;
-        closeDelimiter[closeDelimiter.length - 2] = DASH;
-        System.arraycopy(boundary, 0, closeDelimiter, 4, boundary.length);
-
-        byte[] delimiter = new byte[boundary.length + 6];
-        delimiter[0] = CR;
-        delimiter[1] = LF;
-        delimiter[2] = DASH;
-        delimiter[3] = DASH;
-        delimiter[delimiter.length - 2] = CR;
-        delimiter[delimiter.length - 1] = LF;
-        System.arraycopy(boundary, 0, delimiter, 4, boundary.length);
-
-        Map<String, byte[]> delimiters = new HashMap<String, byte[]>(2);
-        delimiters.put(CLOSE_DELIMITER_NAME, closeDelimiter);
-        delimiters.put(DELIMITER_NAME, delimiter);
-
-        return delimiters;
-
+        return delimiterPrefix;
     }
 
 

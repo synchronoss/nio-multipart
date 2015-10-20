@@ -40,6 +40,7 @@ public class NioMultipartParserFunctionalTest {
     @Parameterized.Parameters
     public static Collection data() {
         return TestFiles.ALL_TEST_FILES;
+        //return Collections.singletonList(TestFiles.TEST_0005);
     }
 
     @Test
@@ -50,7 +51,7 @@ public class NioMultipartParserFunctionalTest {
         final FileItemIterator fileItemIterator = CommonsFileUploadParser.parse(testFile);
         final NioMultipartParserListener nioMultipartParserListener = nioMultipartParserListenerVerifier(fileItemIterator);
 
-        // Comment out the FileItemIterator and NioMultipartParserListener above and uncomment the next two lines to
+        // Comment out the NioMultipartParserListener above and uncomment the next two lines to
         // skip validation and just print the parts as extracted by the 2 frameworks.
         //dumpFileIterator(fileItemIterator);
         //final NioMultipartParserListener nioMultipartParserListener = nioMultipartParserListenerDumper();
@@ -109,7 +110,7 @@ public class NioMultipartParserFunctionalTest {
             @Override
             public void onPartComplete(InputStream partBodyInputStream, Map<String, List<String>> headersFromPart) {
                 log.info("-- NIO MULTIPART PARSER : On part complete " + (partIndex++));
-                log.info("-- Part " + (partIndex++));
+                log.info("-- Part " + (partIndex));
                 for (Map.Entry<String, List<String>> headersEntry : headersFromPart.entrySet()){
                     log.info("Header: " + headersEntry.getKey() + ": " + Joiner.on(',').join(headersEntry.getValue()));
                 }
@@ -144,7 +145,7 @@ public class NioMultipartParserFunctionalTest {
 
             @Override
             public void onPartComplete(InputStream partBodyInputStream, Map<String, List<String>> headersFromPart) {
-                log.info("-- On part complete " + (partIndex));
+                log.info("<<<<< On part complete [" + (partIndex) + "] >>>>>>");
                 assertFileItemIteratorHasNext(true);
                 final FileItemStream fileItemStream = fileItemIteratorNext();
                 assertHeadersAreEqual(fileItemStream.getHeaders(), headersFromPart);
@@ -154,13 +155,18 @@ public class NioMultipartParserFunctionalTest {
 
             @Override
             public void onAllPartsRead() {
-                log.info("-- On all parts read: Number of parts "+ partIndex);
+                log.info("<<<<< On all parts read: Number of parts ["+ partIndex + "] >>>>>>");
                 assertFileItemIteratorHasNext(false);
+                try {
+                    Thread.sleep(100);
+                }catch (Exception e){
+                    // Nothing to do...
+                }
             }
 
             @Override
             public void onError(String message, Throwable cause) {
-                log.info("-- On error. Part " + partIndex);
+                log.info("<<<<< On error. Part " + partIndex + "] >>>>>>");
                 throw new IllegalStateException("Error: " + message, cause );
             }
 
