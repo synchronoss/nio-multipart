@@ -8,13 +8,13 @@ import org.slf4j.LoggerFactory;
 
 /**
  * <p>
- *     Unit tests for {@link NioMultipartParserImpl}
+ *     Unit tests for {@link NioMultipartParser}
  * </p>
  * Created by sriz0001 on 21/10/2015.
  */
-public class NioMultipartParserImplTest {
+public class NioMultipartParserTest {
 
-    private static final Logger log = LoggerFactory.getLogger(NioMultipartParserImplTest.class);
+    private static final Logger log = LoggerFactory.getLogger(NioMultipartParserTest.class);
 
     @Test
     public void testConstruction(){
@@ -25,16 +25,16 @@ public class NioMultipartParserImplTest {
         NioMultipartParserListener listener = Mockito.mock(NioMultipartParserListener.class);
         BodyStreamFactory bodyStreamFactory = Mockito.mock(BodyStreamFactory.class);
 
-        NioMultipartParserImpl parser = new NioMultipartParserImpl(context, listener);
+        NioMultipartParser parser = new NioMultipartParser(context, listener);
         Assert.assertNotNull(parser);
 
-        NioMultipartParserImpl parser1 = new NioMultipartParserImpl(context, listener, 5000);
+        NioMultipartParser parser1 = new NioMultipartParser(context, listener, 5000);
         Assert.assertNotNull(parser1);
 
-        NioMultipartParserImpl parser2 = new NioMultipartParserImpl(context, listener, bodyStreamFactory);
+        NioMultipartParser parser2 = new NioMultipartParser(context, listener, bodyStreamFactory);
         Assert.assertNotNull(parser2);
 
-        NioMultipartParserImpl parser3 = new NioMultipartParserImpl(context, listener, bodyStreamFactory, 5000);
+        NioMultipartParser parser3 = new NioMultipartParser(context, listener, bodyStreamFactory, 5000);
         Assert.assertNotNull(parser3);
 
     }

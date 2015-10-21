@@ -23,6 +23,16 @@ public interface NioMultipartParserListener {
 
     /**
      * <p>
+     *     Called when a part that is a form field has been parsed
+     * </p>
+     * @param fieldName The field name
+     * @param fieldValue The field value
+     * @param headersFromPart The part headers.
+     */
+    void onFormFieldPartComplete(final String fieldName, final String fieldValue, final Map<String, List<String>> headersFromPart);
+
+    /**
+     * <p>
      *     Called when all the parts have been read.
      * </p>
      */

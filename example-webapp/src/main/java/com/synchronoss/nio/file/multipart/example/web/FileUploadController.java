@@ -25,7 +25,7 @@ package com.synchronoss.nio.file.multipart.example.web;
 
 import com.google.common.base.Joiner;
 import com.synchronoss.nio.file.multipart.MultipartContext;
-import com.synchronoss.nio.file.multipart.NioMultipartParserImpl;
+import com.synchronoss.nio.file.multipart.NioMultipartParser;
 import com.synchronoss.nio.file.multipart.NioMultipartParserListener;
 import com.synchronoss.nio.file.multipart.example.config.RootApplicationConfig;
 import org.apache.commons.io.IOUtils;
@@ -91,6 +91,18 @@ public class FileUploadController {
             }
 
             @Override
+            public void onFormFieldPartComplete(String fieldName, String fieldValue, Map<String, List<String>> headersFromPart) {
+                log.info("FORM FIELD COMPLETE");
+
+                for (Map.Entry<String, List<String>> headerEntry : headersFromPart.entrySet()){
+                    log.info("Header -> " + headerEntry.getKey() + " : " + Joiner.on(',').join(headerEntry.getValue()));
+                }
+                log.info("Field " + fieldName + ": " + fieldValue);
+                log.info("--");
+
+            }
+
+            @Override
             public void onAllPartsRead() {
                 log.info("ALL PARTS READ");
             }
@@ -105,7 +117,7 @@ public class FileUploadController {
 
         log.debug("Multipart context: " + multipartContext);
 
-        final NioMultipartParserImpl parser = new NioMultipartParserImpl(multipartContext, listener);
+        final NioMultipartParser parser = new NioMultipartParser(multipartContext, listener);
 
         inputStream.setReadListener(new ReadListener() {
             private long totalBytesRead = 0;
@@ -116,7 +128,7 @@ public class FileUploadController {
                 byte bytes[] = new byte[1024];
                 while (inputStream.isReady()  && (bytesRead = inputStream.read(bytes)) != -1) {
                     totalBytesRead += bytesRead;
-                    parser.handleBytesReceived(bytes, 0, bytesRead);
+                    parser.write(bytes, 0, bytesRead);
                 }
             }
 

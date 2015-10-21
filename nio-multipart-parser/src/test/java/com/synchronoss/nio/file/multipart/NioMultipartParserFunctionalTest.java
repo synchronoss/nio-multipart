@@ -59,7 +59,7 @@ public class NioMultipartParserFunctionalTest {
 
         final MultipartContext multipartContext = multipartContextForTestFile(testFile);
         final ChunksFileReader chunksFileReader = new ChunksFileReader(testFile, 5, 10);
-        final NioMultipartParserImpl parser = new NioMultipartParserImpl(multipartContext, nioMultipartParserListener);
+        final NioMultipartParser parser = new NioMultipartParser(multipartContext, nioMultipartParserListener);
 
         try {
             byte[] chunk;
@@ -69,7 +69,7 @@ public class NioMultipartParserFunctionalTest {
                 if (chunk.length <= 0) {
                     break;
                 }
-                parser.handleBytesReceived(chunk, 0, chunk.length);
+                parser.write(chunk, 0, chunk.length);
             }
         }finally {
             parser.close();
@@ -128,6 +128,16 @@ public class NioMultipartParserFunctionalTest {
             }
 
             @Override
+            public void onFormFieldPartComplete(String fieldName, String fieldValue, Map<String, List<String>> headersFromPart) {
+                log.info("-- NIO MULTIPART PARSER : On form field complete " + (partIndex++));
+                log.info("-- Part " + (partIndex));
+                for (Map.Entry<String, List<String>> headersEntry : headersFromPart.entrySet()){
+                    log.info("Header: " + headersEntry.getKey() + ": " + Joiner.on(',').join(headersEntry.getValue()));
+                }
+                log.info("Field " + fieldName + ": " + fieldValue);
+            }
+
+            @Override
             public void onAllPartsRead() {
                 log.info("-- NIO MULTIPART PARSER : On all parts read");
                 log.info("-- Number of parts: " + partIndex );
@@ -155,6 +165,21 @@ public class NioMultipartParserFunctionalTest {
                 final FileItemStream fileItemStream = fileItemIteratorNext();
                 assertHeadersAreEqual(fileItemStream.getHeaders(), headersFromPart);
                 assertInputStreamsAreEqual(fileItemStreamInputStream(fileItemStream), partBodyInputStream);
+                partIndex++;
+            }
+
+            @Override
+            public void onFormFieldPartComplete(String fieldName, String fieldValue, Map<String, List<String>> headersFromPart) {
+                log.info("<<<<< On form field complete [" + (partIndex) + "] >>>>>>");
+                assertFileItemIteratorHasNext(true);
+                final FileItemStream fileItemStream = fileItemIteratorNext();
+                Assert.assertTrue(fileItemStream.isFormField());
+                Assert.assertEquals(fieldName, fileItemStream.getFieldName());
+                try {
+                    Assert.assertEquals(fieldValue, IOUtils.toString(fileItemStream.openStream()));
+                }catch (Exception e){
+                    throw new IllegalStateException("Unable to assert field value", e);
+                }
                 partIndex++;
             }
 
