@@ -27,7 +27,7 @@ public class TempFileBodyStreamFactory implements BodyStreamFactory {
                 throw new IllegalStateException("Unable to create the temporary folder for the nio temp files");
             }
         }
-        log.debug("Temporary folder: " + tempFolder.getAbsolutePath());
+        if(log.isDebugEnabled())log.debug("Temporary folder: " + tempFolder.getAbsolutePath());
     }
 
     public TempFileBodyStreamFactory() {
