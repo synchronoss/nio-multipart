@@ -10,6 +10,7 @@ import org.apache.commons.fileupload.FileItemIterator;
 import org.apache.commons.fileupload.FileItemStream;
 import org.apache.commons.io.IOUtils;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -45,6 +46,7 @@ public class NioMultipartParserFunctionalTest {
     }
 
     @Test
+    @Ignore
     public void parse() throws IOException {
 
         log.info("File: " + testFile.getPath());
