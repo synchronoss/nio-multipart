@@ -21,7 +21,7 @@
     <!-- Configuration locations must consist of one or more comma or space delimited fully-qualified @Configuration classes -->
     <context-param>
         <param-name>contextConfigLocation</param-name>
-        <param-value>com.synchronoss.nio.file.multipart.example.config.RootApplicationConfig</param-value>
+        <param-value>com.synchronoss.cloud.nio.multipart.example.config.RootApplicationConfig</param-value>
     </context-param>
 
     <!-- Declare a Spring MVC DispatcherServlet as usual -->
@@ -37,7 +37,7 @@
         <!-- Again, config locations must consist of one or more comma or space delimited and fully-qualified @Configuration classes -->
         <init-param>
             <param-name>contextConfigLocation</param-name>
-            <param-value>com.synchronoss.nio.file.multipart.example.config.WebConfig</param-value>
+            <param-value>com.synchronoss.cloud.nio.multipart.example.config.WebConfig</param-value>
         </init-param>
     </servlet>
 
