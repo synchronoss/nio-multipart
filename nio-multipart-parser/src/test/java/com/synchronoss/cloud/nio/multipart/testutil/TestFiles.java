@@ -68,42 +68,42 @@ public class TestFiles {
     }
 
     public static TestFile TEST_0001 = new TestFile(
-            "/samples/test0001.txt",
+            "/test-multiparts/test0001.txt",
             "MUEYT2qJT0_ZzYUvVQLy_DlrLeADyxzmsA",
             "UTF-8",
             "multipart/form-data;boundary=MUEYT2qJT0_ZzYUvVQLy_DlrLeADyxzmsA"
     );
 
     public static TestFile TEST_0002 = new TestFile(
-            "/samples/test0002.txt",
+            "/test-multiparts/test0002.txt",
             "MUEYT2qJT0_ZzYUvVQLy_DlrLeADyxzmsA",
             "UTF-8",
             "multipart/form-data;boundary=MUEYT2qJT0_ZzYUvVQLy_DlrLeADyxzmsA"
     );
 
     public static TestFile TEST_0003 = new TestFile(
-            "/samples/test0003.txt",
+            "/test-multiparts/test0003.txt",
             "MUEYT2qJT0_ZzYUvVQLy_DlrLeADyxzmsA",
             "UTF-8",
             "multipart/mixed;boundary=MUEYT2qJT0_ZzYUvVQLy_DlrLeADyxzmsA"
     );
 
     public static TestFile TEST_0004 = new TestFile(
-            "/samples/test0004.txt",
+            "/test-multiparts/test0004.txt",
             "MUEYT2qJT0_ZzYUvVQLy_DlrLeADyxzmsA",
             "UTF-8",
             "multipart/mixed;boundary=MUEYT2qJT0_ZzYUvVQLy_DlrLeADyxzmsA"
             );
 
     public static TestFile TEST_0005 = new TestFile(
-            "/samples/test0005.txt",
+            "/test-multiparts/test0005.txt",
             "MUEYT2qJT0_ZzYUvVQLy_DlrLeADyxzmsA",
             "UTF-8",
             "multipart/mixed;boundary=MUEYT2qJT0_ZzYUvVQLy_DlrLeADyxzmsA"
     );
 
     public static TestFile TEST_0006 = new TestFile(
-            "/samples/test0006.txt",
+            "/test-multiparts/test0006.txt",
             "MUEYT2qJT0_ZzYUvVQLy_DlrLeADyxzmsA",
             "UTF-8",
             "multipart/mixed;boundary=MUEYT2qJT0_ZzYUvVQLy_DlrLeADyxzmsA"

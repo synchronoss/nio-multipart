@@ -1,3 +1,3 @@
 # Avoid normalizing the following files because they contain
 # examples of multipart bodies that uses CR,LF as end of line delimiter.
-nio-multipart-parser/src/test/resources/samples/*.txt text eol=crlf
+nio-multipart-parser/src/test/resources/test-multiparts/*.txt text eol=crlf
