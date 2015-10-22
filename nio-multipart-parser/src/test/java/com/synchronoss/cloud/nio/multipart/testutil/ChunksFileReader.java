@@ -1,6 +1,9 @@
 package com.synchronoss.cloud.nio.multipart.testutil;
 
-import java.io.*;
+import java.io.ByteArrayOutputStream;
+import java.io.Closeable;
+import java.io.IOException;
+import java.io.InputStream;
 
 /**
  * <p>
@@ -21,7 +24,7 @@ public class ChunksFileReader implements Closeable{
         this.maxChunkSize = maxChunkSize;
         this.minChunkSize = minChunkSize;
         this.baos = new ByteArrayOutputStream();
-        this.inputStream = testFile.getInputStream();
+        this.inputStream = new MultipartTestFileInputStream(testFile.getInputStream());
     }
 
     public byte[] readChunk(){

@@ -20,7 +20,7 @@ public class CommonsFileUploadParser {
 
         final FileUpload fileUpload = new FileUpload();
         final TempFileRequestContext tempFileRequestContext = new TempFileRequestContext(
-                testFile.getInputStream(),
+                new MultipartTestFileInputStream(testFile.getInputStream()),
                 testFile.getCharEncoding(),
                 testFile.getContentLength(),
                 testFile.getContentType()
