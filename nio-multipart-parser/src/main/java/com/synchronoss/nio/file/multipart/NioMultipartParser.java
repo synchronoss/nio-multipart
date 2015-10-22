@@ -48,10 +48,10 @@ public class NioMultipartParser extends OutputStream {
     public static final int DEFAULT_BUFFER_SIZE = 16000;//16kb, Enough for separator and a full header line.
     public static final byte[] HEADER_DELIMITER = {CR, LF};
     protected static final byte[] CLOSE_DELIMITER_SUFFIX = {DASH, DASH};
-    protected static final byte[] DELIMITER_SUFFIX = {CR, LF};
+    protected static final byte[] ENCAPSULATION_DELIMITER_SUFFIX = {CR, LF};
 
     protected enum DelimiterType {
-        CLOSE, PART
+        CLOSE, ENCAPSULATION
     }
 
     protected enum State {
@@ -347,7 +347,7 @@ public class NioMultipartParser extends OutputStream {
 
                 if (isDelimiterSuffix(suffix)){
                     if (log.isDebugEnabled())log.debug(currentState + " --> " + onDelimiter);
-                    delimiterType = DelimiterType.PART;
+                    delimiterType = DelimiterType.ENCAPSULATION;
                     currentState = onDelimiter;
                     delimiterSuffixIdentifier.reset();
                     return ++currentIndex;
@@ -431,7 +431,7 @@ public class NioMultipartParser extends OutputStream {
     }
 
     boolean isDelimiterSuffix(final byte[] suffix){
-        return arrayEquals(DELIMITER_SUFFIX, suffix);
+        return arrayEquals(ENCAPSULATION_DELIMITER_SUFFIX, suffix);
     }
 
     boolean arrayEquals(byte[] a, byte[] b) {
