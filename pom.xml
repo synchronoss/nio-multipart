@@ -94,9 +94,9 @@
     </build>
 
     <scm>
-        <connection>ssh://git@stash.synchronoss.net:7999/cloud-core/nio-file-upload.git</connection>
-        <developerConnection>ssh://git@stash.synchronoss.net:7999/cloud-core/nio-file-upload.git</developerConnection>
-        <url>https://stash.synchronoss.net/projects/CLOUD-CORE/repos/nio-file-upload/browse</url>
+        <connection>ssh://git@stash.synchronoss.net:7999/scm/~sriz0001/nio-multipart.git</connection>
+        <developerConnection>ssh://git@stash.synchronoss.net:7999/scm/~sriz0001/nio-multipart.git</developerConnection>
+        <url>https://stash.synchronoss.net/scm/~sriz0001/nio-multipart.git/browse</url>
         <tag>HEAD</tag>
     </scm>
 
