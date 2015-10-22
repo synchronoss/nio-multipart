@@ -4,8 +4,8 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>com.synchronoss.nio</groupId>
-        <artifactId>nio-file-upload</artifactId>
+        <groupId>com.synchronoss.cloud</groupId>
+        <artifactId>nio-multipart</artifactId>
         <version>0.0.1-SNAPSHOT</version>
     </parent>
 
@@ -29,7 +29,7 @@
         </dependency>
 
         <dependency>
-            <groupId>com.synchronoss.nio</groupId>
+            <groupId>com.synchronoss.cloud</groupId>
             <artifactId>nio-multipart-parser</artifactId>
             <version>${project.version}</version>
         </dependency>
