@@ -1,12 +1,12 @@
 package com.synchronoss.cloud.nio.multipart;
 
 
-import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.IOException;
 
-import static com.synchronoss.cloud.nio.multipart.BodyStreamFactory.*;
+import static com.synchronoss.cloud.nio.multipart.BodyStreamFactory.PartOutputStream;
+import static org.junit.Assert.assertEquals;
 
 /**
  * <p>
@@ -26,7 +26,7 @@ public class PartOutputStreamTest {
             }
         };
 
-        Assert.assertEquals("Foo", partOutputStream.getName());
+        assertEquals("Foo", partOutputStream.getName());
 
     }
 }

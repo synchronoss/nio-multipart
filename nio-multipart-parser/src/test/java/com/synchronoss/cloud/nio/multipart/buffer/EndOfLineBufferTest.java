@@ -1,15 +1,17 @@
 package com.synchronoss.cloud.nio.multipart.buffer;
 
 import com.synchronoss.cloud.nio.multipart.testutil.TestUtils;
-import org.junit.Assert;
 import org.junit.Test;
-import org.mockito.Mockito;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
 
 /**
  * <p>
@@ -30,8 +32,8 @@ public class EndOfLineBufferTest {
         }catch (Exception e){
             expected = e;
         }
-        Assert.assertNotNull(expected);
-        Assert.assertTrue(expected instanceof IllegalArgumentException);
+        assertNotNull(expected);
+        assertTrue(expected instanceof IllegalArgumentException);
 
         expected = null;
         try{
@@ -39,8 +41,8 @@ public class EndOfLineBufferTest {
         }catch (Exception e){
             expected = e;
         }
-        Assert.assertNotNull(expected);
-        Assert.assertTrue(expected instanceof IllegalArgumentException);
+        assertNotNull(expected);
+        assertTrue(expected instanceof IllegalArgumentException);
 
     }
 
@@ -53,15 +55,15 @@ public class EndOfLineBufferTest {
         log.info("Buffer initial status:\n" + endOfLineBufferToString(endOfLineBuffer)  + "\n");
 
         int writtenBytes = writeDataToEndOfLineBuffer(endOfLineBuffer, new byte[]{0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x0D, 0x0A, 0x08, 0x09, 0x10});
-        Assert.assertEquals(9, writtenBytes);
-        Assert.assertArrayEquals(new byte[]{0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07}, flush.toByteArray());
+        assertEquals(9, writtenBytes);
+        assertArrayEquals(new byte[]{0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07}, flush.toByteArray());
 
         flush.reset();
         endOfLineBuffer.reset(new byte[]{0x0D, 0x0A}, flush);
 
         writtenBytes = writeDataToEndOfLineBuffer(endOfLineBuffer, new byte[]{0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x0D, 0x0D, 0x0A, 0x09, 0x10});
-        Assert.assertEquals(10, writtenBytes);
-        Assert.assertArrayEquals(new byte[]{0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x0D}, flush.toByteArray());
+        assertEquals(10, writtenBytes);
+        assertArrayEquals(new byte[]{0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x0D}, flush.toByteArray());
 
     }
 
@@ -73,7 +75,7 @@ public class EndOfLineBufferTest {
         log.info("Buffer initial status:\n" + endOfLineBufferToString(endOfLineBuffer)  + "\n");
 
         writeDataToEndOfLineBuffer(endOfLineBuffer, new byte[]{0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x0D, 0x0A, 0x08, 0x09, 0x10});
-        Assert.assertTrue(endOfLineBuffer.isEndOfLine());
+        assertTrue(endOfLineBuffer.isEndOfLine());
 
         Exception expected = null;
         try{
@@ -81,8 +83,8 @@ public class EndOfLineBufferTest {
         }catch (Exception e){
             expected = e;
         }
-        Assert.assertNotNull(expected);
-        Assert.assertTrue(expected instanceof IllegalStateException);
+        assertNotNull(expected);
+        assertTrue(expected instanceof IllegalStateException);
 
     }
 
@@ -94,21 +96,21 @@ public class EndOfLineBufferTest {
         log.info("Buffer initial status:\n" + endOfLineBufferToString(endOfLineBuffer)  + "\n");
 
         writeDataToEndOfLineBuffer(endOfLineBuffer, new byte[]{0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09});
-        Assert.assertEquals(0, flush.size());
+        assertEquals(0, flush.size());
         writeDataToEndOfLineBuffer(endOfLineBuffer, new byte[]{0x10, 0x11});
-        Assert.assertEquals(10, flush.size());
+        assertEquals(10, flush.size());
         writeDataToEndOfLineBuffer(endOfLineBuffer, new byte[]{0x12, 0x13, 0x14});
-        Assert.assertEquals(12, flush.size());
+        assertEquals(12, flush.size());
 
-        Assert.assertArrayEquals(new byte[]{0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x10, 0x11, 0x12}, flush.toByteArray());
+        assertArrayEquals(new byte[]{0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x10, 0x11, 0x12}, flush.toByteArray());
     }
 
     @Test
     public void testWrite_flush_error() throws Exception {
 
-        OutputStream flush = Mockito.mock(OutputStream.class);
+        OutputStream flush = mock(OutputStream.class);
         byte failingWrite = 10;
-        Mockito.doThrow(new IOException("mock throwing the exception")).when(flush).write(failingWrite);
+        doThrow(new IOException("mock throwing the exception")).when(flush).write(failingWrite);
 
         EndOfLineBuffer endOfLineBuffer = new EndOfLineBuffer(10, new byte[]{0x0D, 0x0A}, flush);
         log.info("Buffer initial status:\n" + endOfLineBufferToString(endOfLineBuffer)  + "\n");
@@ -121,8 +123,8 @@ public class EndOfLineBufferTest {
         }catch (Exception e){
             expected = e;
         }
-        Assert.assertNotNull(expected);
-        Assert.assertTrue(expected instanceof IllegalStateException);
+        assertNotNull(expected);
+        assertTrue(expected instanceof IllegalStateException);
 
     }
 

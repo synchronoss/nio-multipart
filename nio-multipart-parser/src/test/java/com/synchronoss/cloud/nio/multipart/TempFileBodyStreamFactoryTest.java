@@ -2,7 +2,6 @@ package com.synchronoss.cloud.nio.multipart;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
-import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -13,6 +12,8 @@ import java.io.File;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.List;
+
+import static org.junit.Assert.*;
 
 /**
  * <p>
@@ -36,7 +37,7 @@ public class TempFileBodyStreamFactoryTest {
 
             // Get the output stream
             outputStream = tempFileBodyStreamFactory.getOutputStream(new HashMap<String, List<String>>(), 2);
-            Assert.assertNotNull(outputStream);
+            assertNotNull(outputStream);
 
             log.info("Part body output stream created with name: " + outputStream.getName());
 
@@ -46,11 +47,11 @@ public class TempFileBodyStreamFactoryTest {
 
             // Get the input stream related to the PartOutputStream
             InputStream inputStream = tempFileBodyStreamFactory.getInputStream(outputStream.getName());
-            Assert.assertNotNull(inputStream);
+            assertNotNull(inputStream);
 
             // Read back the data and verify
             byte[] readData = readFromInputStreamAndClose(inputStream);
-            Assert.assertArrayEquals(dataToWrite, readData);
+            assertArrayEquals(dataToWrite, readData);
 
         }finally {
 
@@ -59,7 +60,7 @@ public class TempFileBodyStreamFactoryTest {
 
                 File tmpFileToCleanup = new File(outputStream.getName());
                 if (tmpFileToCleanup.exists()) {
-                    Assert.assertTrue(tmpFileToCleanup.delete());
+                    assertTrue(tmpFileToCleanup.delete());
                     log.info("Temp file deleted");
                 }
             }
@@ -75,7 +76,7 @@ public class TempFileBodyStreamFactoryTest {
 
         // Get the output stream
         BodyStreamFactory.PartOutputStream outputStream = tempFileBodyStreamFactory.getOutputStream(new HashMap<String, List<String>>(), 2);
-        Assert.assertNotNull(outputStream);
+        assertNotNull(outputStream);
 
         log.info("Part body output stream created with name: " + outputStream.getName());
 
@@ -85,11 +86,11 @@ public class TempFileBodyStreamFactoryTest {
 
         // Get the input stream related to the PartOutputStream
         InputStream inputStream = tempFileBodyStreamFactory.getInputStream(outputStream.getName());
-        Assert.assertNotNull(inputStream);
+        assertNotNull(inputStream);
 
         // Read back the data and verify
         byte[] readData = readFromInputStreamAndClose(inputStream);
-        Assert.assertArrayEquals(dataToWrite, readData);
+        assertArrayEquals(dataToWrite, readData);
 
     }
 
@@ -100,7 +101,7 @@ public class TempFileBodyStreamFactoryTest {
         TempFileBodyStreamFactory tempFileBodyStreamFactory = new TempFileBodyStreamFactory(folder.getAbsolutePath());
 
         // Delete the folder to have an error when creating the output stream
-        Assert.assertTrue(folder.delete());
+        assertTrue(folder.delete());
 
         Exception expected = null;
         try{
@@ -108,8 +109,8 @@ public class TempFileBodyStreamFactoryTest {
         }catch (Exception e){
             expected = e;
         }
-        Assert.assertNotNull(expected);
-        Assert.assertTrue(expected instanceof IllegalStateException);
+        assertNotNull(expected);
+        assertTrue(expected instanceof IllegalStateException);
 
     }
 
@@ -120,15 +121,15 @@ public class TempFileBodyStreamFactoryTest {
 
         Exception expected = null;
         try{
-            Assert.assertTrue(folder.setWritable(false));
+            assertTrue(folder.setWritable(false));
             new TempFileBodyStreamFactory(folder.getAbsolutePath() + "/body-parts" );
         }catch (Exception e){
             expected = e;
         }finally {
-            Assert.assertTrue(folder.setWritable(true));
+            assertTrue(folder.setWritable(true));
         }
-        Assert.assertNotNull(expected);
-        Assert.assertTrue(expected instanceof IllegalStateException);
+        assertNotNull(expected);
+        assertTrue(expected instanceof IllegalStateException);
 
     }
 
@@ -140,7 +141,7 @@ public class TempFileBodyStreamFactoryTest {
 
         // Get the output stream
         BodyStreamFactory.PartOutputStream outputStream = tempFileBodyStreamFactory.getOutputStream(new HashMap<String, List<String>>(), 2);
-        Assert.assertNotNull(outputStream);
+        assertNotNull(outputStream);
 
         log.info("Part body output stream created with name: " + outputStream.getName());
 
@@ -150,7 +151,7 @@ public class TempFileBodyStreamFactoryTest {
 
         // Delete the folder to have an error when creating the input stream
         FileUtils.deleteDirectory(folder);
-        Assert.assertFalse(folder.exists());
+        assertFalse(folder.exists());
 
         Exception expected = null;
         try{
@@ -158,8 +159,8 @@ public class TempFileBodyStreamFactoryTest {
         }catch (Exception e){
             expected = e;
         }
-        Assert.assertNotNull(expected);
-        Assert.assertTrue(expected instanceof IllegalStateException);
+        assertNotNull(expected);
+        assertTrue(expected instanceof IllegalStateException);
 
     }
 

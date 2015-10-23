@@ -1,10 +1,12 @@
 package com.synchronoss.cloud.nio.multipart;
 
-import org.junit.Assert;
 import org.junit.Test;
-import org.mockito.Mockito;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import static org.junit.Assert.assertNotNull;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * <p>
@@ -19,23 +21,23 @@ public class NioMultipartParserTest {
     @Test
     public void testConstruction(){
 
-        MultipartContext context = Mockito.mock(MultipartContext.class);
-        Mockito.when(context.getContentType()).thenReturn("multipart/form-data;boundary=MUEYT2qJT0_ZzYUvVQLy_DlrLeADyxzmsA");
+        MultipartContext context = mock(MultipartContext.class);
+        when(context.getContentType()).thenReturn("multipart/form-data;boundary=MUEYT2qJT0_ZzYUvVQLy_DlrLeADyxzmsA");
 
-        NioMultipartParserListener listener = Mockito.mock(NioMultipartParserListener.class);
-        BodyStreamFactory bodyStreamFactory = Mockito.mock(BodyStreamFactory.class);
+        NioMultipartParserListener listener = mock(NioMultipartParserListener.class);
+        BodyStreamFactory bodyStreamFactory = mock(BodyStreamFactory.class);
 
         NioMultipartParser parser = new NioMultipartParser(context, listener);
-        Assert.assertNotNull(parser);
+        assertNotNull(parser);
 
         NioMultipartParser parser1 = new NioMultipartParser(context, listener, 5000);
-        Assert.assertNotNull(parser1);
+        assertNotNull(parser1);
 
         NioMultipartParser parser2 = new NioMultipartParser(context, listener, bodyStreamFactory);
-        Assert.assertNotNull(parser2);
+        assertNotNull(parser2);
 
         NioMultipartParser parser3 = new NioMultipartParser(context, listener, bodyStreamFactory, 5000);
-        Assert.assertNotNull(parser3);
+        assertNotNull(parser3);
 
     }
 

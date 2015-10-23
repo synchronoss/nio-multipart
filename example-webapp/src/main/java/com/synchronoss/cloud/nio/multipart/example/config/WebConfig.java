@@ -28,7 +28,7 @@ import org.springframework.web.servlet.view.JstlView;
 
 @Configuration
 @EnableWebMvc
-@ComponentScan(basePackages = {"com.synchronoss.nio.file.multipart.example.web"})
+@ComponentScan(basePackages = {"com.synchronoss.cloud.nio.multipart.example.web"})
 public class WebConfig extends WebMvcConfigurerAdapter {
 
     @Bean

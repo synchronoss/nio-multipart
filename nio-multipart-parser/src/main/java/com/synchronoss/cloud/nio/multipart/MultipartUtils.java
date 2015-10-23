@@ -1,6 +1,6 @@
 package com.synchronoss.cloud.nio.multipart;
 
-import org.apache.commons.fileupload.ParameterParser;
+import com.synchronoss.cloud.nio.multipart.util.ParameterParser;
 
 import java.util.List;
 import java.util.Locale;

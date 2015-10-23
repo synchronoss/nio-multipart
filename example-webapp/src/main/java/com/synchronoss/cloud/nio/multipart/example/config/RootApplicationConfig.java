@@ -7,7 +7,7 @@ import org.springframework.context.annotation.PropertySource;
 import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
 
 @Configuration
-@ComponentScan(basePackages = {"com.synchronoss.nio.file.multipart.example.utils"})
+@ComponentScan(basePackages = {"com.synchronoss.cloud.nio.multipart.example.utils"})
 @PropertySource("classpath:app.properties")
 public class RootApplicationConfig {
 

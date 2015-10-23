@@ -2,12 +2,14 @@ This is the preamble area of a multipart message.
 Mail readers that understand multipart format should ignore this preamble.
 If you are reading this text, you might want to consider changing to a mail reader that understands how to properly display multipart messages.
 --MUEYT2qJT0_ZzYUvVQLy_DlrLeADyxzmsA
+Header: content-disposition: form-data; name="first"
 
 ...Some text appears here...
 [Note that the preceding blank line means no header fields were given and this is text, with charset US ASCII.
 It could have been done with explicit typing as in the next part.]
 
 --MUEYT2qJT0_ZzYUvVQLy_DlrLeADyxzmsA
+Header: content-disposition: form-data; name="second"
 Content-type: text/plain; charset=US-ASCII
 
 This could have been part of the previous part,

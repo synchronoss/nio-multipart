@@ -8,6 +8,8 @@ import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayOutputStream;
 
+import static org.junit.Assert.*;
+
 /**
  * <p>
  *     Unit tests for {@link CircularBuffer}
@@ -27,8 +29,8 @@ public class CircularBufferTest {
         }catch (Exception e){
             expected = e;
         }
-        Assert.assertNotNull(expected);
-        Assert.assertTrue(expected instanceof IllegalArgumentException);
+        assertNotNull(expected);
+        assertTrue(expected instanceof IllegalArgumentException);
 
         expected = null;
         try{
@@ -36,8 +38,8 @@ public class CircularBufferTest {
         }catch (Exception e){
             expected = e;
         }
-        Assert.assertNotNull(expected);
-        Assert.assertTrue(expected instanceof IllegalArgumentException);
+        assertNotNull(expected);
+        assertTrue(expected instanceof IllegalArgumentException);
 
     }
 
@@ -46,51 +48,51 @@ public class CircularBufferTest {
 
         final CircularBuffer buffer = new CircularBuffer(10);
         log.info("Buffer initial status:\n" + circularBufferToString(buffer)  + "\n");
-        Assert.assertEquals(0, buffer.startValidDataIndex);
-        Assert.assertEquals(0, buffer.nextAvailablePosition);
-        Assert.assertEquals(0, buffer.availableReadLength);
+        assertEquals(0, buffer.startValidDataIndex);
+        assertEquals(0, buffer.nextAvailablePosition);
+        assertEquals(0, buffer.availableReadLength);
 
         byte[] chunk1 = {0x01};
         writeDataToCircularBuffer(buffer, chunk1);
         log.info("Buffer after writing 1 byte:\n" + circularBufferToString(buffer) + "\n");
-        Assert.assertEquals(0, buffer.startValidDataIndex);
-        Assert.assertEquals(1, buffer.nextAvailablePosition);
-        Assert.assertEquals(1, buffer.availableReadLength);
+        assertEquals(0, buffer.startValidDataIndex);
+        assertEquals(1, buffer.nextAvailablePosition);
+        assertEquals(1, buffer.availableReadLength);
 
         byte[] chunk2 = {0x02, 0x03, 0x04, 0x05};
         writeDataToCircularBuffer(buffer, chunk2);
         log.info("Buffer after writing 5 bytes:\n" + circularBufferToString(buffer) + "\n");
-        Assert.assertEquals(0, buffer.startValidDataIndex);
-        Assert.assertEquals(5, buffer.nextAvailablePosition);
-        Assert.assertEquals(5, buffer.availableReadLength);
+        assertEquals(0, buffer.startValidDataIndex);
+        assertEquals(5, buffer.nextAvailablePosition);
+        assertEquals(5, buffer.availableReadLength);
 
         byte[] chunk3 = {0x06, 0x07, 0x08, 0x09};
         writeDataToCircularBuffer(buffer, chunk3);
         log.info("Buffer after writing 9 bytes:\n" + circularBufferToString(buffer) + "\n");
-        Assert.assertEquals(0, buffer.startValidDataIndex);
-        Assert.assertEquals(9, buffer.nextAvailablePosition);
-        Assert.assertEquals(9, buffer.availableReadLength);
+        assertEquals(0, buffer.startValidDataIndex);
+        assertEquals(9, buffer.nextAvailablePosition);
+        assertEquals(9, buffer.availableReadLength);
 
         byte[] chunk4 = {0x10};
         writeDataToCircularBuffer(buffer, chunk4);
         log.info("Buffer after writing 10 bytes:\n" + circularBufferToString(buffer) + "\n");
-        Assert.assertEquals(0, buffer.startValidDataIndex);
-        Assert.assertEquals(0, buffer.nextAvailablePosition);
-        Assert.assertEquals(10, buffer.availableReadLength);
+        assertEquals(0, buffer.startValidDataIndex);
+        assertEquals(0, buffer.nextAvailablePosition);
+        assertEquals(10, buffer.availableReadLength);
 
         byte[] chunk5 = {0x11};
         writeDataToCircularBuffer(buffer, chunk5);
         log.info("Buffer after writing 11 bytes:\n" + circularBufferToString(buffer) + "\n");
-        Assert.assertEquals(1, buffer.startValidDataIndex);
-        Assert.assertEquals(1, buffer.nextAvailablePosition);
-        Assert.assertEquals(10, buffer.availableReadLength);
+        assertEquals(1, buffer.startValidDataIndex);
+        assertEquals(1, buffer.nextAvailablePosition);
+        assertEquals(10, buffer.availableReadLength);
 
         byte[] chunk6 = {0x12};
         writeDataToCircularBuffer(buffer, chunk6);
         log.info("Buffer after writing 12 bytes:\n" + circularBufferToString(buffer) + "\n");
-        Assert.assertEquals(2, buffer.startValidDataIndex);
-        Assert.assertEquals(2, buffer.nextAvailablePosition);
-        Assert.assertEquals(10, buffer.availableReadLength);
+        assertEquals(2, buffer.startValidDataIndex);
+        assertEquals(2, buffer.nextAvailablePosition);
+        assertEquals(10, buffer.availableReadLength);
 
     }
 
@@ -108,10 +110,10 @@ public class CircularBufferTest {
         readBytes = readBaos.toByteArray();
         log.info("Buffer after reading all:\n" + circularBufferToString(buffer));
         log.info("Read bytes: " + TestUtils.printBytesHexEncoded(readBytes) + "\n");
-        Assert.assertArrayEquals(new byte[]{}, readBaos.toByteArray());
-        Assert.assertEquals(0, buffer.startValidDataIndex);
-        Assert.assertEquals(0, buffer.nextAvailablePosition);
-        Assert.assertEquals(0, buffer.availableReadLength);
+        assertArrayEquals(new byte[]{}, readBaos.toByteArray());
+        assertEquals(0, buffer.startValidDataIndex);
+        assertEquals(0, buffer.nextAvailablePosition);
+        assertEquals(0, buffer.availableReadLength);
         buffer.reset();
         readBaos.reset();
         log.info("Buffer after reset:\n" + circularBufferToString(buffer) + "\n");
@@ -123,10 +125,10 @@ public class CircularBufferTest {
         readBytes = readBaos.toByteArray();
         log.info("Buffer after reading all:\n" + circularBufferToString(buffer));
         log.info("Read bytes: " + TestUtils.printBytesHexEncoded(readBytes) + "\n");
-        Assert.assertArrayEquals(chunk1, readBaos.toByteArray());
-        Assert.assertEquals(1, buffer.startValidDataIndex);
-        Assert.assertEquals(1, buffer.nextAvailablePosition);
-        Assert.assertEquals(0, buffer.availableReadLength);
+        assertArrayEquals(chunk1, readBaos.toByteArray());
+        assertEquals(1, buffer.startValidDataIndex);
+        assertEquals(1, buffer.nextAvailablePosition);
+        assertEquals(0, buffer.availableReadLength);
         buffer.reset();
         readBaos.reset();
         log.info("Buffer after reset:\n" + circularBufferToString(buffer) + "\n");
@@ -138,10 +140,10 @@ public class CircularBufferTest {
         readBytes = readBaos.toByteArray();
         log.info("Buffer after reading all:\n" + circularBufferToString(buffer));
         log.info("Read bytes: " + TestUtils.printBytesHexEncoded(readBytes) + "\n");
-        Assert.assertArrayEquals(chunk2, readBytes);
-        Assert.assertEquals(5, buffer.startValidDataIndex);
-        Assert.assertEquals(5, buffer.nextAvailablePosition);
-        Assert.assertEquals(0, buffer.availableReadLength);
+        assertArrayEquals(chunk2, readBytes);
+        assertEquals(5, buffer.startValidDataIndex);
+        assertEquals(5, buffer.nextAvailablePosition);
+        assertEquals(0, buffer.availableReadLength);
         readBaos.reset();
         byte[] chunk3 = {0x06, 0x07, 0x08, 0x09, 0x10, 0x11, 0x12};
         writeDataToCircularBuffer(buffer, chunk3);
@@ -151,10 +153,10 @@ public class CircularBufferTest {
         readBytes = readBaos.toByteArray();
         log.info("Buffer after reading all:\n" + circularBufferToString(buffer));
         log.info("Read bytes: " + TestUtils.printBytesHexEncoded(readBytes) + "\n");
-        Assert.assertArrayEquals(chunk3, readBytes);
-        Assert.assertEquals(2, buffer.startValidDataIndex);
-        Assert.assertEquals(2, buffer.nextAvailablePosition);
-        Assert.assertEquals(0, buffer.availableReadLength);
+        assertArrayEquals(chunk3, readBytes);
+        assertEquals(2, buffer.startValidDataIndex);
+        assertEquals(2, buffer.nextAvailablePosition);
+        assertEquals(0, buffer.availableReadLength);
     }
 
     @Test
@@ -170,10 +172,10 @@ public class CircularBufferTest {
         readBytes = readBaos.toByteArray();
         log.info("Buffer after reading a chunk of 0 bytes:\n" + circularBufferToString(buffer));
         log.info("Read bytes: " + TestUtils.printBytesHexEncoded(readBytes) + "\n");
-        Assert.assertArrayEquals(new byte[]{}, readBytes);
-        Assert.assertEquals(0, buffer.startValidDataIndex);
-        Assert.assertEquals(0, buffer.nextAvailablePosition);
-        Assert.assertEquals(0, buffer.availableReadLength);
+        assertArrayEquals(new byte[]{}, readBytes);
+        assertEquals(0, buffer.startValidDataIndex);
+        assertEquals(0, buffer.nextAvailablePosition);
+        assertEquals(0, buffer.availableReadLength);
         readBaos.reset();
 
         writeDataToCircularBuffer(buffer, new byte[]{0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07});
@@ -183,30 +185,30 @@ public class CircularBufferTest {
         readBytes = readBaos.toByteArray();
         log.info("Buffer after reading a chunk of 0 bytes:\n" + circularBufferToString(buffer));
         log.info("Read bytes: " + TestUtils.printBytesHexEncoded(readBytes) + "\n");
-        Assert.assertArrayEquals(new byte[]{}, readBytes);
-        Assert.assertEquals(0, buffer.startValidDataIndex);
-        Assert.assertEquals(7, buffer.nextAvailablePosition);
-        Assert.assertEquals(7, buffer.availableReadLength);
+        assertArrayEquals(new byte[]{}, readBytes);
+        assertEquals(0, buffer.startValidDataIndex);
+        assertEquals(7, buffer.nextAvailablePosition);
+        assertEquals(7, buffer.availableReadLength);
         readBaos.reset();
 
         buffer.readChunk(readBaos, 3);
         readBytes = readBaos.toByteArray();
         log.info("Buffer after reading a chunk of 3 bytes:\n" + circularBufferToString(buffer));
         log.info("Read bytes: " + TestUtils.printBytesHexEncoded(readBytes) + "\n");
-        Assert.assertArrayEquals(new byte[]{0x01, 0x02, 0x03}, readBytes);
-        Assert.assertEquals(3, buffer.startValidDataIndex);
-        Assert.assertEquals(7, buffer.nextAvailablePosition);
-        Assert.assertEquals(4, buffer.availableReadLength);
+        assertArrayEquals(new byte[]{0x01, 0x02, 0x03}, readBytes);
+        assertEquals(3, buffer.startValidDataIndex);
+        assertEquals(7, buffer.nextAvailablePosition);
+        assertEquals(4, buffer.availableReadLength);
 
         readBaos.reset();
         buffer.readChunk(readBaos, 4);
         readBytes = readBaos.toByteArray();
         log.info("Buffer after reading a chunk of 4 bytes:\n" + circularBufferToString(buffer));
         log.info("Read bytes: " + TestUtils.printBytesHexEncoded(readBytes) + "\n");
-        Assert.assertArrayEquals(new byte[]{0x04, 0x05, 0x06, 0x07}, readBytes);
-        Assert.assertEquals(7, buffer.startValidDataIndex);
-        Assert.assertEquals(7, buffer.nextAvailablePosition);
-        Assert.assertEquals(0, buffer.availableReadLength);
+        assertArrayEquals(new byte[]{0x04, 0x05, 0x06, 0x07}, readBytes);
+        assertEquals(7, buffer.startValidDataIndex);
+        assertEquals(7, buffer.nextAvailablePosition);
+        assertEquals(0, buffer.availableReadLength);
 
     }
 
@@ -223,8 +225,8 @@ public class CircularBufferTest {
         }catch (Exception e){
             expected = e;
         }
-        Assert.assertNotNull(expected);
-        Assert.assertTrue(expected instanceof IllegalArgumentException);
+        assertNotNull(expected);
+        assertTrue(expected instanceof IllegalArgumentException);
 
     }
 
@@ -232,9 +234,9 @@ public class CircularBufferTest {
     public void testForwards() throws Exception {
 
         final CircularBuffer buffer = new CircularBuffer(10);
-        Assert.assertEquals(1, buffer.forwards(0));
-        Assert.assertEquals(5, buffer.forwards(4));
-        Assert.assertEquals(0, buffer.forwards(9));
+        assertEquals(1, buffer.forwards(0));
+        assertEquals(5, buffer.forwards(4));
+        assertEquals(0, buffer.forwards(9));
 
     }
 
@@ -242,9 +244,9 @@ public class CircularBufferTest {
     public void testBackwards() throws Exception {
 
         final CircularBuffer buffer = new CircularBuffer(10);
-        Assert.assertEquals(9, buffer.backwards(0));
-        Assert.assertEquals(3, buffer.backwards(4));
-        Assert.assertEquals(8, buffer.backwards(9));
+        assertEquals(9, buffer.backwards(0));
+        assertEquals(3, buffer.backwards(4));
+        assertEquals(8, buffer.backwards(9));
     }
 
     @Test
@@ -252,17 +254,17 @@ public class CircularBufferTest {
 
         CircularBuffer buffer = new CircularBuffer(10);
 
-        Assert.assertEquals(1, buffer.forwards(0, 1));
-        Assert.assertEquals(2, buffer.forwards(0, 2));
-        Assert.assertEquals(9, buffer.forwards(0, 9));
+        assertEquals(1, buffer.forwards(0, 1));
+        assertEquals(2, buffer.forwards(0, 2));
+        assertEquals(9, buffer.forwards(0, 9));
 
-        Assert.assertEquals(0, buffer.forwards(0, 10));
-        Assert.assertEquals(1, buffer.forwards(0, 11));
-        Assert.assertEquals(2, buffer.forwards(0, 12));
+        assertEquals(0, buffer.forwards(0, 10));
+        assertEquals(1, buffer.forwards(0, 11));
+        assertEquals(2, buffer.forwards(0, 12));
 
-        Assert.assertEquals(0, buffer.forwards(0, 20));
-        Assert.assertEquals(1, buffer.forwards(0, 21));
-        Assert.assertEquals(2, buffer.forwards(0, 22));
+        assertEquals(0, buffer.forwards(0, 20));
+        assertEquals(1, buffer.forwards(0, 21));
+        assertEquals(2, buffer.forwards(0, 22));
 
     }
 
@@ -271,18 +273,18 @@ public class CircularBufferTest {
 
         CircularBuffer buffer = new CircularBuffer(10);
 
-        Assert.assertEquals(4, buffer.backwards(5, 1));
-        Assert.assertEquals(3, buffer.backwards(5, 2));
-        Assert.assertEquals(0, buffer.backwards(5, 5));
+        assertEquals(4, buffer.backwards(5, 1));
+        assertEquals(3, buffer.backwards(5, 2));
+        assertEquals(0, buffer.backwards(5, 5));
 
-        Assert.assertEquals(9, buffer.backwards(5, 6));
-        Assert.assertEquals(8, buffer.backwards(5, 7));
+        assertEquals(9, buffer.backwards(5, 6));
+        assertEquals(8, buffer.backwards(5, 7));
 
-        Assert.assertEquals(5, buffer.backwards(5, 10));
-        Assert.assertEquals(4, buffer.backwards(5, 11));
+        assertEquals(5, buffer.backwards(5, 10));
+        assertEquals(4, buffer.backwards(5, 11));
 
-        Assert.assertEquals(5, buffer.backwards(5, 20));
-        Assert.assertEquals(4, buffer.backwards(5, 21));
+        assertEquals(5, buffer.backwards(5, 20));
+        assertEquals(4, buffer.backwards(5, 21));
 
     }
 
@@ -299,14 +301,14 @@ public class CircularBufferTest {
         byte[] chunk2 = {0x06, 0x07, 0x08, 0x09, 0x10};
         writeDataToCircularBuffer(buffer, chunk2);
         //log.info("Buffer after writing 5 more bytes:\n" + TestUtils.printCircularBuffer(buffer) + "\n");
-        Assert.assertTrue(buffer.isFull());
+        assertTrue(buffer.isFull());
     }
 
     @Test
     public void testIsEmpty() throws Exception {
 
         final CircularBuffer buffer = new CircularBuffer(10);
-        Assert.assertTrue(buffer.isEmpty());
+        assertTrue(buffer.isEmpty());
 
         writeDataToCircularBuffer(buffer, new byte[]{0x01, 0x02, 0x03});
         Assert.assertFalse(buffer.isEmpty());
@@ -324,16 +326,16 @@ public class CircularBufferTest {
     public void testGetAvailableLength() throws Exception {
 
         final CircularBuffer buffer = new CircularBuffer(10);
-        Assert.assertEquals(0, buffer.getAvailableDataLength());
+        assertEquals(0, buffer.getAvailableDataLength());
 
         writeDataToCircularBuffer(buffer, new byte[]{0x01, 0x02, 0x03});
-        Assert.assertEquals(3, buffer.getAvailableDataLength());
+        assertEquals(3, buffer.getAvailableDataLength());
 
         writeDataToCircularBuffer(buffer, new byte[]{0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x10});
-        Assert.assertEquals(10, buffer.getAvailableDataLength());
+        assertEquals(10, buffer.getAvailableDataLength());
 
         writeDataToCircularBuffer(buffer, new byte[]{0x11});
-        Assert.assertEquals(10, buffer.getAvailableDataLength());
+        assertEquals(10, buffer.getAvailableDataLength());
 
 
     }
@@ -342,13 +344,13 @@ public class CircularBufferTest {
     public void testReset() throws Exception {
 
         final CircularBuffer buffer = new CircularBuffer(10);
-        Assert.assertTrue(buffer.isEmpty());
+        assertTrue(buffer.isEmpty());
 
         writeDataToCircularBuffer(buffer, new byte[]{0x01, 0x02, 0x03});
         Assert.assertFalse(buffer.isEmpty());
 
         buffer.reset();
-        Assert.assertTrue(buffer.isEmpty());
+        assertTrue(buffer.isEmpty());
 
     }
 
@@ -356,7 +358,7 @@ public class CircularBufferTest {
     public void testGetBufferSize() throws Exception {
 
         final CircularBuffer buffer = new CircularBuffer(10);
-        Assert.assertEquals(10, buffer.getBufferSize());
+        assertEquals(10, buffer.getBufferSize());
 
     }
 

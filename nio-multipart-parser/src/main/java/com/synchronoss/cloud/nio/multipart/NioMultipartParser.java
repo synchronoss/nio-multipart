@@ -2,15 +2,13 @@ package com.synchronoss.cloud.nio.multipart;
 
 import com.synchronoss.cloud.nio.multipart.BodyStreamFactory.PartOutputStream;
 import com.synchronoss.cloud.nio.multipart.buffer.EndOfLineBuffer;
+import com.synchronoss.cloud.nio.multipart.util.HeadersParser;
 import com.synchronoss.cloud.nio.multipart.util.ParameterParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * <p>
@@ -45,8 +43,9 @@ public class NioMultipartParser extends OutputStream {
     public static final byte CR = 0x0D;
     public static final byte LF = 0x0A;
 
+    public static final String CHARACTER_SET = "US-ASCII";
     public static final int DEFAULT_BUFFER_SIZE = 16000;//16kb, Enough for separator and a full header line.
-    public static final byte[] HEADER_DELIMITER = {CR, LF};
+    public static final byte[] HEADER_DELIMITER = {CR, LF, CR, LF};
     protected static final byte[] CLOSE_DELIMITER_SUFFIX = {DASH, DASH};
     protected static final byte[] ENCAPSULATION_DELIMITER_SUFFIX = {CR, LF};
 
@@ -245,18 +244,12 @@ public class NioMultipartParser extends OutputStream {
         headers = new HashMap<String, List<String>>();
     }
 
+
     int readHeaders(final byte[] receivedBytes, int currentIndex, final int indexEnd){
         while (currentIndex < indexEnd) {
             if (buffer.write(receivedBytes[currentIndex])) {
-                final String header = headerToString();
-                if (header.length() == 0){
-                    // Got an empty value, it means the header section is finished.
-                    if (log.isDebugEnabled())log.debug(currentState + " --> " + State.GET_READY_FOR_BODY);
-                    currentState = State.GET_READY_FOR_BODY;
-                }else{
-                    // Add the header to the current headers map...
-                    addHeader(header);
-                }
+                parseHeaders();
+                currentState = State.GET_READY_FOR_BODY;
                 return ++currentIndex;
             }
             currentIndex++;
@@ -264,35 +257,13 @@ public class NioMultipartParser extends OutputStream {
         return ++currentIndex;
     }
 
-    void addHeader(final String header){
-
-        final String[] headerComponents = header.trim().split(":");
-
-        if(headerComponents.length < 1){
-            return;
-        }
-
-        final String headerName = headerComponents[0].trim().toLowerCase();// Header names are case insensitive
-        List<String> headerValues = headers.get(headerName);
-        if (headerValues == null){
-            headerValues = new ArrayList<String>();
-            headers.put(headerName, headerValues);
-        }
-        if (headerComponents.length > 1){
-            for(String headerValue: headerComponents[1].split(",")){
-                headerValues.add(headerValue.trim());
-            }
-        }
-
-        headerOutputStream.reset();
-        buffer.reset(HEADER_DELIMITER, headerOutputStream);
-    }
-
-    String headerToString(){
+    void parseHeaders() {
         try{
-            return headerOutputStream.toString(multipartContext.getCharEncoding()).trim();
+            // TODO - which encoding?
+            headers = HeadersParser.parseHeaders(new ByteArrayInputStream(headerOutputStream.toByteArray()), CHARACTER_SET);
         }catch (Exception e){
-            return headerOutputStream.toString().trim();
+            currentState = State.ERROR;
+            nioMultipartParserListener.onError("Error parsing the part headers", e);
         }
     }
 

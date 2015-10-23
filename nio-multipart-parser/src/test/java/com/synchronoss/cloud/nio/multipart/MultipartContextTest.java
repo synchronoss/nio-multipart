@@ -1,9 +1,10 @@
 package com.synchronoss.cloud.nio.multipart;
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import static org.junit.Assert.*;
 
 /**
  * <p>
@@ -18,7 +19,7 @@ public class MultipartContextTest {
     @Test
     public void testGetContentType() throws Exception {
         MultipartContext multipartContext = new MultipartContext("multipart/mixed;boundary=gc0p4Jq0M2Yt08jU534c0p", 560, "UTF-8");
-        Assert.assertEquals("multipart/mixed;boundary=gc0p4Jq0M2Yt08jU534c0p", multipartContext.getContentType());
+        assertEquals("multipart/mixed;boundary=gc0p4Jq0M2Yt08jU534c0p", multipartContext.getContentType());
 
         log.info("Created multipart context " + multipartContext);
 
@@ -28,8 +29,8 @@ public class MultipartContextTest {
         }catch (Exception e){
             expected = e;
         }
-        Assert.assertNotNull(expected);
-        Assert.assertTrue(expected instanceof IllegalStateException);
+        assertNotNull(expected);
+        assertTrue(expected instanceof IllegalStateException);
 
         expected = null;
         try{
@@ -37,8 +38,8 @@ public class MultipartContextTest {
         }catch (Exception e){
             expected = e;
         }
-        Assert.assertNotNull(expected);
-        Assert.assertTrue(expected instanceof IllegalStateException);
+        assertNotNull(expected);
+        assertTrue(expected instanceof IllegalStateException);
 
     }
 
@@ -46,17 +47,17 @@ public class MultipartContextTest {
     public void testGetContentLength() throws Exception {
         MultipartContext multipartContext = new MultipartContext("multipart/mixed;boundary=gc0p4Jq0M2Yt08jU534c0p", 560, "UTF-8");
         log.info("Created multipart context " + multipartContext);
-        Assert.assertEquals(560, multipartContext.getContentLength());
+        assertEquals(560, multipartContext.getContentLength());
     }
 
     @Test
     public void testGetCharEncoding() throws Exception {
         MultipartContext multipartContext = new MultipartContext("multipart/mixed;boundary=gc0p4Jq0M2Yt08jU534c0p", 560, "UTF-8");
         log.info("Created multipart context " + multipartContext);
-        Assert.assertEquals("UTF-8", multipartContext.getCharEncoding());
+        assertEquals("UTF-8", multipartContext.getCharEncoding());
 
         multipartContext = new MultipartContext("multipart/mixed;boundary=gc0p4Jq0M2Yt08jU534c0p", 560, null);
         log.info("Created multipart context " + multipartContext);
-        Assert.assertNull(multipartContext.getCharEncoding());
+        assertNull(multipartContext.getCharEncoding());
     }
 }
