@@ -17,13 +17,13 @@ import static org.junit.Assert.*;
 
 /**
  * <p>
- *     Unit tests for {@link TempFileBodyStreamFactory}
+ *     Unit tests for {@link DefaultBodyStreamFactory}
  * </p>
  * Created by sriz0001 on 21/10/2015.
  */
-public class TempFileBodyStreamFactoryTest {
+public class DefaultBodyStreamFactoryTest {
 
-    private static final Logger log = LoggerFactory.getLogger(TempFileBodyStreamFactoryTest.class);
+    private static final Logger log = LoggerFactory.getLogger(DefaultBodyStreamFactoryTest.class);
 
     @Rule
     public TemporaryFolder tempFolder = new TemporaryFolder();
@@ -33,10 +33,10 @@ public class TempFileBodyStreamFactoryTest {
 
         BodyStreamFactory.PartOutputStream outputStream = null;
         try{
-            TempFileBodyStreamFactory tempFileBodyStreamFactory = new TempFileBodyStreamFactory();
+            DefaultBodyStreamFactory defaultBodyStreamFactory = new DefaultBodyStreamFactory();
 
             // Get the output stream
-            outputStream = tempFileBodyStreamFactory.getOutputStream(new HashMap<String, List<String>>(), 2);
+            outputStream = defaultBodyStreamFactory.getOutputStream(new HashMap<String, List<String>>(), 2);
             assertNotNull(outputStream);
 
             log.info("Part body output stream created with name: " + outputStream.getName());
@@ -46,7 +46,7 @@ public class TempFileBodyStreamFactoryTest {
             writeToPartOutputStreamAndClose(outputStream, dataToWrite);
 
             // Get the input stream related to the PartOutputStream
-            InputStream inputStream = tempFileBodyStreamFactory.getInputStream(outputStream.getName());
+            InputStream inputStream = defaultBodyStreamFactory.getInputStream(outputStream.getName());
             assertNotNull(inputStream);
 
             // Read back the data and verify
@@ -72,10 +72,10 @@ public class TempFileBodyStreamFactoryTest {
     @Test
     public void testBodyStreams_customFolder() throws Exception {
 
-        TempFileBodyStreamFactory tempFileBodyStreamFactory = new TempFileBodyStreamFactory(tempFolder.newFolder("body-parts").getAbsolutePath());
+        DefaultBodyStreamFactory defaultBodyStreamFactory = new DefaultBodyStreamFactory(tempFolder.newFolder("body-parts").getAbsolutePath());
 
         // Get the output stream
-        BodyStreamFactory.PartOutputStream outputStream = tempFileBodyStreamFactory.getOutputStream(new HashMap<String, List<String>>(), 2);
+        BodyStreamFactory.PartOutputStream outputStream = defaultBodyStreamFactory.getOutputStream(new HashMap<String, List<String>>(), 2);
         assertNotNull(outputStream);
 
         log.info("Part body output stream created with name: " + outputStream.getName());
@@ -85,7 +85,7 @@ public class TempFileBodyStreamFactoryTest {
         writeToPartOutputStreamAndClose(outputStream, dataToWrite);
 
         // Get the input stream related to the PartOutputStream
-        InputStream inputStream = tempFileBodyStreamFactory.getInputStream(outputStream.getName());
+        InputStream inputStream = defaultBodyStreamFactory.getInputStream(outputStream.getName());
         assertNotNull(inputStream);
 
         // Read back the data and verify
@@ -98,14 +98,14 @@ public class TempFileBodyStreamFactoryTest {
     public void testGetOutputStream_error() throws Exception {
 
         File folder = tempFolder.newFolder();
-        TempFileBodyStreamFactory tempFileBodyStreamFactory = new TempFileBodyStreamFactory(folder.getAbsolutePath());
+        DefaultBodyStreamFactory defaultBodyStreamFactory = new DefaultBodyStreamFactory(folder.getAbsolutePath());
 
         // Delete the folder to have an error when creating the output stream
         assertTrue(folder.delete());
 
         Exception expected = null;
         try{
-            tempFileBodyStreamFactory.getOutputStream(new HashMap<String, List<String>>(), 2);
+            defaultBodyStreamFactory.getOutputStream(new HashMap<String, List<String>>(), 2);
         }catch (Exception e){
             expected = e;
         }
@@ -122,7 +122,7 @@ public class TempFileBodyStreamFactoryTest {
         Exception expected = null;
         try{
             assertTrue(folder.setWritable(false));
-            new TempFileBodyStreamFactory(folder.getAbsolutePath() + "/body-parts" );
+            new DefaultBodyStreamFactory(folder.getAbsolutePath() + "/body-parts" );
         }catch (Exception e){
             expected = e;
         }finally {
@@ -137,10 +137,10 @@ public class TempFileBodyStreamFactoryTest {
     public void testGetInputStream_error() throws Exception {
 
         File folder = tempFolder.newFolder();
-        TempFileBodyStreamFactory tempFileBodyStreamFactory = new TempFileBodyStreamFactory(folder.getAbsolutePath());
+        DefaultBodyStreamFactory defaultBodyStreamFactory = new DefaultBodyStreamFactory(folder.getAbsolutePath());
 
         // Get the output stream
-        BodyStreamFactory.PartOutputStream outputStream = tempFileBodyStreamFactory.getOutputStream(new HashMap<String, List<String>>(), 2);
+        BodyStreamFactory.PartOutputStream outputStream = defaultBodyStreamFactory.getOutputStream(new HashMap<String, List<String>>(), 2);
         assertNotNull(outputStream);
 
         log.info("Part body output stream created with name: " + outputStream.getName());
@@ -155,7 +155,7 @@ public class TempFileBodyStreamFactoryTest {
 
         Exception expected = null;
         try{
-            tempFileBodyStreamFactory.getInputStream(outputStream.getName());
+            defaultBodyStreamFactory.getInputStream(outputStream.getName());
         }catch (Exception e){
             expected = e;
         }

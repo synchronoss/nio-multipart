@@ -36,7 +36,7 @@ public class NioMultipartParserTest {
         NioMultipartParser parser2 = new NioMultipartParser(context, listener, bodyStreamFactory);
         assertNotNull(parser2);
 
-        NioMultipartParser parser3 = new NioMultipartParser(context, listener, bodyStreamFactory, 5000);
+        NioMultipartParser parser3 = new NioMultipartParser(context, listener, bodyStreamFactory, 5000, 5000, 1);
         assertNotNull(parser3);
 
     }

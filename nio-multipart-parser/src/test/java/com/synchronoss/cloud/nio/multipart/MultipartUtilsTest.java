@@ -12,7 +12,7 @@ public class MultipartUtilsTest {
 
     @Test
     public void testIsMultipart() throws Exception {
-        assertFalse(MultipartUtils.isMultipart(null));
+        assertFalse(MultipartUtils.isMultipart((String)null));
         assertTrue(MultipartUtils.isMultipart("multipart/mixed"));
         assertTrue(MultipartUtils.isMultipart("multipart/digest"));
         assertTrue(MultipartUtils.isMultipart("multipart/alternative"));

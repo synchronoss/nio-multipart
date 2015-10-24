@@ -38,6 +38,17 @@ public class MultipartUtils {
 
     /**
      * <p>
+     *     Checks if the headers contains a Content-Type header that defines a multipart request.
+     * </p>
+     * @param headers The headers map
+     * @return true if the request is a multipart request, false otherwise.
+     */
+    public static boolean hasMultipartContentType(final Map<String, List<String>> headers){
+        return isMultipart(getHeader(CONTENT_TYPE, headers));
+    }
+
+    /**
+     * <p>
      *     Returns the list of values fo a particular header.
      * </p>
      * @param headerName The header name

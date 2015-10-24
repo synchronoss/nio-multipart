@@ -16,12 +16,11 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import sun.nio.ch.IOUtil;
 
 import java.io.InputStream;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -43,8 +42,7 @@ public class NioMultipartParserFunctionalTest {
     @Parameterized.Parameters
     public static Collection data() {
         return MultipartTestCases.ALL_TEST_CASES;
-        //return Collections.singletonList(MultipartTestCases.FOLDED_HEADERS);
-        //return Collections.singletonList(MultipartTestCases.FILE_UPLOAD_130);
+        //return Collections.singletonList(MultipartTestCases.FILEUPLOAD62);
     }
 
     @Test
@@ -56,9 +54,11 @@ public class NioMultipartParserFunctionalTest {
             log.debug("Request body\n" + IOUtils.toString(testCase.getBodyInputStream()));
         }
 
+        final AtomicBoolean finished = new AtomicBoolean(false);
         final FileUpload fileUpload = new FileUpload();
         final FileItemIterator fileItemIterator = fileUpload.getItemIterator(testCase.getRequestContext());
-        final NioMultipartParserListener nioMultipartParserListener = nioMultipartParserListenerVerifier(fileItemIterator);
+        final NioMultipartParserListener nioMultipartParserListener = nioMultipartParserListenerVerifier(fileItemIterator, finished);
+
 
         // Comment out the NioMultipartParserListener above and uncomment the next two lines to
         // skip validation and just print the parts as extracted by the 2 frameworks.
@@ -69,23 +69,28 @@ public class NioMultipartParserFunctionalTest {
         final ChunksFileReader chunksFileReader = new ChunksFileReader(testCase.getBodyInputStream(), 5, 10);
         final NioMultipartParser parser = new NioMultipartParser(multipartContext, nioMultipartParserListener);
 
-        try {
-            byte[] chunk;
-            while (true) {
 
-                chunk = chunksFileReader.readChunk();
-                if (chunk.length <= 0) {
-                    break;
-                }
-                parser.write(chunk, 0, chunk.length);
+        byte[] chunk;
+        while (true) {
+
+            chunk = chunksFileReader.readChunk();
+            if (chunk.length <= 0) {
+                break;
             }
-        }finally {
-            parser.close();
+            parser.write(chunk, 0, chunk.length);
+        }
+
+        int attempts = 0;
+        while(!finished.get()){
+            Thread.sleep(100);
+            if (++attempts > 3){
+                Assert.fail("Parser didn't come back in a reasonable time");
+            }
         }
 
     }
 
-    NioMultipartParserListener nioMultipartParserListenerVerifier(final FileItemIterator fileItemIterator){
+    NioMultipartParserListener nioMultipartParserListenerVerifier(final FileItemIterator fileItemIterator, final AtomicBoolean finished){
 
         return new NioMultipartParserListener() {
 
@@ -115,20 +120,29 @@ public class NioMultipartParserFunctionalTest {
             }
 
             @Override
+            public void onNestedPartStarted(Map<String, List<String>> headersFromParentPart) {
+                log.info("<<<<< On form field complete [" + (partIndex) + "] >>>>>>");
+            }
+
+
+            @Override
             public void onAllPartsRead() {
                 log.info("<<<<< On all parts read: Number of parts ["+ partIndex.get() + "] >>>>>>");
                 assertFileItemIteratorHasNext(false);
-                try {
-                    Thread.sleep(100);
-                }catch (Exception e){
-                    // Nothing to do...
-                }
+                finished.set(true);
+            }
+
+            @Override
+            public void onNestedPartRead() {
+                log.info("<<<<< On form field complete [" + (partIndex) + "] >>>>>>");
             }
 
             @Override
             public void onError(String message, Throwable cause) {
                 log.info("<<<<< On error. Part " + partIndex.get() + "] >>>>>>");
-                throw new IllegalStateException("Error: " + message, cause );
+                finished.set(true);
+                log.error(message, cause);
+                Assert.fail("Got an error from the parser");
             }
 
             InputStream fileItemStreamInputStream(final FileItemStream fileItemStream){
@@ -241,6 +255,15 @@ public class NioMultipartParserFunctionalTest {
             }
 
             @Override
+            public void onNestedPartStarted(Map<String, List<String>> headersFromParentPart) {
+                log.info("-- NIO MULTIPART PARSER : On nested part started " + (partIndex));
+                log.info("-- Part " + partIndex.get());
+                for (Map.Entry<String, List<String>> headersEntry : headersFromParentPart.entrySet()){
+                    log.info("Header: " + headersEntry.getKey() + ": " + Joiner.on(',').join(headersEntry.getValue()));
+                }
+            }
+
+            @Override
             public void onFormFieldPartComplete(String fieldName, String fieldValue, Map<String, List<String>> headersFromPart) {
                 log.info("-- NIO MULTIPART PARSER : On form field complete " + partIndex.addAndGet(1));
                 log.info("-- Part " + (partIndex.get()));
@@ -248,6 +271,11 @@ public class NioMultipartParserFunctionalTest {
                     log.info("Header: " + headersEntry.getKey() + ": " + Joiner.on(',').join(headersEntry.getValue()));
                 }
                 log.info("Field " + fieldName + ": " + fieldValue);
+            }
+
+            @Override
+            public void onNestedPartRead() {
+                log.info("-- NIO MULTIPART PARSER : On nested part read");
             }
 
             @Override

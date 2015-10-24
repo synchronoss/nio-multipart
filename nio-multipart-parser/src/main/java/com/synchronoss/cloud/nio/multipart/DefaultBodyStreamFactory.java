@@ -10,17 +10,17 @@ import java.util.UUID;
 
 /**
  * <p>
- *     A {@link TempFileBodyStreamFactory} that uses a temporary file as input and output
+ *     A {@link DefaultBodyStreamFactory} that uses a temporary file as input and output
  * </p>
  * Created by sriz0001 on 18/10/2015.
  */
-public class TempFileBodyStreamFactory implements BodyStreamFactory {
+public class DefaultBodyStreamFactory implements BodyStreamFactory {
 
-    private static final Logger log = LoggerFactory.getLogger(TempFileBodyStreamFactory.class);
+    private static final Logger log = LoggerFactory.getLogger(DefaultBodyStreamFactory.class);
 
     final File tempFolder;
 
-    public TempFileBodyStreamFactory(final String tempFolderPath) {
+    public DefaultBodyStreamFactory(final String tempFolderPath) {
         tempFolder = new File(tempFolderPath);
         if (!tempFolder.exists()){
             if (!tempFolder.mkdirs()){
@@ -30,7 +30,7 @@ public class TempFileBodyStreamFactory implements BodyStreamFactory {
         if(log.isDebugEnabled())log.debug("Temporary folder: " + tempFolder.getAbsolutePath());
     }
 
-    public TempFileBodyStreamFactory() {
+    public DefaultBodyStreamFactory() {
         this(System.getProperty("java.io.tmpdir") + "/nio-file-upload");
     }
 

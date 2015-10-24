@@ -77,17 +77,26 @@ public class FileUploadController {
             public void onPartComplete(InputStream partBodyInputStream, Map<String, List<String>> headersFromPart) {
 
                 log.info("PART COMPLETE");
+                logHeaders(headersFromPart);
 
-                for (Map.Entry<String, List<String>> headerEntry : headersFromPart.entrySet()){
-                    log.info("Header -> " + headerEntry.getKey() + " : " + Joiner.on(',').join(headerEntry.getValue()));
-                }
-                log.info("--");
                 try {
+                    log.info("--");
                     log.info("Body\n" + IOUtils.toString(partBodyInputStream));
                 }catch (Exception e){
                     log.error("Cannot read the body", e);
                 }
 
+            }
+
+            @Override
+            public void onNestedPartStarted(Map<String, List<String>> headersFromParentPart) {
+                log.info("NESTED PART STARTED");
+                logHeaders(headersFromParentPart);
+            }
+
+            @Override
+            public void onNestedPartRead() {
+                log.info("NESTED PART READ");
             }
 
             @Override
@@ -97,8 +106,8 @@ public class FileUploadController {
                 for (Map.Entry<String, List<String>> headerEntry : headersFromPart.entrySet()){
                     log.info("Header -> " + headerEntry.getKey() + " : " + Joiner.on(',').join(headerEntry.getValue()));
                 }
-                log.info("Field " + fieldName + ": " + fieldValue);
                 log.info("--");
+                log.info("Field " + fieldName + ": " + fieldValue);
 
             }
 
@@ -111,6 +120,17 @@ public class FileUploadController {
             public void onError(String message, Throwable cause) {
                 log.error("ERROR", cause);
             }
+
+            void logHeaders(final Map<String, List<String>> headersFromPart){
+                if (headersFromPart == null || headersFromPart.size() == 0){
+                    log.info("No headers.");
+                }else {
+                    for (Map.Entry<String, List<String>> headerEntry : headersFromPart.entrySet()) {
+                        log.info("Header -> " + headerEntry.getKey() + " : " + Joiner.on(',').join(headerEntry.getValue()));
+                    }
+                }
+            }
+
         };
 
         final MultipartContext multipartContext = getMultipartContext(request);

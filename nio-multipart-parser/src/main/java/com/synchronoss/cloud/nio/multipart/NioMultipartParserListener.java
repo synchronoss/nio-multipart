@@ -40,6 +40,21 @@ public interface NioMultipartParserListener {
 
     /**
      * <p>
+     *     Called when the parser is about to start a nested multipart.
+     * </p>
+     * @param headersFromParentPart The headers from the parent part.
+     */
+    void onNestedPartStarted(final Map<String, List<String>> headersFromParentPart);
+
+    /**
+     * <p>
+     *     Called when a nested part has completed.
+     * </p>
+     */
+    void onNestedPartRead();
+
+    /**
+     * <p>
      *     Called if an error occurs during the multipart parsing.
      * </p>
      * @param message The error message

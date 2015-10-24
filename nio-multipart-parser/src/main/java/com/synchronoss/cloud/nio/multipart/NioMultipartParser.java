@@ -2,6 +2,7 @@ package com.synchronoss.cloud.nio.multipart;
 
 import com.synchronoss.cloud.nio.multipart.BodyStreamFactory.PartOutputStream;
 import com.synchronoss.cloud.nio.multipart.buffer.EndOfLineBuffer;
+import com.synchronoss.cloud.nio.multipart.buffer.FixedSizeByteArrayOutputStream;
 import com.synchronoss.cloud.nio.multipart.util.HeadersParser;
 import com.synchronoss.cloud.nio.multipart.util.ParameterParser;
 import org.slf4j.Logger;
@@ -12,27 +13,8 @@ import java.util.*;
 
 /**
  * <p>
- * NIO Multipart Parser that process data streams conforming to MIME 'multipart' format as defined in
- * <a href="http://www.ietf.org/rfc/rfc1867.txt">RFC 1867</a>.
- * </p>
- *
- * <p> The format of the stream is defined in the following way:<br>
- *
- * <code>
- *   multipart-body := preamble 1*encapsulation close-delimiter epilogue<br>
- *   encapsulation := delimiter body CRLF<br>
- *   delimiter := "--" boundary CRLF<br>
- *   close-delimiter := "--" boundary "--"<br>
- *   preamble := &lt;ignore&gt;<br>
- *   epilogue := &lt;ignore&gt;<br>
- *   body := header-part CRLF body-part<br>
- *   header-part := 1*header CRLF<br>
- *   header := header-name ":" header-value<br>
- *   header-name := &lt;printable ascii characters except ":"&gt;<br>
- *   header-value := &lt;any ascii characters except CR & LF&gt;<br>
- *   body-data := &lt;arbitrary data&gt;<br>
- * </code>
- *
+ *    {@link OutputStream} implementing a Non blocking IO Multipart Parser.
+ *</p>
  * Created by sriz0001 on 15/10/2015.
  */
 public class NioMultipartParser extends OutputStream {
@@ -44,13 +26,37 @@ public class NioMultipartParser extends OutputStream {
     public static final byte LF = 0x0A;
 
     public static final String CHARACTER_SET = "US-ASCII";
-    public static final int DEFAULT_BUFFER_SIZE = 16000;//16kb, Enough for separator and a full header line.
+    public static final int DEFAULT_BUFFER_SIZE = 16000;//16Kb default. It needs to be bigger than the separator. (70 Characters)
     public static final byte[] HEADER_DELIMITER = {CR, LF, CR, LF};
-    protected static final byte[] CLOSE_DELIMITER_SUFFIX = {DASH, DASH};
-    protected static final byte[] ENCAPSULATION_DELIMITER_SUFFIX = {CR, LF};
+    public static final int DEFAULT_MAX_LEVEL_OF_NESTED_MULTIPART = 1;
 
+    /**
+     * The type of a delimiter is identified using its suffix.
+     * For example if the boundary is "XVZ", the sequence
+     * DASH,DASH,X,W,Z,CR,LF represents an encapsulation boundary, while the
+     * sequence DASH,DASH,X,V,Z,DASH,DASH is the close boundary.
+     */
     protected enum DelimiterType {
-        CLOSE, ENCAPSULATION
+
+        CLOSE(new byte[]{DASH, DASH}),
+        ENCAPSULATION(new byte[]{CR, LF});
+        final byte[] delimiterSuffix;
+
+        DelimiterType(byte[] delimiterSuffix) {
+            this.delimiterSuffix = delimiterSuffix;
+        }
+
+        boolean matches(byte[] delimiterSuffixToMatch){
+            if (delimiterSuffix.length != delimiterSuffixToMatch.length){
+                return false;
+            }
+            for (int i = 0; i < delimiterSuffixToMatch.length; i++) {
+                if (delimiterSuffix[i] != delimiterSuffixToMatch[i]) {
+                    return false;
+                }
+            }
+            return true;
+        }
     }
 
     protected enum State {
@@ -62,6 +68,8 @@ public class NioMultipartParser extends OutputStream {
         READ_BODY,
         IDENTIFY_BODY_DELIMITER,
         PART_COMPLETE,
+        GET_READY_FOR_NESTED_MULTIPART,
+        NESTED_PART_READ,
         ALL_PARTS_READ,
         SKIP_EPILOGUE,
         ERROR
@@ -70,8 +78,10 @@ public class NioMultipartParser extends OutputStream {
     final MultipartContext multipartContext;
     final NioMultipartParserListener nioMultipartParserListener;
     final BodyStreamFactory bodyStreamFactory;
-    final EndOfLineBuffer buffer;
-    final byte[] delimiterPrefix;
+    final EndOfLineBuffer endOfLineBuffer;
+    final ByteArrayOutputStream formFieldOutputStream = new ByteArrayOutputStream();
+    final ByteArrayOutputStream byteArrayOutputStream;
+    final int maxLevelOfNestedMultipart;
 
     // Current state of the ASF
     State currentState = State.SKIP_PREAMBLE;
@@ -79,15 +89,6 @@ public class NioMultipartParser extends OutputStream {
     // Current output stream where to flush the body data.
     // It will be instantiated for each part via {@link BodyStreamFactory#getOutputStream(Map, int)} )}
     OutputStream outputStream = null;
-
-    // Reusable output stream where to flush the header data. will be reset every time an header is parsed.
-    ByteArrayOutputStream headerOutputStream = new ByteArrayOutputStream();
-
-    // Reusable output stream for bodies that are form parameters.
-    ByteArrayOutputStream formFieldBodyOutputStream = new ByteArrayOutputStream();
-
-    // Reusable output stream used to identify the delimiter type from the last two chars: close delimiter or delimiter.
-    ByteArrayOutputStream delimiterSuffixIdentifier = new ByteArrayOutputStream(2);
 
     // The current headers.
     Map<String, List<String>> headers = null;
@@ -98,35 +99,53 @@ public class NioMultipartParser extends OutputStream {
     // Keeps track of how many parts we encountered
     int partIndex = 1;
 
+    // Stack of delimiters. To support nested multiparts...
+    final Stack<byte[]> delimiterPrefixes = new Stack<byte[]>();
+
+    // In debug mode is keeping track of the FSM transitions
+    final List<String> fsmTransitions = new ArrayList<String>();
+
     // ------------
     // Constructors
     // ------------
     public NioMultipartParser(final MultipartContext multipartContext, final NioMultipartParserListener nioMultipartParserListener) {
-        this(multipartContext, nioMultipartParserListener, null, DEFAULT_BUFFER_SIZE);
+        this(multipartContext, nioMultipartParserListener, null, DEFAULT_BUFFER_SIZE, DEFAULT_BUFFER_SIZE, DEFAULT_MAX_LEVEL_OF_NESTED_MULTIPART);
     }
 
     public NioMultipartParser(final MultipartContext multipartContext, final NioMultipartParserListener nioMultipartParserListener, final BodyStreamFactory bodyStreamFactory) {
-        this(multipartContext, nioMultipartParserListener, bodyStreamFactory, DEFAULT_BUFFER_SIZE);
+        this(multipartContext, nioMultipartParserListener, bodyStreamFactory, DEFAULT_BUFFER_SIZE, DEFAULT_BUFFER_SIZE, DEFAULT_MAX_LEVEL_OF_NESTED_MULTIPART);
     }
 
     public NioMultipartParser(final MultipartContext multipartContext, final NioMultipartParserListener nioMultipartParserListener, final int bufferSize) {
-        this(multipartContext, nioMultipartParserListener, null, bufferSize);
+        this(multipartContext, nioMultipartParserListener, null, bufferSize, DEFAULT_BUFFER_SIZE, DEFAULT_MAX_LEVEL_OF_NESTED_MULTIPART);
     }
 
-    public NioMultipartParser(final MultipartContext multipartContext, final NioMultipartParserListener nioMultipartParserListener, final BodyStreamFactory bodyStreamFactory, final int bufferSize) {
+    public NioMultipartParser(final MultipartContext multipartContext,
+                              final NioMultipartParserListener nioMultipartParserListener,
+                              final BodyStreamFactory bodyStreamFactory,
+                              final int bufferSize,
+                              final int maxHeadersSectionSize,
+                              final int maxLevelOfNestedMultipart) {
         this.multipartContext = multipartContext;
         this.nioMultipartParserListener = nioMultipartParserListener;
-        this.delimiterPrefix = getDelimiterPrefix(multipartContext.getContentType());
+        this.delimiterPrefixes.push(getDelimiterPrefix(multipartContext.getContentType()));
+        this.maxLevelOfNestedMultipart = maxLevelOfNestedMultipart;
+
+        if (maxHeadersSectionSize == -1) {
+            this.byteArrayOutputStream = new ByteArrayOutputStream();
+        }else{
+            this.byteArrayOutputStream = new FixedSizeByteArrayOutputStream(maxHeadersSectionSize);
+        }
 
         if (bodyStreamFactory != null){
             this.bodyStreamFactory = bodyStreamFactory;
         }else{
             // By default use a temporary file where to save the body data.
-            this.bodyStreamFactory = new TempFileBodyStreamFactory();
+            this.bodyStreamFactory = new DefaultBodyStreamFactory();
         }
 
-        // At the beginning set up the buffer to skip the preamble.
-        this.buffer = new EndOfLineBuffer(bufferSize, getPreambleDelimiterPrefix(delimiterPrefix), null);
+        // At the beginning set up the endOfLineBuffer to skip the preamble.
+        this.endOfLineBuffer = new EndOfLineBuffer(bufferSize, getPreambleDelimiterPrefix(delimiterPrefixes.peek()), null);
 
         debug = this.bodyStreamFactory.getOutputStream(new HashMap<String, List<String>>(),0);
     }
@@ -140,18 +159,28 @@ public class NioMultipartParser extends OutputStream {
     }
 
     @Override
+    public void flush() throws IOException {
+        // nothing to do.
+    }
+
+    @Override
     public void write(final int data) throws IOException{
         write(new byte[]{(byte) data}, 0, 1);
     }
 
     @Override
-    public void write(byte[] receivedBytes, int indexStart, int indexEnd) throws IOException{
+    public void write(byte[] data) throws IOException {
+        write(data, 0, data.length);
+    }
 
-        if (receivedBytes == null) {
+    @Override
+    public void write(byte[] data, int indexStart, int indexEnd) {
+
+        if (data == null) {
             throw new NullPointerException();
         }
 
-        if (receivedBytes.length == 0){
+        if (data.length == 0){
             return;
         }
 
@@ -159,26 +188,26 @@ public class NioMultipartParser extends OutputStream {
             throw new IllegalArgumentException("End index cannot be lower that the start index. End index: " + indexEnd + ", Start index: " + indexStart);
         }
 
-        if (indexStart > receivedBytes.length){
-            throw new IllegalArgumentException("The start index cannot be greater than the size of the data. Start index: " + indexStart + ", Data length: " + receivedBytes.length);
+        if (indexStart > data.length){
+            throw new IllegalArgumentException("The start index cannot be greater than the size of the data. Start index: " + indexStart + ", Data length: " + data.length);
         }
 
-        if (indexEnd > receivedBytes.length){
-            throw new IllegalArgumentException("The end index cannot be greater than the size of the data. End index: " + indexEnd + ", Data length: " + receivedBytes.length);
+        if (indexEnd > data.length){
+            throw new IllegalArgumentException("The end index cannot be greater than the size of the data. End index: " + indexEnd + ", Data length: " + data.length);
         }
 
-        writeForDebug(receivedBytes, indexStart, indexEnd);
+        writeForDebug(data, indexStart, indexEnd);
 
         int currentIndex = indexStart;
-        while (currentIndex < indexEnd) {
+        while (currentIndex < indexEnd) {// FIXME - This might be a problem because notification depend on data available
             switch (currentState) {
 
                 case SKIP_PREAMBLE:
-                    currentIndex = skipPreamble(receivedBytes, currentIndex, indexEnd);
+                    currentIndex = skipPreamble(data, currentIndex, indexEnd);
                     break;
 
                 case IDENTIFY_PREAMBLE_DELIMITER:
-                    currentIndex = identifyPreambleDelimiter(receivedBytes, currentIndex, indexEnd);
+                    currentIndex = identifyPreambleDelimiter(data, currentIndex, indexEnd);
                     break;
 
                 case GET_READY_FOR_HEADERS:
@@ -186,7 +215,7 @@ public class NioMultipartParser extends OutputStream {
                     break;
 
                 case READ_HEADERS:
-                    currentIndex = readHeaders(receivedBytes, currentIndex, indexEnd);
+                    currentIndex = readHeaders(data, currentIndex, indexEnd);
                     break;
 
                 case GET_READY_FOR_BODY:
@@ -194,15 +223,23 @@ public class NioMultipartParser extends OutputStream {
                     break;
 
                 case READ_BODY:
-                    currentIndex = readBody(receivedBytes, currentIndex, indexEnd);
+                    currentIndex = readBody(data, currentIndex, indexEnd);
                     break;
 
                 case IDENTIFY_BODY_DELIMITER:
-                    currentIndex = identifyBodyDelimiter(receivedBytes, currentIndex, indexEnd);
+                    currentIndex = identifyBodyDelimiter(data, currentIndex, indexEnd);
                     break;
 
                 case PART_COMPLETE:
                     partComplete();
+                    break;
+
+                case GET_READY_FOR_NESTED_MULTIPART:
+                    getReadyForNestedMultipart();
+                    break;
+
+                case NESTED_PART_READ:
+                    nestedPartRead();
                     break;
 
                 case ALL_PARTS_READ:
@@ -224,11 +261,19 @@ public class NioMultipartParser extends OutputStream {
         }
     }
 
+
+    void goToState(final State nextState){
+        if (log.isDebugEnabled()){
+            log.debug(String.format("%-30s --> %s", currentState.name(), nextState.name()));
+            fsmTransitions.add(String.format("%-30s --> %s\n", currentState.name(), nextState.name()));
+        }
+        currentState = nextState;
+    }
+
     int skipPreamble(final byte[] receivedBytes, int currentIndex, final int indexEnd){
         while (currentIndex < indexEnd) {
-            if (buffer.write(receivedBytes[currentIndex])) {
-                if (log.isDebugEnabled())log.debug(currentState + " --> " + State.IDENTIFY_PREAMBLE_DELIMITER);
-                currentState = State.IDENTIFY_PREAMBLE_DELIMITER;
+            if (endOfLineBuffer.write(receivedBytes[currentIndex])) {
+                goToState(State.IDENTIFY_PREAMBLE_DELIMITER);
                 return ++currentIndex;
             }
             currentIndex++;
@@ -237,19 +282,24 @@ public class NioMultipartParser extends OutputStream {
     }
 
     void getReadyForHeaders(){
-        if (log.isDebugEnabled())log.debug(currentState + " --> " + State.READ_HEADERS);
-        currentState = State.READ_HEADERS;
-        headerOutputStream.reset();
-        buffer.reset(HEADER_DELIMITER, headerOutputStream);
+        byteArrayOutputStream.reset();
+        endOfLineBuffer.reset(HEADER_DELIMITER, byteArrayOutputStream);
         headers = new HashMap<String, List<String>>();
+        goToState(State.READ_HEADERS);
     }
 
 
     int readHeaders(final byte[] receivedBytes, int currentIndex, final int indexEnd){
         while (currentIndex < indexEnd) {
-            if (buffer.write(receivedBytes[currentIndex])) {
+            if (endOfLineBuffer.write(receivedBytes[currentIndex])) {
                 parseHeaders();
-                currentState = State.GET_READY_FOR_BODY;
+
+                String contentType = MultipartUtils.getHeader(MultipartUtils.CONTENT_TYPE, headers);
+                if (MultipartUtils.isMultipart(contentType)){
+                    goToState(State.GET_READY_FOR_NESTED_MULTIPART);
+                }else {
+                    goToState(State.GET_READY_FOR_BODY);
+                }
                 return ++currentIndex;
             }
             currentIndex++;
@@ -260,41 +310,44 @@ public class NioMultipartParser extends OutputStream {
     void parseHeaders() {
         try{
             // TODO - which encoding?
-            headers = HeadersParser.parseHeaders(new ByteArrayInputStream(headerOutputStream.toByteArray()), CHARACTER_SET);
+            headers = HeadersParser.parseHeaders(new ByteArrayInputStream(byteArrayOutputStream.toByteArray()), CHARACTER_SET);
+            byteArrayOutputStream.reset();
         }catch (Exception e){
-            currentState = State.ERROR;
+            goToState(State.ERROR);
             nioMultipartParserListener.onError("Error parsing the part headers", e);
         }
     }
 
     void getReadyForBody(){
-
-        if (log.isDebugEnabled())log.debug(currentState + " --> " + State.READ_BODY);
-
-        currentState = State.READ_BODY;
-        delimiterType = null;
-
         if (MultipartUtils.isFormField(headers)){
-
-            if (log.isDebugEnabled())log.debug("Processing form field body");
-
-            formFieldBodyOutputStream.reset();
-            buffer.reset(delimiterPrefix, formFieldBodyOutputStream);
+            formFieldOutputStream.reset();
+            endOfLineBuffer.reset(delimiterPrefixes.peek(), formFieldOutputStream);
         }else{
-
-            if (log.isDebugEnabled())log.debug("Processing data body");
-
             outputStream = bodyStreamFactory.getOutputStream(headers, partIndex);
-            buffer.reset(delimiterPrefix, outputStream);
+            endOfLineBuffer.reset(delimiterPrefixes.peek(), outputStream);
         }
+        delimiterType = null;
+        goToState(State.READ_BODY);
 
+    }
+
+    void getReadyForNestedMultipart(){
+        if (delimiterPrefixes.size() > maxLevelOfNestedMultipart + 1){
+            goToState(State.ERROR);
+            nioMultipartParserListener.onError("Reached maximum number of nested multiparts: " + maxLevelOfNestedMultipart, null);
+        }else {
+            byte[] delimiter = getDelimiterPrefix(MultipartUtils.getHeader(MultipartUtils.CONTENT_TYPE, headers));
+            delimiterPrefixes.push(delimiter);
+            endOfLineBuffer.reset(getPreambleDelimiterPrefix(delimiter), null);
+            goToState(State.SKIP_PREAMBLE);
+            nioMultipartParserListener.onNestedPartStarted(headers);
+        }
     }
 
     int readBody(final byte[] receivedBytes, int currentIndex, final int indexEnd){
         while (currentIndex < indexEnd) {
-            if (buffer.write(receivedBytes[currentIndex])) {
-                if (log.isDebugEnabled())log.debug(currentState + " --> " + State.IDENTIFY_BODY_DELIMITER);
-                currentState = State.IDENTIFY_BODY_DELIMITER;
+            if (endOfLineBuffer.write(receivedBytes[currentIndex])) {
+                goToState(State.IDENTIFY_BODY_DELIMITER);
                 return ++currentIndex;
             }
             currentIndex++;
@@ -303,7 +356,11 @@ public class NioMultipartParser extends OutputStream {
     }
 
     int identifyPreambleDelimiter(final byte[] receivedBytes, int currentIndex, final int indexEnd){
-        return identifyDelimiter(receivedBytes, currentIndex, indexEnd, State.GET_READY_FOR_HEADERS, State.ALL_PARTS_READ);
+        if (delimiterPrefixes.size() > 1) {
+            return identifyDelimiter(receivedBytes, currentIndex, indexEnd, State.GET_READY_FOR_HEADERS, State.NESTED_PART_READ);
+        }else{
+            return identifyDelimiter(receivedBytes, currentIndex, indexEnd, State.GET_READY_FOR_HEADERS, State.ALL_PARTS_READ);
+        }
     }
 
     int identifyBodyDelimiter(final byte[] receivedBytes, int currentIndex, final int indexEnd){
@@ -312,26 +369,24 @@ public class NioMultipartParser extends OutputStream {
 
     int identifyDelimiter(final byte[] receivedBytes, int currentIndex, final int indexEnd, final State onDelimiter, final State onCloseDelimiter){
         while (currentIndex < indexEnd) {
-            delimiterSuffixIdentifier.write(receivedBytes[currentIndex]);
-            if (delimiterSuffixIdentifier.size() == 2){
-                byte[] suffix = delimiterSuffixIdentifier.toByteArray();
+            byteArrayOutputStream.write(receivedBytes[currentIndex]);
+            if (byteArrayOutputStream.size() >= 2){
 
-                if (isDelimiterSuffix(suffix)){
-                    if (log.isDebugEnabled())log.debug(currentState + " --> " + onDelimiter);
+                byte[] suffix = byteArrayOutputStream.toByteArray();
+
+                if (DelimiterType.ENCAPSULATION.matches(suffix)){
                     delimiterType = DelimiterType.ENCAPSULATION;
-                    currentState = onDelimiter;
-                    delimiterSuffixIdentifier.reset();
+                    byteArrayOutputStream.reset();
+                    goToState(onDelimiter);
                     return ++currentIndex;
-                }else if (isCloseDelimiterSuffix(suffix)){
-                    if (log.isDebugEnabled())log.debug(currentState + " --> " + onCloseDelimiter);
+                }else if (DelimiterType.CLOSE.matches(suffix)) {
                     delimiterType = DelimiterType.CLOSE;
-                    currentState = onCloseDelimiter;
-                    delimiterSuffixIdentifier.reset();
+                    byteArrayOutputStream.reset();
+                    goToState(onCloseDelimiter);
                     return ++currentIndex;
                 }else{
-                    if (log.isDebugEnabled())log.debug(currentState + " --> " + State.ERROR);
-                    currentState = State.ERROR;
-                    delimiterSuffixIdentifier.reset();
+                    byteArrayOutputStream.reset();
+                    goToState(State.ERROR);
                     nioMultipartParserListener.onError("Unexpected characters follow a boundary", null);
                     return ++currentIndex;
                 }
@@ -342,9 +397,8 @@ public class NioMultipartParser extends OutputStream {
     }
 
     void allPartsRead(){
-        if (log.isDebugEnabled())log.debug(currentState + " --> " + State.SKIP_EPILOGUE);
-        currentState = State.SKIP_EPILOGUE;
         nioMultipartParserListener.onAllPartsRead();
+        goToState(State.SKIP_EPILOGUE);
         logDebugFile();
     }
 
@@ -352,7 +406,7 @@ public class NioMultipartParser extends OutputStream {
         if (MultipartUtils.isFormField(headers)){
 
             final String fieldName = MultipartUtils.getFieldName(headers);
-            final String value = formFieldBodyOutputStream.toString();
+            final String value = formFieldOutputStream.toString();
             nioMultipartParserListener.onFormFieldPartComplete(fieldName, value, headers);
 
         }else{
@@ -370,12 +424,23 @@ public class NioMultipartParser extends OutputStream {
         }
 
         if (delimiterType == DelimiterType.CLOSE){
-            currentState = State.ALL_PARTS_READ;
+            if (delimiterPrefixes.size() > 1){
+                goToState(State.NESTED_PART_READ);
+            }else {
+                goToState(State.ALL_PARTS_READ);
+            }
         }else {
-            currentState = State.GET_READY_FOR_HEADERS;
+            goToState(State.GET_READY_FOR_HEADERS);
         }
         partIndex++;
 
+    }
+
+    void nestedPartRead(){
+        delimiterPrefixes.pop();
+        endOfLineBuffer.reset(getPreambleDelimiterPrefix(delimiterPrefixes.peek()), null);
+        goToState(State.SKIP_PREAMBLE);
+        nioMultipartParserListener.onNestedPartRead();
     }
 
     byte[] getBoundary(final String contentType) {
@@ -397,28 +462,12 @@ public class NioMultipartParser extends OutputStream {
         return boundary;
     }
 
-    boolean isCloseDelimiterSuffix(final byte[] suffix){
-        return arrayEquals(CLOSE_DELIMITER_SUFFIX, suffix);
-    }
-
-    boolean isDelimiterSuffix(final byte[] suffix){
-        return arrayEquals(ENCAPSULATION_DELIMITER_SUFFIX, suffix);
-    }
-
-    boolean arrayEquals(byte[] a, byte[] b) {
-        if (a.length != b.length){
-            return false;
-        }
-        for (int i = 0; i < a.length; i++) {
-            if (a[i] != b[i]) {
-                return false;
-            }
-        }
-        return true;
-    }
-
     byte[] getPreambleDelimiterPrefix(final byte[] delimiterPrefix){
 
+        // This allows to parse multipart bodies starting with a delimiter.
+        // From the specs, a delimiter is always preceded by a CR,LF but commons file upload supports it.
+
+        // Remove the CR,LF from the delimiterPrefix
         byte[] preambleDelimiterPrefix = new byte[delimiterPrefix.length-2];
         System.arraycopy(delimiterPrefix, 2, preambleDelimiterPrefix, 0, delimiterPrefix.length -2);
         return preambleDelimiterPrefix;
@@ -435,6 +484,16 @@ public class NioMultipartParser extends OutputStream {
         System.arraycopy(boundary, 0, delimiterPrefix, 4, boundary.length);
 
         return delimiterPrefix;
+    }
+
+    void closeQuietly(){
+        try{
+            if (outputStream != null) {
+                outputStream.close();
+            }
+        }catch (Exception e){
+            // Stay quiet!
+        }
     }
 
     // Just for testing. It enables the possibility to capture the full multipart body into a file.
