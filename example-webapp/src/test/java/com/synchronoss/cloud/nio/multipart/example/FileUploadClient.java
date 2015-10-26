@@ -73,7 +73,7 @@ public class FileUploadClient {
             if (resEntity != null) {
                 String responseString = EntityUtils.toString(resEntity, "UTF-8");
                 log.info("Response content length: " + resEntity.getContentLength());
-                log.info("Response content: " + responseString);
+                log.info("Response content:\n" + responseString);
             }
             EntityUtils.consume(resEntity);
 

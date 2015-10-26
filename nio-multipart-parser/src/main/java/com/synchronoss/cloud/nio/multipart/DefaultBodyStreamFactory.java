@@ -35,18 +35,13 @@ public class DefaultBodyStreamFactory implements BodyStreamFactory {
     }
 
     @Override
-    public PartOutputStream getOutputStream(final Map<String, List<String>> headers, int partIndex) {
+    public NamedOutputStreamHolder getOutputStream(final Map<String, List<String>> headers, int partIndex) {
         try {
-            final File tempFile = new File(tempFolder, String.format("nio-body-%d-%s.tmp", partIndex, UUID.randomUUID().toString()));// TODO - is this random enough?
-            return new PartOutputStream(tempFile.getAbsolutePath()) {
+            // TODO - An improvement can be if we can detect th size and decide if go to disk or not.
+            // TODO - is the name random enough?
+            final File tempFile = new File(tempFolder, String.format("nio-body-%d-%s.tmp", partIndex, UUID.randomUUID().toString()));
+            return new NamedOutputStreamHolder(tempFile.getAbsolutePath(), new FileOutputStream(tempFile));
 
-                final FileOutputStream fos = new FileOutputStream(tempFile);
-
-                @Override
-                public void write(int b) throws IOException {
-                    fos.write(b);
-                }
-            };
         }catch (Exception e){
             throw new IllegalStateException("Unable to create the temporary file where to store the body", e);
         }

@@ -341,7 +341,7 @@ public class MultipartTestCases {
             ,FILENAME_CASE_SENSITIVITY
             ,EMPTY_FILE
             //,IE5_MAC_BUG// Won't fix
-            //,FILEUPLOAD62// FIXME - this test is failing
+            ,FILEUPLOAD62
             ,FOLDED_HEADERS
             ,FILE_UPLOAD_130
             ,PARAMETER_MAP

@@ -1,5 +1,6 @@
 package com.synchronoss.cloud.nio.multipart;
 
+import com.synchronoss.cloud.nio.multipart.BodyStreamFactory.NamedOutputStreamHolder;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.junit.Rule;
@@ -10,6 +11,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.HashMap;
 import java.util.List;
 
@@ -31,22 +33,22 @@ public class DefaultBodyStreamFactoryTest {
     @Test
     public void testBodyStreams() throws Exception {
 
-        BodyStreamFactory.PartOutputStream outputStream = null;
+        NamedOutputStreamHolder namedOutputStreamHolder = null;
         try{
             DefaultBodyStreamFactory defaultBodyStreamFactory = new DefaultBodyStreamFactory();
 
             // Get the output stream
-            outputStream = defaultBodyStreamFactory.getOutputStream(new HashMap<String, List<String>>(), 2);
-            assertNotNull(outputStream);
+            namedOutputStreamHolder = defaultBodyStreamFactory.getOutputStream(new HashMap<String, List<String>>(), 2);
+            assertNotNull(namedOutputStreamHolder);
 
-            log.info("Part body output stream created with name: " + outputStream.getName());
+            log.info("Part body output stream created with name: " + namedOutputStreamHolder.getName());
 
             // Write some data
             byte[] dataToWrite = {0x01, 0x02, 0x03};
-            writeToPartOutputStreamAndClose(outputStream, dataToWrite);
+            writeToPartOutputStreamAndClose(namedOutputStreamHolder.getOutputStream(), dataToWrite);
 
             // Get the input stream related to the PartOutputStream
-            InputStream inputStream = defaultBodyStreamFactory.getInputStream(outputStream.getName());
+            InputStream inputStream = defaultBodyStreamFactory.getInputStream(namedOutputStreamHolder.getName());
             assertNotNull(inputStream);
 
             // Read back the data and verify
@@ -56,9 +58,9 @@ public class DefaultBodyStreamFactoryTest {
         }finally {
 
             // Clean up the temporary file...
-            if (outputStream != null) {
+            if (namedOutputStreamHolder != null) {
 
-                File tmpFileToCleanup = new File(outputStream.getName());
+                File tmpFileToCleanup = new File(namedOutputStreamHolder.getName());
                 if (tmpFileToCleanup.exists()) {
                     assertTrue(tmpFileToCleanup.delete());
                     log.info("Temp file deleted");
@@ -75,17 +77,17 @@ public class DefaultBodyStreamFactoryTest {
         DefaultBodyStreamFactory defaultBodyStreamFactory = new DefaultBodyStreamFactory(tempFolder.newFolder("body-parts").getAbsolutePath());
 
         // Get the output stream
-        BodyStreamFactory.PartOutputStream outputStream = defaultBodyStreamFactory.getOutputStream(new HashMap<String, List<String>>(), 2);
-        assertNotNull(outputStream);
+        NamedOutputStreamHolder namedOutputStreamHolder = defaultBodyStreamFactory.getOutputStream(new HashMap<String, List<String>>(), 2);
+        assertNotNull(namedOutputStreamHolder);
 
-        log.info("Part body output stream created with name: " + outputStream.getName());
+        log.info("Part body output stream created with name: " + namedOutputStreamHolder.getName());
 
         // Write some data
         byte[] dataToWrite = {0x01, 0x02, 0x03};
-        writeToPartOutputStreamAndClose(outputStream, dataToWrite);
+        writeToPartOutputStreamAndClose(namedOutputStreamHolder.getOutputStream(), dataToWrite);
 
         // Get the input stream related to the PartOutputStream
-        InputStream inputStream = defaultBodyStreamFactory.getInputStream(outputStream.getName());
+        InputStream inputStream = defaultBodyStreamFactory.getInputStream(namedOutputStreamHolder.getName());
         assertNotNull(inputStream);
 
         // Read back the data and verify
@@ -140,14 +142,14 @@ public class DefaultBodyStreamFactoryTest {
         DefaultBodyStreamFactory defaultBodyStreamFactory = new DefaultBodyStreamFactory(folder.getAbsolutePath());
 
         // Get the output stream
-        BodyStreamFactory.PartOutputStream outputStream = defaultBodyStreamFactory.getOutputStream(new HashMap<String, List<String>>(), 2);
-        assertNotNull(outputStream);
+        NamedOutputStreamHolder namedOutputStreamHolder = defaultBodyStreamFactory.getOutputStream(new HashMap<String, List<String>>(), 2);
+        assertNotNull(namedOutputStreamHolder);
 
-        log.info("Part body output stream created with name: " + outputStream.getName());
+        log.info("Part body output stream created with name: " + namedOutputStreamHolder.getName());
 
         // Write some data
         byte[] dataToWrite = {0x01, 0x02, 0x03};
-        writeToPartOutputStreamAndClose(outputStream, dataToWrite);
+        writeToPartOutputStreamAndClose(namedOutputStreamHolder.getOutputStream(), dataToWrite);
 
         // Delete the folder to have an error when creating the input stream
         FileUtils.deleteDirectory(folder);
@@ -155,7 +157,7 @@ public class DefaultBodyStreamFactoryTest {
 
         Exception expected = null;
         try{
-            defaultBodyStreamFactory.getInputStream(outputStream.getName());
+            defaultBodyStreamFactory.getInputStream(namedOutputStreamHolder.getName());
         }catch (Exception e){
             expected = e;
         }
@@ -164,7 +166,7 @@ public class DefaultBodyStreamFactoryTest {
 
     }
 
-    void writeToPartOutputStreamAndClose(final BodyStreamFactory.PartOutputStream outputStream, byte[] data){
+    void writeToPartOutputStreamAndClose(final OutputStream outputStream, byte[] data){
         try{
             IOUtils.write(data, outputStream);
 

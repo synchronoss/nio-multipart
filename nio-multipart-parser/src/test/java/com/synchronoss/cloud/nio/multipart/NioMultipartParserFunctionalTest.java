@@ -87,6 +87,7 @@ public class NioMultipartParserFunctionalTest {
                 Assert.fail("Parser didn't come back in a reasonable time");
             }
         }
+        log.info("TRANSITIONS: \n" + Joiner.on('\n').join(parser.geFsmTransitions()));
 
     }
 

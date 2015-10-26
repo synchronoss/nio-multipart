@@ -84,6 +84,7 @@ public class CircularBuffer {
         int bytesToRead = availableReadLength;
         while (bytesToRead > 0){
             // XXX - If this becomes a problem there might be a better way to compute the new index. See sun.plugin2.jvm.CircularByteBuffer
+            // TODO - Is it better to buffer here? Usually we are writing to a FileOutputStream
             outputStream.write(buffer[startValidDataIndex]);
             startValidDataIndex = forwards(startValidDataIndex);
             bytesToRead --;
@@ -115,6 +116,7 @@ public class CircularBuffer {
         int bytesToRead = chunkSize;
         while (bytesToRead > 0){
             // XXX - If this becomes a problem there might be a better way to compute the new index. See sun.plugin2.jvm.CircularByteBuffer
+            // TODO - Is it better to buffer here? Usually we are writing to a FileOutputStream
             outputStream.write(buffer[startValidDataIndex]);
             startValidDataIndex = forwards(startValidDataIndex);
             bytesToRead --;

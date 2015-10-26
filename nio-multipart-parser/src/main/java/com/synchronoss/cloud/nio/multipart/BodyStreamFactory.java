@@ -15,43 +15,55 @@ public interface BodyStreamFactory {
 
     /**
      * <p>
-     *     A part {@link OutputStream}. Essentially a named {@link OutputStream}.<br/>
+     *     Holds an {@link OutputStream} and it's name
      *     The name will be used to retrieve the correspondent {@link InputStream} by calling {@link BodyStreamFactory#getInputStream(String)}
      * </p>
      */
-    abstract class PartOutputStream extends OutputStream {
+    class NamedOutputStreamHolder {
 
         final String name;
-        public PartOutputStream(String name) {
+        final OutputStream outputStream;
+        public NamedOutputStreamHolder(final String name, final OutputStream outputStream) {
             this.name = name;
+            this.outputStream = outputStream;
         }
 
         /**
          * <p>
-         *     Returns the name of the stream
+         *     Returns the name of the {@link OutputStream}
          * </p>
          * @return The name of the stream.
          */
         public String getName() {
             return name;
         }
+
+        /**
+         * <p>
+         *     Returns the {@link OutputStream}
+         * </p>
+         * @return the {@link OutputStream}
+         */
+        public OutputStream getOutputStream() {
+            return outputStream;
+        }
     }
 
     /**
      * <p>
-     *     Gets the {@link PartOutputStream} where to store the part body.
+     *     Gets the {@link NamedOutputStreamHolder} where to store the part body.
      * </p>
      * @param headers The headers of the processed part
      * @param partIndex The index of the processed part.
-     * @return The {@link PartOutputStream} where to store the part body.
+     * @return The {@link NamedOutputStreamHolder} holding the {@link OutputStream} where to store the part body.
      */
-    PartOutputStream getOutputStream(final Map<String, List<String>> headers, final int partIndex);
+    NamedOutputStreamHolder getOutputStream(final Map<String, List<String>> headers, final int partIndex);
 
     /**
      * <p>
      *     Returns the {@link InputStream} to read the part body.
      * </p>
-     * @param outputStreamName The name of the of the {@link PartOutputStream} created by the {@link #getOutputStream(Map, int)}
+     * @param outputStreamName The name of the of the {@link NamedOutputStreamHolder} created by the {@link #getOutputStream(Map, int)}
      * @return The {@link InputStream} from where to read the part body.
      */
     InputStream getInputStream(final String outputStreamName);

@@ -42,10 +42,14 @@ import javax.servlet.AsyncContext;
 import javax.servlet.ReadListener;
 import javax.servlet.ServletInputStream;
 import javax.servlet.http.HttpServletRequest;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.Writer;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 
 @RestController
@@ -67,114 +71,120 @@ public class FileUploadController {
     @RequestMapping(value = "/nio/multipart", method = RequestMethod.POST)
     public @ResponseBody void nioMultipart(final HttpServletRequest request) throws IOException {
 
-        log.debug("nioUpload");
+        if (log.isDebugEnabled())log.debug("Process multipart request");
 
         final AsyncContext asyncContext = switchRequestToAsyncIfNeeded(request);
         final ServletInputStream inputStream = request.getInputStream();
 
-        NioMultipartParserListener listener = new NioMultipartParserListener() {
+        final ByteArrayOutputStream requestDumper = new ByteArrayOutputStream();
+        final StringBuilder response = new StringBuilder();
+
+        // Set up the listener. This is where the business logic happens...
+        final NioMultipartParserListener listener = new NioMultipartParserListener() {
+
             @Override
-            public void onPartComplete(InputStream partBodyInputStream, Map<String, List<String>> headersFromPart) {
+            public void onPartComplete(final InputStream partBodyInputStream, final Map<String, List<String>> headersFromPart) {
 
-                log.info("PART COMPLETE");
-                logHeaders(headersFromPart);
-
-                try {
-                    log.info("--");
-                    log.info("Body\n" + IOUtils.toString(partBodyInputStream));
-                }catch (Exception e){
-                    log.error("Cannot read the body", e);
-                }
+                append("On Part Complete", response);
+                appendHeaders(headersFromPart, response);
+                appendBody(partBodyInputStream, response);
 
             }
 
             @Override
-            public void onNestedPartStarted(Map<String, List<String>> headersFromParentPart) {
-                log.info("NESTED PART STARTED");
-                logHeaders(headersFromParentPart);
+            public void onNestedPartStarted(final Map<String, List<String>> headersFromParentPart) {
+                append("Nested part started", response);
+                appendHeaders(headersFromParentPart, response);
             }
 
             @Override
             public void onNestedPartRead() {
-                log.info("NESTED PART READ");
+                append("Nested part read", response);
             }
 
             @Override
             public void onFormFieldPartComplete(String fieldName, String fieldValue, Map<String, List<String>> headersFromPart) {
-                log.info("FORM FIELD COMPLETE");
-
-                for (Map.Entry<String, List<String>> headerEntry : headersFromPart.entrySet()){
-                    log.info("Header -> " + headerEntry.getKey() + " : " + Joiner.on(',').join(headerEntry.getValue()));
-                }
-                log.info("--");
-                log.info("Field " + fieldName + ": " + fieldValue);
+                append("On Form Field Complete", response);
+                appendHeaders(headersFromPart, response);
+                append("Field " + fieldName + ": " + fieldValue, response);
 
             }
 
             @Override
             public void onAllPartsRead() {
-                log.info("ALL PARTS READ");
+                append("On All Parts Read", response);
             }
 
             @Override
             public void onError(String message, Throwable cause) {
-                log.error("ERROR", cause);
-            }
-
-            void logHeaders(final Map<String, List<String>> headersFromPart){
-                if (headersFromPart == null || headersFromPart.size() == 0){
-                    log.info("No headers.");
-                }else {
-                    for (Map.Entry<String, List<String>> headerEntry : headersFromPart.entrySet()) {
-                        log.info("Header -> " + headerEntry.getKey() + " : " + Joiner.on(',').join(headerEntry.getValue()));
-                    }
-                }
+                log.error("Parser Error", cause);
+                append("On Error: " + message, response);
             }
 
         };
 
-        final MultipartContext multipartContext = getMultipartContext(request);
+        // Set up the parser...
+        final NioMultipartParser parser = new NioMultipartParser(getMultipartContext(request), listener);
 
-        log.debug("Multipart context: " + multipartContext);
-
-        final NioMultipartParser parser = new NioMultipartParser(multipartContext, listener);
-
+        // Set up the Servlet 3.1 read listener and connect it to the parser
         inputStream.setReadListener(new ReadListener() {
-            private long totalBytesRead = 0;
+
+            private AtomicBoolean responseSent = new AtomicBoolean(false);
 
             @Override
             public void onDataAvailable() throws IOException {
                 int bytesRead;
                 byte bytes[] = new byte[1024];
                 while (inputStream.isReady()  && (bytesRead = inputStream.read(bytes)) != -1) {
-                    totalBytesRead += bytesRead;
                     parser.write(bytes, 0, bytesRead);
+                    requestDumper.write(bytes, 0, bytesRead);
                 }
             }
 
             @Override
             public void onAllDataRead() throws IOException {
-                asyncContext.getResponse().getWriter().write("OK - read " + totalBytesRead + " bytes");
-                asyncContext.complete();
-                parser.close();
+                sendResponse();
             }
 
             @Override
             public void onError(Throwable throwable) {
                 try {
                     log.error("onError", throwable);
-                    asyncContext.getResponse().getWriter().write("KO - err " + throwable.getLocalizedMessage());
+                    asyncContext.getResponse().getWriter().write("Error: " + throwable.getLocalizedMessage());
                     asyncContext.complete();
                     parser.close();
                 }catch(IOException e){
                     log.warn("Error closing the asyncMultipartParser", e);
                 }
             }
+
+            void sendResponse() {
+                if (responseSent.compareAndSet(false, true)){
+                    try {
+                        final Writer responseWriter = asyncContext.getResponse().getWriter();
+                        responseWriter.write("<<<< ORIGINAL REQUEST BODY >>>>\n");
+                        responseWriter.write(requestDumper.toString());
+                        responseWriter.write("\n<<<< PROCESS LOG >>>>\n");
+                        responseWriter.write(response.toString());
+                        List<String> fsmTransitions = parser.geFsmTransitions();
+                        if (fsmTransitions != null) {
+                            responseWriter.write("\n<<<< FSM TRANSITIONS LOG >>>>\n");
+                            responseWriter.write(Joiner.on('\n').join(fsmTransitions));
+                        }
+                        asyncContext.complete();
+                    }catch (Exception e){
+                        onError(e);
+                    }finally {
+                        IOUtils.closeQuietly(parser);
+                    }
+                }
+            }
+
         });
 
     }
 
-    final MultipartContext getMultipartContext(final HttpServletRequest request){
+    MultipartContext getMultipartContext(final HttpServletRequest request){
         String contentType = request.getContentType();
         int contentLength = request.getContentLength();
         String charEncoding = request.getCharacterEncoding();
@@ -183,11 +193,33 @@ public class FileUploadController {
 
     AsyncContext switchRequestToAsyncIfNeeded(final HttpServletRequest request){
         if (request.isAsyncStarted()){
-            log.info("Async context already started. Return it");
+            if (log.isDebugEnabled()) log.debug("Async context already started. Return it");
             return request.getAsyncContext();
         }else{
-            log.info("Start async context and return it.");
+            if (log.isDebugEnabled()) log.info("Start async context and return it.");
             return request.startAsync();
+        }
+    }
+
+    void append(final String message, final StringBuilder stringBuilder) {
+        stringBuilder.append(new Date()).append(" - ").append(message).append('\n');
+    }
+
+    void appendHeaders(final Map<String, List<String>> headers, final StringBuilder stringBuilder){
+        if (headers == null || headers.size() == 0){
+            append("No headers", stringBuilder);
+        }else{
+            for (Map.Entry<String, List<String>> headerEntry : headers.entrySet()) {
+                append("Header -> " + headerEntry.getKey() + " : " + Joiner.on(',').join(headerEntry.getValue()), stringBuilder);
+            }
+        }
+    }
+
+    void appendBody(final InputStream inputStream, final StringBuilder stringBuilder){
+        try{
+            append("Body:\n" + IOUtils.toString(inputStream), stringBuilder);
+        }catch (Exception e){
+            append("Unable to convert body content toString", stringBuilder);
         }
     }
 
