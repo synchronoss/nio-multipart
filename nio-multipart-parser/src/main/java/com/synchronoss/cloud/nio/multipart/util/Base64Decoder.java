@@ -19,9 +19,6 @@ package com.synchronoss.cloud.nio.multipart.util;
 import java.io.IOException;
 import java.io.OutputStream;
 
-/**
- * @since 1.3
- */
 final class Base64Decoder {
 
     /**

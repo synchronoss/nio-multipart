@@ -32,7 +32,6 @@ import java.util.Map;
  *  <code>param1 = value; param2 = "anything goes; really"; param3</code>
  * </p>
  *
- * @version $Id$
  */
 public class ParameterParser {
 

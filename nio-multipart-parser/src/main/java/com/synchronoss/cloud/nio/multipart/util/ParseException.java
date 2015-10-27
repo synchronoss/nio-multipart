@@ -16,9 +16,6 @@
  */
 package com.synchronoss.cloud.nio.multipart.util;
 
-/**
- * @since 1.3
- */
 final class ParseException extends Exception {
 
     /**

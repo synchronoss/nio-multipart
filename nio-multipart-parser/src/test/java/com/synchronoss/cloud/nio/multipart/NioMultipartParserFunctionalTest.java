@@ -1,3 +1,19 @@
+/*
+ * Copyright (C) 2015 Synchronoss Technologies
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.synchronoss.cloud.nio.multipart;
 
 import com.google.common.base.Joiner;
@@ -16,10 +32,12 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sun.nio.ch.IOUtil;
 
 import java.io.InputStream;
-import java.util.*;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -27,7 +45,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * <p>
  *     Functional test that verifies the library is compliant with the apache commons fileupload.
  * </p>
- * Created by sriz0001 on 19/10/2015.
+ * @author Silvano Riz.
  */
 @RunWith(Parameterized.class)
 public class NioMultipartParserFunctionalTest {
