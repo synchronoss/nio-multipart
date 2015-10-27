@@ -6,7 +6,10 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 /**
- * Created by mele on 24/10/2015.
+ * <p>
+ *     Unit tests for {@link FixedSizeByteArrayOutputStream}
+ * </p>
+ * Created by sriz0001 on 24/10/2015.
  */
 public class FixedSizeByteArrayOutputStreamTest {
 

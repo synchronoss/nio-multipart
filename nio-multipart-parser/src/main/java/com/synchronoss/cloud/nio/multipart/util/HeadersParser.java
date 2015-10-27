@@ -11,9 +11,11 @@ import java.util.Map;
  * <p>
  *     Utility methods to parse the headers section into a {@link Map} of header name - list of header values
  * </p>
- * Created by mele on 22/10/2015.
+ * Created by sriz0001 on 22/10/2015.
  */
 public class HeadersParser {
+
+    public static final String EMPTY_STRING = "";
 
     private HeadersParser() { }
 
@@ -105,42 +107,42 @@ public class HeadersParser {
     }
 
     static String readLine(final InputStream inputStream, final String charset) {
-        byte[] rawdata = readRawLine(inputStream);
-        if (rawdata == null) {
+        byte[] rawData = readRawLine(inputStream);
+        if (rawData == null) {
             return null;
         }
         // strip CR and LF from the end
-        int len = rawdata.length;
+        int len = rawData.length;
         int offset = 0;
         if (len > 0) {
-            if (rawdata[len - 1] == '\n') {
+            if (rawData[len - 1] == '\n') {
                 offset++;
                 if (len > 1) {
-                    if (rawdata[len - 2] == '\r') {
+                    if (rawData[len - 2] == '\r') {
                         offset++;
                     }
                 }
             }
         }
-        return getString(rawdata, 0, len - offset, charset);
+        return getString(rawData, 0, len - offset, charset);
 
     }
 
     static String getString(final byte[] data, final int offset, final int length, final String charset) {
 
-        if (data == null) {
-            throw new IllegalArgumentException("data cannot be null");
+        if (data == null || data.length == 0) {
+            return EMPTY_STRING;
         }
 
-        if (charset == null || charset.length() == 0) {
-            throw new IllegalArgumentException("Charset cannot be null or empty");
+        if (charset != null && charset.length() > 0){
+            try {
+                return new String(data, offset, length, charset);
+            } catch (Exception e) {
+                // Failed using the charset provided
+            }
         }
 
-        try {
-            return new String(data, offset, length, charset);
-        } catch (Exception e) {
-            return new String(data, offset, length);
-        }
+        return new String(data, offset, length);
     }
 
 }

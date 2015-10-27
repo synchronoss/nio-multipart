@@ -19,7 +19,7 @@ public interface NioMultipartParserListener {
      * @param partBodyInputStream The {@link InputStream} from where the part body can be read.
      * @param headersFromPart The part headers.
      */
-    void onPartComplete(final InputStream partBodyInputStream, final Map<String, List<String>> headersFromPart);
+    void onPartReady(final InputStream partBodyInputStream, final Map<String, List<String>> headersFromPart);
 
     /**
      * <p>
@@ -29,14 +29,14 @@ public interface NioMultipartParserListener {
      * @param fieldValue The field value
      * @param headersFromPart The part headers.
      */
-    void onFormFieldPartComplete(final String fieldName, final String fieldValue, final Map<String, List<String>> headersFromPart);
+    void onFormFieldPartReady(final String fieldName, final String fieldValue, final Map<String, List<String>> headersFromPart);
 
     /**
      * <p>
      *     Called when all the parts have been read.
      * </p>
      */
-    void onAllPartsRead();
+    void onAllPartsFinished();
 
     /**
      * <p>
@@ -51,7 +51,7 @@ public interface NioMultipartParserListener {
      *     Called when a nested part has completed.
      * </p>
      */
-    void onNestedPartRead();
+    void onNestedPartFinished();
 
     /**
      * <p>

@@ -10,6 +10,8 @@ import java.io.IOException;
 import java.io.OutputStream;
 
 import static org.junit.Assert.*;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyInt;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 
@@ -110,7 +112,7 @@ public class EndOfLineBufferTest {
 
         OutputStream flush = mock(OutputStream.class);
         byte failingWrite = 10;
-        doThrow(new IOException("mock throwing the exception")).when(flush).write(failingWrite);
+        doThrow(new IOException("mock throwing the exception")).when(flush).write(any(byte[].class), anyInt(), anyInt());
 
         EndOfLineBuffer endOfLineBuffer = new EndOfLineBuffer(10, new byte[]{0x0D, 0x0A}, flush);
         log.info("Buffer initial status:\n" + endOfLineBufferToString(endOfLineBuffer)  + "\n");

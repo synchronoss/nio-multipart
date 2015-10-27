@@ -80,18 +80,7 @@ public class CircularBuffer {
         if (isEmpty()){
             return;
         }
-
-        int bytesToRead = availableReadLength;
-        while (bytesToRead > 0){
-            // XXX - If this becomes a problem there might be a better way to compute the new index. See sun.plugin2.jvm.CircularByteBuffer
-            // TODO - Is it better to buffer here? Usually we are writing to a FileOutputStream
-            outputStream.write(buffer[startValidDataIndex]);
-            startValidDataIndex = forwards(startValidDataIndex);
-            bytesToRead --;
-        }
-        outputStream.flush();
-        updateAvailableReadLength(false);
-
+        readChunk(outputStream, availableReadLength);
     }
 
     /**
@@ -113,14 +102,14 @@ public class CircularBuffer {
             return;
         }
 
-        int bytesToRead = chunkSize;
-        while (bytesToRead > 0){
-            // XXX - If this becomes a problem there might be a better way to compute the new index. See sun.plugin2.jvm.CircularByteBuffer
-            // TODO - Is it better to buffer here? Usually we are writing to a FileOutputStream
-            outputStream.write(buffer[startValidDataIndex]);
-            startValidDataIndex = forwards(startValidDataIndex);
-            bytesToRead --;
+        if (startValidDataIndex + chunkSize > buffer.length){
+            int firstChunkLength = buffer.length - startValidDataIndex;
+            outputStream.write(buffer, startValidDataIndex, firstChunkLength);
+            outputStream.write(buffer, 0, chunkSize - firstChunkLength);
+        }else{
+            outputStream.write(buffer, startValidDataIndex, chunkSize);
         }
+        startValidDataIndex = forwards(startValidDataIndex, chunkSize);
         outputStream.flush();
         updateAvailableReadLength(false);
 

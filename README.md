@@ -8,7 +8,7 @@ The library is intentionally decoupled from the java servlet APIs and it's based
 This makes the library generic and usable for processing not only Http Requests, but also Http responses and potentially other transport protocols.
 It is also a good solution for Android given it's reduced dependencies tree.
 
-Requires JDK 1.6 or higher.
+Requires JDK 1.7 or higher.
 
 Latest release
 --------------
@@ -35,6 +35,12 @@ dependencies {
 
 How to use
 ----------
+In progress...
 
+References
+----------
+[RFC1867](http://www.ietf.org/rfc/rfc1867.txt)
+[RFC1521](http://www.ietf.org/rfc/rfc1521.txt)
+[RFC1522](http://www.ietf.org/rfc/rfc1522.txt)
 
 

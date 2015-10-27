@@ -98,7 +98,7 @@ public class NioMultipartParserFunctionalTest {
             AtomicInteger partIndex = new AtomicInteger(0);
 
             @Override
-            public void onPartComplete(InputStream partBodyInputStream, Map<String, List<String>> headersFromPart) {
+            public void onPartReady(InputStream partBodyInputStream, Map<String, List<String>> headersFromPart) {
                 log.info("<<<<< On part complete [" + (partIndex.addAndGet(1)) + "] >>>>>>");
                 assertFileItemIteratorHasNext(true);
                 final FileItemStream fileItemStream = fileItemIteratorNext();
@@ -107,7 +107,7 @@ public class NioMultipartParserFunctionalTest {
             }
 
             @Override
-            public void onFormFieldPartComplete(String fieldName, String fieldValue, Map<String, List<String>> headersFromPart) {
+            public void onFormFieldPartReady(String fieldName, String fieldValue, Map<String, List<String>> headersFromPart) {
                 log.info("<<<<< On form field complete [" + (partIndex.addAndGet(1)) + "] >>>>>>");
                 assertFileItemIteratorHasNext(true);
                 final FileItemStream fileItemStream = fileItemIteratorNext();
@@ -127,14 +127,14 @@ public class NioMultipartParserFunctionalTest {
 
 
             @Override
-            public void onAllPartsRead() {
+            public void onAllPartsFinished() {
                 log.info("<<<<< On all parts read: Number of parts ["+ partIndex.get() + "] >>>>>>");
                 assertFileItemIteratorHasNext(false);
                 finished.set(true);
             }
 
             @Override
-            public void onNestedPartRead() {
+            public void onNestedPartFinished() {
                 log.info("<<<<< On form field complete [" + (partIndex) + "] >>>>>>");
             }
 
@@ -241,7 +241,7 @@ public class NioMultipartParserFunctionalTest {
             AtomicInteger partIndex = new AtomicInteger(0);
 
             @Override
-            public void onPartComplete(InputStream partBodyInputStream, Map<String, List<String>> headersFromPart) {
+            public void onPartReady(InputStream partBodyInputStream, Map<String, List<String>> headersFromPart) {
                 log.info("-- NIO MULTIPART PARSER : On part complete " + (partIndex.addAndGet(1)));
                 log.info("-- Part " + partIndex.get());
                 for (Map.Entry<String, List<String>> headersEntry : headersFromPart.entrySet()){
@@ -265,7 +265,7 @@ public class NioMultipartParserFunctionalTest {
             }
 
             @Override
-            public void onFormFieldPartComplete(String fieldName, String fieldValue, Map<String, List<String>> headersFromPart) {
+            public void onFormFieldPartReady(String fieldName, String fieldValue, Map<String, List<String>> headersFromPart) {
                 log.info("-- NIO MULTIPART PARSER : On form field complete " + partIndex.addAndGet(1));
                 log.info("-- Part " + (partIndex.get()));
                 for (Map.Entry<String, List<String>> headersEntry : headersFromPart.entrySet()){
@@ -275,12 +275,12 @@ public class NioMultipartParserFunctionalTest {
             }
 
             @Override
-            public void onNestedPartRead() {
+            public void onNestedPartFinished() {
                 log.info("-- NIO MULTIPART PARSER : On nested part read");
             }
 
             @Override
-            public void onAllPartsRead() {
+            public void onAllPartsFinished() {
                 log.info("-- NIO MULTIPART PARSER : On all parts read");
                 log.info("-- Number of parts: " + partIndex.get() );
             }

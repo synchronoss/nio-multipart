@@ -24,9 +24,9 @@
 package com.synchronoss.cloud.nio.multipart.example.web;
 
 import com.google.common.base.Joiner;
+import com.synchronoss.cloud.nio.multipart.MultipartContext;
 import com.synchronoss.cloud.nio.multipart.NioMultipartParser;
 import com.synchronoss.cloud.nio.multipart.NioMultipartParserListener;
-import com.synchronoss.cloud.nio.multipart.MultipartContext;
 import com.synchronoss.cloud.nio.multipart.example.config.RootApplicationConfig;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
@@ -46,7 +46,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Writer;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -75,112 +74,77 @@ public class FileUploadController {
 
         final AsyncContext asyncContext = switchRequestToAsyncIfNeeded(request);
         final ServletInputStream inputStream = request.getInputStream();
-
-        final ByteArrayOutputStream requestDumper = new ByteArrayOutputStream();
-        final StringBuilder response = new StringBuilder();
+        final ResponseBuilder responseBuilder = new ResponseBuilder(asyncContext);
 
         // Set up the listener. This is where the business logic happens...
         final NioMultipartParserListener listener = new NioMultipartParserListener() {
 
             @Override
-            public void onPartComplete(final InputStream partBodyInputStream, final Map<String, List<String>> headersFromPart) {
-
-                append("On Part Complete", response);
-                appendHeaders(headersFromPart, response);
-                appendBody(partBodyInputStream, response);
-
+            public void onPartReady(final InputStream partBodyInputStream, final Map<String, List<String>> headersFromPart) {
+                responseBuilder.appendToResponse("ON PART READY", headersFromPart, partBodyInputStream);
             }
 
             @Override
             public void onNestedPartStarted(final Map<String, List<String>> headersFromParentPart) {
-                append("Nested part started", response);
-                appendHeaders(headersFromParentPart, response);
+                responseBuilder.appendToResponse("ON NESTED PART STARTED", headersFromParentPart);
             }
 
             @Override
-            public void onNestedPartRead() {
-                append("Nested part read", response);
+            public void onNestedPartFinished() {
+                responseBuilder.appendToResponse("ON NESTED PART FINISHED");
             }
 
             @Override
-            public void onFormFieldPartComplete(String fieldName, String fieldValue, Map<String, List<String>> headersFromPart) {
-                append("On Form Field Complete", response);
-                appendHeaders(headersFromPart, response);
-                append("Field " + fieldName + ": " + fieldValue, response);
+            public void onFormFieldPartReady(String fieldName, String fieldValue, Map<String, List<String>> headersFromPart) {
+                responseBuilder.appendToResponse("ON FORM FIELD PART READY", headersFromPart, fieldName, fieldValue);
 
             }
 
             @Override
-            public void onAllPartsRead() {
-                append("On All Parts Read", response);
+            public void onAllPartsFinished() {
+                responseBuilder.appendToResponse("ON ALL PART FINISHED");
+                responseBuilder.send();
             }
 
             @Override
             public void onError(String message, Throwable cause) {
-                log.error("Parser Error", cause);
-                append("On Error: " + message, response);
+                // Invalid data...
+                responseBuilder.appendToResponse("ON ERROR", cause);
+                responseBuilder.sendError(cause);
             }
 
         };
 
-        // Set up the parser...
-        final NioMultipartParser parser = new NioMultipartParser(getMultipartContext(request), listener);
+        try(NioMultipartParser parser = new NioMultipartParser(getMultipartContext(request), listener)){
 
-        // Set up the Servlet 3.1 read listener and connect it to the parser
-        inputStream.setReadListener(new ReadListener() {
+            // Set up the Servlet 3.1 read listener and connect it to the parser
+            inputStream.setReadListener(new ReadListener() {
 
-            private AtomicBoolean responseSent = new AtomicBoolean(false);
-
-            @Override
-            public void onDataAvailable() throws IOException {
-                int bytesRead;
-                byte bytes[] = new byte[1024];
-                while (inputStream.isReady()  && (bytesRead = inputStream.read(bytes)) != -1) {
-                    parser.write(bytes, 0, bytesRead);
-                    requestDumper.write(bytes, 0, bytesRead);
-                }
-            }
-
-            @Override
-            public void onAllDataRead() throws IOException {
-                sendResponse();
-            }
-
-            @Override
-            public void onError(Throwable throwable) {
-                try {
-                    log.error("onError", throwable);
-                    asyncContext.getResponse().getWriter().write("Error: " + throwable.getLocalizedMessage());
-                    asyncContext.complete();
-                    parser.close();
-                }catch(IOException e){
-                    log.warn("Error closing the asyncMultipartParser", e);
-                }
-            }
-
-            void sendResponse() {
-                if (responseSent.compareAndSet(false, true)){
-                    try {
-                        final Writer responseWriter = asyncContext.getResponse().getWriter();
-                        responseWriter.write("<<<< ORIGINAL REQUEST BODY >>>>\n");
-                        responseWriter.write(requestDumper.toString());
-                        responseWriter.write("\n<<<< PROCESS LOG >>>>\n");
-                        responseWriter.write(response.toString());
-                        List<String> fsmTransitions = parser.geFsmTransitions();
-                        if (fsmTransitions != null) {
-                            responseWriter.write("\n<<<< FSM TRANSITIONS LOG >>>>\n");
-                            responseWriter.write(Joiner.on('\n').join(fsmTransitions));
-                        }
-                        asyncContext.complete();
-                    }catch (Exception e){
-                        onError(e);
-                    }finally {
-                        IOUtils.closeQuietly(parser);
+                @Override
+                public void onDataAvailable() throws IOException {
+                    int bytesRead;
+                    byte bytes[] = new byte[1024];
+                    while (inputStream.isReady()  && (bytesRead = inputStream.read(bytes)) != -1) {
+                        parser.write(bytes, 0, bytesRead);
+                        responseBuilder.captureRequest(bytes, 0, bytesRead);
                     }
                 }
-            }
 
-        });
+                @Override
+                public void onAllDataRead() throws IOException {
+                    responseBuilder.send();
+                }
+
+                @Override
+                public void onError(Throwable throwable) {
+                    responseBuilder.sendError(throwable);
+                }
+
+            });
+
+        }catch (Exception e){
+            // Bug in your code...
+        }
 
     }
 
@@ -201,26 +165,95 @@ public class FileUploadController {
         }
     }
 
-    void append(final String message, final StringBuilder stringBuilder) {
-        stringBuilder.append(new Date()).append(" - ").append(message).append('\n');
-    }
 
-    void appendHeaders(final Map<String, List<String>> headers, final StringBuilder stringBuilder){
-        if (headers == null || headers.size() == 0){
-            append("No headers", stringBuilder);
-        }else{
-            for (Map.Entry<String, List<String>> headerEntry : headers.entrySet()) {
-                append("Header -> " + headerEntry.getKey() + " : " + Joiner.on(',').join(headerEntry.getValue()), stringBuilder);
+    static class ResponseBuilder{
+
+        private final AsyncContext asyncContext;
+        private final AtomicBoolean sendResponse = new AtomicBoolean(false);
+
+        private final StringBuilder response = new StringBuilder();
+        private final ByteArrayOutputStream requestCapture =new ByteArrayOutputStream();
+
+        public ResponseBuilder(AsyncContext asyncContext) {
+            this.asyncContext = asyncContext;
+        }
+
+        public synchronized void send() {
+            if (sendResponse.getAndSet(true)) {
+                try {
+                    String responseText = response.append("\n====== ORIGINAL REQUEST ======\n").append(requestCapture.toString()).toString();
+                    final Writer responseWriter = asyncContext.getResponse().getWriter();
+                    responseWriter.write(responseText);
+                    asyncContext.complete();
+                }catch (Exception e){
+                    log.error("Could not send response", e);
+                }
+
             }
         }
-    }
 
-    void appendBody(final InputStream inputStream, final StringBuilder stringBuilder){
-        try{
-            append("Body:\n" + IOUtils.toString(inputStream), stringBuilder);
-        }catch (Exception e){
-            append("Unable to convert body content toString", stringBuilder);
+        public synchronized void sendError(final Throwable t) {
+            if (sendResponse.getAndSet(true)) {
+                try {
+                    String responseText = "Error: " + t.getLocalizedMessage();
+                    final Writer responseWriter = asyncContext.getResponse().getWriter();
+                    responseWriter.write(responseText);
+                    asyncContext.complete();
+                }catch (Exception e){
+                    log.error("Could not send error response", e);
+                }
+            }
         }
+
+        public synchronized void appendToResponse(final String event, final Map<String, List<String>> headers, final String formField, final String formFieldValue){
+            appendToResponse(event, headers);
+            response.append(formField).append(" = ").append(formFieldValue).append('\n');
+        }
+
+        public synchronized void appendToResponse(final String event, final Map<String, List<String>> headers){
+            response.append("\n[[[ ").append(event).append(" ]]]\n");
+            headers(headers);
+        }
+
+        public synchronized void appendToResponse(final String event, final Map<String, List<String>> headers, final InputStream bodyInputStream){
+            appendToResponse(event, headers);
+            body(bodyInputStream);
+        }
+
+        public synchronized void appendToResponse(final String event){
+            response.append("\n[[[ ").append(event).append(" ]]]\n");
+        }
+
+        public synchronized void appendToResponse(final String event, Throwable error){
+            response.append("\n[[[ ").append(event).append(" ]]]\n");
+            response.append(error.getLocalizedMessage()).append('\n');
+        }
+
+        public void captureRequest(final byte[] data, final int indexStart, final int indexEnd){
+            requestCapture.write(data, indexStart, indexEnd);
+        }
+
+        private void headers(final Map<String, List<String>> headers){
+            if (headers == null || headers.size() == 0){
+                response.append("No headers");
+            }else{
+                response.append("Headers:\n");
+                for (Map.Entry<String, List<String>> headerEntry : headers.entrySet()) {
+                    response.append("Header -> ").append(headerEntry.getKey()).append(" : ").append(Joiner.on(',').join(headerEntry.getValue())).append('\n');
+                }
+            }
+        }
+
+        private void body(final InputStream bodyInputStream){
+            try{
+                response.append("Body:\n").append(IOUtils.toString(bodyInputStream));
+            }catch (Exception e){
+                response.append("Unable to convert body content to String");
+            }
+            response.append('\n');
+        }
+
+
     }
 
 }
