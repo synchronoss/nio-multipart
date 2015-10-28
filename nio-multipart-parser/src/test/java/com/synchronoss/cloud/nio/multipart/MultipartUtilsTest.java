@@ -26,7 +26,7 @@ import static org.junit.Assert.*;
  * <p>
  *     Unit Tests for {@link MultipartUtils}
  * </p>
- * Created by mele on 20/10/2015.
+ * @author Silvano Riz.
  */
 public class MultipartUtilsTest {
 
