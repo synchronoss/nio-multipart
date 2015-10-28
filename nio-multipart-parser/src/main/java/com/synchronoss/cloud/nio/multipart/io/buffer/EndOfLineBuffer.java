@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.synchronoss.cloud.nio.multipart.buffer;
+package com.synchronoss.cloud.nio.multipart.io.buffer;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

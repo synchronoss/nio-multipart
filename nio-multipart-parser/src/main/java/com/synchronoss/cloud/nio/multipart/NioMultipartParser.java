@@ -17,8 +17,8 @@
 package com.synchronoss.cloud.nio.multipart;
 
 import com.synchronoss.cloud.nio.multipart.PartStreamsFactory.PartStreams;
-import com.synchronoss.cloud.nio.multipart.buffer.EndOfLineBuffer;
-import com.synchronoss.cloud.nio.multipart.buffer.FixedSizeByteArrayOutputStream;
+import com.synchronoss.cloud.nio.multipart.io.FixedSizeByteArrayOutputStream;
+import com.synchronoss.cloud.nio.multipart.io.buffer.EndOfLineBuffer;
 import com.synchronoss.cloud.nio.multipart.util.HeadersParser;
 import com.synchronoss.cloud.nio.multipart.util.IOUtils;
 import com.synchronoss.cloud.nio.multipart.util.ParameterParser;
@@ -244,7 +244,6 @@ public class NioMultipartParser extends OutputStream {
 
     // ------------
     // Constructors
-    // TODO - Fluent, easy to use way to instantiate
     // ------------
     public NioMultipartParser(final MultipartContext multipartContext, final NioMultipartParserListener nioMultipartParserListener) {
         this(multipartContext, nioMultipartParserListener, null, DEFAULT_BUFFER_SIZE, DEFAULT_BUFFER_SIZE, DEFAULT_MAX_LEVEL_OF_NESTED_MULTIPART);
@@ -603,7 +602,7 @@ public class NioMultipartParser extends OutputStream {
         wCtx.stop();
     }
 
-    byte[] getBoundary(final String contentType) {
+    static byte[] getBoundary(final String contentType) {
         ParameterParser parser = new ParameterParser();
         parser.setLowerCaseNames(true);
         // Parameter parser can handle null input
@@ -622,7 +621,7 @@ public class NioMultipartParser extends OutputStream {
         return boundary;
     }
 
-    byte[] getPreambleDelimiterPrefix(final byte[] delimiterPrefix){
+    static byte[] getPreambleDelimiterPrefix(final byte[] delimiterPrefix){
 
         // This allows to parse multipart bodies starting with a delimiter.
         // From the specs, a delimiter is always preceded by a CR,LF but commons file upload supports it.
@@ -633,9 +632,12 @@ public class NioMultipartParser extends OutputStream {
         return preambleDelimiterPrefix;
     }
 
-    byte[] getDelimiterPrefix(final String contentType){
+    static byte[] getDelimiterPrefix(final String contentType){
 
         byte[] boundary = getBoundary(contentType);
+        if (boundary == null || boundary.length == 0){
+            throw new IllegalStateException("Invalid boundary in the content type" + contentType);
+        }
         byte[] delimiterPrefix = new byte[boundary.length + 4];
         delimiterPrefix[0] = CR;
         delimiterPrefix[1] = LF;

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.synchronoss.cloud.nio.multipart.buffer;
+package com.synchronoss.cloud.nio.multipart.io;
 
 import java.io.ByteArrayOutputStream;
 

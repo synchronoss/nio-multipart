@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
-package com.synchronoss.cloud.nio.multipart.buffer;
+package com.synchronoss.cloud.nio.multipart.io;
 
 import org.junit.Assert;
 import org.junit.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * <p>

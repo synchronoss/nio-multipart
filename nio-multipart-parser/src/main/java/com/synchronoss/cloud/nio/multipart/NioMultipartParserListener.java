@@ -23,7 +23,7 @@ import java.util.Map;
 
 /**
  * <p>
- *     Listener that will be notified with the progress of the parsing.
+ *     Listener that will be notified with the progress of the multipart parsing.
  * </p>
  * @author Silvano Riz.
  */
@@ -33,7 +33,7 @@ public interface NioMultipartParserListener {
      * <p>
      *     Called when a part has been parsed.
      * </p>
-     * @param partStreams The {@link PartStreams} from where the part body can be read reading the stream returned by {@link PartStreams#getPartInputStream()}
+     * @param partStreams The {@link PartStreams} from where the part body can be read using the stream returned by {@link PartStreams#getPartInputStream()}
      * @param headersFromPart The part headers.
      */
     void onPartReady(final PartStreams partStreams, final Map<String, List<String>> headersFromPart);
@@ -75,7 +75,7 @@ public interface NioMultipartParserListener {
      *     Called if an error occurs during the multipart parsing.
      * </p>
      * @param message The error message
-     * @param cause The error cause
+     * @param cause The error cause or null if there is no cause.
      */
     void onError(final String message, final Throwable cause);
 
