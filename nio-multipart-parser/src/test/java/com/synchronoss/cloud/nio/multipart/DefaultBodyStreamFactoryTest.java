@@ -61,6 +61,23 @@ public class DefaultBodyStreamFactoryTest {
     }
 
     @Test
+    public void testConstructor_error() throws Exception{
+
+        Exception expected = null;
+        File folder = tempFolder.newFolder();
+        try {
+            assertTrue(folder.setWritable(false));
+            new DefaultBodyStreamFactory(new File(folder, "testConstructor_error").getAbsolutePath());
+        }catch (Exception e){
+            expected = e;
+        }finally {
+            assertTrue(folder.setWritable(true));
+        }
+        assertNotNull(expected);
+
+    }
+
+    @Test
     public void testGetOutputStream() throws IOException {
 
         // Content length unknown. Should decide to go in memory first

@@ -16,9 +16,12 @@
 
 package com.synchronoss.cloud.nio.multipart;
 
+import org.junit.Assert;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
 
 import static org.junit.Assert.assertNotNull;
 import static org.mockito.Mockito.mock;
@@ -57,5 +60,130 @@ public class NioMultipartParserTest {
 
     }
 
+    @Test
+    public void testWrite_emptyData() throws IOException {
+
+        MultipartContext context = mock(MultipartContext.class);
+        when(context.getContentType()).thenReturn("multipart/form-data;boundary=MUEYT2qJT0_ZzYUvVQLy_DlrLeADyxzmsA");
+
+        NioMultipartParserListener listener = mock(NioMultipartParserListener.class);
+
+        NioMultipartParser parser = new NioMultipartParser(context, listener);
+        parser.write(new byte[]{});
+
+    }
+
+    @Test
+    public void testWrite_error1(){
+
+        MultipartContext context = mock(MultipartContext.class);
+        when(context.getContentType()).thenReturn("multipart/form-data;boundary=MUEYT2qJT0_ZzYUvVQLy_DlrLeADyxzmsA");
+
+        NioMultipartParserListener listener = mock(NioMultipartParserListener.class);
+
+        NioMultipartParser parser = new NioMultipartParser(context, listener);
+
+        Exception expected = null;
+        try {
+            parser.write(null, 0, 10);
+        }catch (Exception e){
+            expected = e;
+        }
+        Assert.assertNotNull(expected);
+
+        expected = null;
+        try {
+            parser.write(new byte[]{0x01, 0x02, 0x03}, 0, 2);
+        }catch (Exception e){
+            expected = e;
+        }
+        Assert.assertNotNull(expected);
+
+    }
+
+
+    @Test
+    public void testWrite_error2(){
+
+        MultipartContext context = mock(MultipartContext.class);
+        when(context.getContentType()).thenReturn("multipart/form-data;boundary=MUEYT2qJT0_ZzYUvVQLy_DlrLeADyxzmsA");
+
+        NioMultipartParserListener listener = mock(NioMultipartParserListener.class);
+
+        NioMultipartParser parser = new NioMultipartParser(context, listener);
+
+        Exception expected = null;
+        try {
+            parser.write(new byte[]{0x01, 0x02, 0x03}, 9, 10);
+        }catch (Exception e){
+            expected = e;
+        }
+        Assert.assertNotNull(expected);
+
+        expected = null;
+        try {
+            parser.write(new byte[]{0x01, 0x02, 0x03}, 0, 2);
+        }catch (Exception e){
+            expected = e;
+        }
+        Assert.assertNotNull(expected);
+
+    }
+
+    @Test
+    public void testWrite_error3(){
+
+        MultipartContext context = mock(MultipartContext.class);
+        when(context.getContentType()).thenReturn("multipart/form-data;boundary=MUEYT2qJT0_ZzYUvVQLy_DlrLeADyxzmsA");
+
+        NioMultipartParserListener listener = mock(NioMultipartParserListener.class);
+
+        NioMultipartParser parser = new NioMultipartParser(context, listener);
+
+        Exception expected = null;
+        try {
+            parser.write(new byte[]{0x01, 0x02, 0x03}, 3, 2);
+        }catch (Exception e){
+            expected = e;
+        }
+        Assert.assertNotNull(expected);
+
+        expected = null;
+        try {
+            parser.write(new byte[]{0x01, 0x02, 0x03}, 0, 2);
+        }catch (Exception e){
+            expected = e;
+        }
+        Assert.assertNotNull(expected);
+
+    }
+
+    @Test
+    public void testWrite_error4(){
+
+        MultipartContext context = mock(MultipartContext.class);
+        when(context.getContentType()).thenReturn("multipart/form-data;boundary=MUEYT2qJT0_ZzYUvVQLy_DlrLeADyxzmsA");
+
+        NioMultipartParserListener listener = mock(NioMultipartParserListener.class);
+
+        NioMultipartParser parser = new NioMultipartParser(context, listener);
+
+        Exception expected = null;
+        try {
+            parser.write(new byte[]{0x01, 0x02, 0x03}, 0, 15);
+        }catch (Exception e){
+            expected = e;
+        }
+        Assert.assertNotNull(expected);
+
+        expected = null;
+        try {
+            parser.write(new byte[]{0x01, 0x02, 0x03}, 0, 2);
+        }catch (Exception e){
+            expected = e;
+        }
+        Assert.assertNotNull(expected);
+
+    }
 
 }
