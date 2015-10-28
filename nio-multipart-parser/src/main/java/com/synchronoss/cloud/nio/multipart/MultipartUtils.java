@@ -30,13 +30,44 @@ import java.util.Map;
  */
 public class MultipartUtils {
 
+    /**
+     * Multipart content type prefix
+     */
     public static final String MULTIPART = "multipart/";
+
+    /**
+     * Content disposition header name
+     */
     public static final String CONTENT_DISPOSITION = "Content-disposition";
+
+    /**
+     * Content length header name
+     */
     public static final String CONTENT_LENGTH = "Content-length";
+
+    /**
+     * Content type header name
+     */
     public static final String CONTENT_TYPE = "Content-type";
+
+    /**
+     * Content disposition form-data parameter
+     */
     public static final String FORM_DATA = "form-data";
+
+    /**
+     * Content disposition attachment parameter
+     */
     public static final String ATTACHMENT = "attachment";
+
+    /**
+     * Specific multipart/form-data content type
+     */
     public static final String MULTIPART_FORM_DATA = "multipart/form-data";
+
+    /**
+     * Specific multipart/mixed content type
+     */
     public static final String MULTIPART_MIXED = "multipart/mixed";
 
     private MultipartUtils(){}// empty private constructor
@@ -63,6 +94,13 @@ public class MultipartUtils {
         return isMultipart(getHeader(CONTENT_TYPE, headers));
     }
 
+    /**
+     * <p>
+     *     Returns the value of the content length header if present. -1 if the header is not present or if the value cannot be converted to a long
+     * </p>
+     * @param headers The headers map
+     * @return the value of the content length header if present. -1 if the header is not present or if the value cannot be converted to a long
+     */
     public static long getContentLength(final Map<String, List<String>> headers) {
         long contentLength = -1;
         String contentLengthHeaderValue = getHeader(CONTENT_LENGTH, headers);
@@ -76,6 +114,14 @@ public class MultipartUtils {
         return contentLength;
     }
 
+    /**
+     * <p>
+     *     Extracts the charset parameter value from the content type header.
+     * </p>
+     *
+     * @param headers The headers map
+     * @return the charset parameter value from the content type header or null if the header is not present of the charset parameter not defined
+     */
     public static String getCharEncoding(final Map<String, List<String>> headers) {
         String contentType = getHeader(CONTENT_TYPE, headers);
         if (contentType != null) {

@@ -82,7 +82,7 @@ public class NioMultipartParserFunctionalTest {
 
         final MultipartContext multipartContext = testCase.getMultipartContext();
         final ChunksFileReader chunksFileReader = new ChunksFileReader(testCase.getBodyInputStream(), 5, 10);
-        final DefaultBodyStreamFactory defaultBodyStreamFactory = new DefaultBodyStreamFactory(3000);// 3kb
+        final DefaultPartStreamsFactory defaultBodyStreamFactory = new DefaultPartStreamsFactory(3000);// 3kb
         final NioMultipartParser parser = new NioMultipartParser(multipartContext, nioMultipartParserListener);
 
 
@@ -114,12 +114,12 @@ public class NioMultipartParserFunctionalTest {
             AtomicInteger partIndex = new AtomicInteger(0);
 
             @Override
-            public void onPartReady(InputStream partBodyInputStream, Map<String, List<String>> headersFromPart) {
+            public void onPartReady(PartStreamsFactory.PartStreams partStreams, Map<String, List<String>> headersFromPart) {
                 log.info("<<<<< On part complete [" + (partIndex.addAndGet(1)) + "] >>>>>>");
                 assertFileItemIteratorHasNext(true);
                 final FileItemStream fileItemStream = fileItemIteratorNext();
                 assertHeadersAreEqual(fileItemStream.getHeaders(), headersFromPart);
-                assertInputStreamsAreEqual(fileItemStreamInputStream(fileItemStream), partBodyInputStream);
+                assertInputStreamsAreEqual(fileItemStreamInputStream(fileItemStream), partStreams.getPartInputStream());
             }
 
             @Override
@@ -219,6 +219,9 @@ public class NioMultipartParserFunctionalTest {
                     }
                 }catch (Exception e){
                     throw new IllegalStateException("Unable to verify the input streams", e);
+                }finally {
+                    IOUtils.closeQuietly(fileItemInputStream);
+                    IOUtils.closeQuietly(partBodyInputStream);
                 }
             }
 
@@ -257,16 +260,19 @@ public class NioMultipartParserFunctionalTest {
             AtomicInteger partIndex = new AtomicInteger(0);
 
             @Override
-            public void onPartReady(InputStream partBodyInputStream, Map<String, List<String>> headersFromPart) {
+            public void onPartReady(PartStreamsFactory.PartStreams partStreams, Map<String, List<String>> headersFromPart) {
                 log.info("-- NIO MULTIPART PARSER : On part complete " + (partIndex.addAndGet(1)));
                 log.info("-- Part " + partIndex.get());
                 for (Map.Entry<String, List<String>> headersEntry : headersFromPart.entrySet()){
                     log.info("Header: " + headersEntry.getKey() + ": " + Joiner.on(',').join(headersEntry.getValue()));
                 }
+                InputStream partInputStream = partStreams.getPartInputStream();
                 try {
-                    log.info("Body:\n" + IOUtils.toString(partBodyInputStream));
+                    log.info("Body:\n" + IOUtils.toString(partInputStream));
                 }catch (Exception e){
                     log.error("Cannot read the body into a string", e);
+                }finally {
+                    IOUtils.closeQuietly(partInputStream);
                 }
 
             }

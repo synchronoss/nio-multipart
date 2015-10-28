@@ -20,6 +20,7 @@ import com.google.common.base.Joiner;
 import com.synchronoss.cloud.nio.multipart.MultipartContext;
 import com.synchronoss.cloud.nio.multipart.NioMultipartParser;
 import com.synchronoss.cloud.nio.multipart.NioMultipartParserListener;
+import com.synchronoss.cloud.nio.multipart.PartStreamsFactory.PartStreams;
 import com.synchronoss.cloud.nio.multipart.example.config.RootApplicationConfig;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
@@ -79,8 +80,8 @@ public class FileUploadController {
         final NioMultipartParserListener listener = new NioMultipartParserListener() {
 
             @Override
-            public void onPartReady(final InputStream partBodyInputStream, final Map<String, List<String>> headersFromPart) {
-                responseBuilder.appendToResponse("ON PART READY", headersFromPart, partBodyInputStream);
+            public void onPartReady(final PartStreams partStreams, final Map<String, List<String>> headersFromPart) {
+                responseBuilder.appendToResponse("ON PART READY", headersFromPart, partStreams.getPartInputStream());
             }
 
             @Override
@@ -248,6 +249,8 @@ public class FileUploadController {
                 response.append("Body:\n").append(IOUtils.toString(bodyInputStream));
             }catch (Exception e){
                 response.append("Unable to convert body content to String");
+            }finally {
+                IOUtils.closeQuietly(bodyInputStream);
             }
             response.append('\n');
         }

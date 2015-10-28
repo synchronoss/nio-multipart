@@ -44,7 +44,7 @@ public class NioMultipartParserTest {
         when(context.getContentType()).thenReturn("multipart/form-data;boundary=MUEYT2qJT0_ZzYUvVQLy_DlrLeADyxzmsA");
 
         NioMultipartParserListener listener = mock(NioMultipartParserListener.class);
-        BodyStreamFactory bodyStreamFactory = mock(BodyStreamFactory.class);
+        PartStreamsFactory partStreamsFactory = mock(PartStreamsFactory.class);
 
         NioMultipartParser parser = new NioMultipartParser(context, listener);
         assertNotNull(parser);
@@ -52,10 +52,10 @@ public class NioMultipartParserTest {
         NioMultipartParser parser1 = new NioMultipartParser(context, listener, 5000);
         assertNotNull(parser1);
 
-        NioMultipartParser parser2 = new NioMultipartParser(context, listener, bodyStreamFactory);
+        NioMultipartParser parser2 = new NioMultipartParser(context, listener, partStreamsFactory);
         assertNotNull(parser2);
 
-        NioMultipartParser parser3 = new NioMultipartParser(context, listener, bodyStreamFactory, 5000, 5000, 1);
+        NioMultipartParser parser3 = new NioMultipartParser(context, listener, partStreamsFactory, 5000, 5000, 1);
         assertNotNull(parser3);
 
     }
