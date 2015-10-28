@@ -18,8 +18,9 @@ package com.synchronoss.cloud.nio.multipart;
 
 import org.junit.Test;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import java.util.*;
+
+import static org.junit.Assert.*;
 
 /**
  * <p>
@@ -31,7 +32,7 @@ public class MultipartUtilsTest {
 
     @Test
     public void testIsMultipart() throws Exception {
-        assertFalse(MultipartUtils.isMultipart((String)null));
+        assertFalse(MultipartUtils.isMultipart(null));
         assertTrue(MultipartUtils.isMultipart("multipart/mixed"));
         assertTrue(MultipartUtils.isMultipart("multipart/digest"));
         assertTrue(MultipartUtils.isMultipart("multipart/alternative"));
@@ -39,4 +40,145 @@ public class MultipartUtilsTest {
         assertFalse(MultipartUtils.isMultipart("application/json"));
         assertFalse(MultipartUtils.isMultipart("text/plain"));
     }
+
+    @Test
+    public void testHasMultipartContentType() throws Exception {
+
+        Map<String, List<String>> multipart = new HashMap<String, List<String>>();
+        multipart.put(MultipartUtils.CONTENT_TYPE.toLowerCase(), Collections.singletonList("multipart/mixed"));
+
+        Map<String, List<String>> jpeg = new HashMap<String, List<String>>();
+        jpeg.put(MultipartUtils.CONTENT_TYPE.toLowerCase(), Collections.singletonList("image/jpeg"));
+
+        assertFalse(MultipartUtils.hasMultipartContentType(jpeg));
+        assertTrue(MultipartUtils.hasMultipartContentType(multipart));
+        assertFalse(MultipartUtils.hasMultipartContentType(new HashMap<String, List<String>>()));
+    }
+
+    @Test
+    public void getContentLength(){
+
+        Map<String, List<String>> contentLength100 = new HashMap<String, List<String>>();
+        contentLength100.put(MultipartUtils.CONTENT_LENGTH.toLowerCase(), Collections.singletonList("100"));
+
+        Map<String, List<String>> contentLengthWrongValue = new HashMap<String, List<String>>();
+        contentLengthWrongValue.put(MultipartUtils.CONTENT_LENGTH.toLowerCase(), Collections.singletonList("ABC"));
+
+        assertEquals(100, MultipartUtils.getContentLength(contentLength100));
+        assertEquals(-1, MultipartUtils.getContentLength(contentLengthWrongValue));
+        assertEquals(-1, MultipartUtils.getContentLength(new HashMap<String, List<String>>()));
+
+    }
+
+    @Test
+    public void getCharEncoding(){
+
+        Map<String, List<String>> charEncodingUTF8 = new HashMap<String, List<String>>();
+        charEncodingUTF8.put(MultipartUtils.CONTENT_TYPE.toLowerCase(), Collections.singletonList("text/plain; charset=UTF-8"));
+
+        Map<String, List<String>> noCharEncoding = new HashMap<String, List<String>>();
+        noCharEncoding.put(MultipartUtils.CONTENT_TYPE.toLowerCase(), Collections.singletonList("text/plain"));
+
+        assertEquals("UTF-8", MultipartUtils.getCharEncoding(charEncodingUTF8));
+        assertNull(MultipartUtils.getCharEncoding(noCharEncoding));
+        assertNull(MultipartUtils.getCharEncoding(new HashMap<String, List<String>>()));
+
+    }
+
+    @Test
+    public void testGetHeaders(){
+
+        Map<String, List<String>> singleValueHeader = new HashMap<String, List<String>>();
+        singleValueHeader.put("my-header", Collections.singletonList("single value"));
+
+        assertEquals(Collections.singletonList("single value"), MultipartUtils.getHeaders("my-header", singleValueHeader));
+
+        Map<String, List<String>> multiValueHeader = new HashMap<String, List<String>>();
+        multiValueHeader.put("my-multi-value-header", Arrays.asList("value 1", "value 2"));
+
+        assertEquals(Arrays.asList("value 1", "value 2"), MultipartUtils.getHeaders("my-multi-value-header", multiValueHeader));
+
+        Map<String, List<String>> emptyHeaders = new HashMap<String, List<String>>();
+        assertNull(MultipartUtils.getHeaders("no-header", emptyHeaders));
+
+    }
+
+    @Test
+    public void testGetHeader(){
+
+        Map<String, List<String>> singleValueHeader = new HashMap<String, List<String>>();
+        singleValueHeader.put("my-header", Collections.singletonList("single value"));
+
+        assertEquals("single value", MultipartUtils.getHeader("my-header", singleValueHeader));
+
+        Map<String, List<String>> multiValueHeader = new HashMap<String, List<String>>();
+        multiValueHeader.put("my-multi-value-header", Arrays.asList("value 1", "value 2"));
+
+        assertEquals("value 1", MultipartUtils.getHeader("my-multi-value-header", multiValueHeader));
+
+        Map<String, List<String>> emptyHeaders = new HashMap<String, List<String>>();
+        assertNull(MultipartUtils.getHeader("no-header", emptyHeaders));
+
+    }
+
+    @Test
+    public void testIsFormField(){
+
+        Map<String, List<String>> contentDispositionWithFilenameAndName = new HashMap<String, List<String>>();
+        contentDispositionWithFilenameAndName.put(MultipartUtils.CONTENT_DISPOSITION.toLowerCase(), Collections.singletonList("form-data; name=\"file\"; filename=\"file.txt\""));
+        assertFalse(MultipartUtils.isFormField(contentDispositionWithFilenameAndName));
+
+        Map<String, List<String>> contentDispositionWithFilename = new HashMap<String, List<String>>();
+        contentDispositionWithFilename.put(MultipartUtils.CONTENT_DISPOSITION.toLowerCase(), Collections.singletonList("form-data; filename=\"file.txt\""));
+        assertFalse(MultipartUtils.isFormField(contentDispositionWithFilename));
+
+        Map<String, List<String>> contentDispositionWithName = new HashMap<String, List<String>>();
+        contentDispositionWithName.put(MultipartUtils.CONTENT_DISPOSITION.toLowerCase(), Collections.singletonList("form-data; name=\"file\""));
+        assertTrue(MultipartUtils.isFormField(contentDispositionWithName));
+
+        Map<String, List<String>> contentDispositionNoNameNoFileName = new HashMap<String, List<String>>();
+        contentDispositionNoNameNoFileName.put(MultipartUtils.CONTENT_DISPOSITION.toLowerCase(), Collections.singletonList("form-data"));
+        assertFalse(MultipartUtils.isFormField(contentDispositionNoNameNoFileName));
+
+    }
+
+    @Test
+    public void testGetFileName(){
+
+        Map<String, List<String>> contentDispositionWithFilenameAndName = new HashMap<String, List<String>>();
+        contentDispositionWithFilenameAndName.put(MultipartUtils.CONTENT_DISPOSITION.toLowerCase(), Collections.singletonList("form-data; name=\"file\"; filename=\"file.txt\""));
+        assertEquals("file.txt", MultipartUtils.getFileName(contentDispositionWithFilenameAndName));
+
+        Map<String, List<String>> contentDispositionWithName = new HashMap<String, List<String>>();
+        contentDispositionWithName.put(MultipartUtils.CONTENT_DISPOSITION.toLowerCase(), Collections.singletonList("form-data; name=\"file\""));
+        assertNull(MultipartUtils.getFileName(contentDispositionWithName));
+
+        Map<String, List<String>> contentDispositionNoNameNoFileName = new HashMap<String, List<String>>();
+        contentDispositionNoNameNoFileName.put(MultipartUtils.CONTENT_DISPOSITION.toLowerCase(), Collections.singletonList("form-data"));
+        assertNull(MultipartUtils.getFileName(contentDispositionNoNameNoFileName));
+
+        assertNull(MultipartUtils.getFileName(new HashMap<String, List<String>>()));
+    }
+
+
+    @Test
+    public void testGetFieldName(){
+
+        Map<String, List<String>> contentDispositionWithFilenameAndName = new HashMap<String, List<String>>();
+        contentDispositionWithFilenameAndName.put(MultipartUtils.CONTENT_DISPOSITION.toLowerCase(), Collections.singletonList("form-data; name=\"file\"; filename=\"file.txt\""));
+        assertEquals("file", MultipartUtils.getFieldName(contentDispositionWithFilenameAndName));
+
+        Map<String, List<String>> contentDispositionWithFilename = new HashMap<String, List<String>>();
+        contentDispositionWithFilename.put(MultipartUtils.CONTENT_DISPOSITION.toLowerCase(), Collections.singletonList("form-data; filename=\"file.txt\""));
+        assertNull(MultipartUtils.getFieldName(contentDispositionWithFilename));
+
+        Map<String, List<String>> contentDispositionNoNameNoFileName = new HashMap<String, List<String>>();
+        contentDispositionNoNameNoFileName.put(MultipartUtils.CONTENT_DISPOSITION.toLowerCase(), Collections.singletonList("form-data"));
+        assertNull(MultipartUtils.getFieldName(contentDispositionNoNameNoFileName));
+
+        assertNull(MultipartUtils.getFieldName(new HashMap<String, List<String>>()));
+
+    }
+
+
 }
