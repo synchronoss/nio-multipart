@@ -16,6 +16,11 @@
  */
 package com.synchronoss.cloud.nio.multipart.util;
 
+/**
+ * <>
+ *     Exception thrown when parsing an encoded-word (compliant with the RFC 2047 rules) fails
+ * </>
+ */
 final class ParseException extends Exception {
 
     /**

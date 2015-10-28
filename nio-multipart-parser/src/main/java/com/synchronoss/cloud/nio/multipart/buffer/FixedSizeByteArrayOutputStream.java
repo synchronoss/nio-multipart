@@ -17,44 +17,52 @@
 package com.synchronoss.cloud.nio.multipart.buffer;
 
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 
 /**
  * <p>
  *     A {@link ByteArrayOutputStream} with a limited capacity.
+ *     If the data about to be written does not fir the remaining size an {@link IllegalStateException} will be thrown
  * </p>
+ *
  * @author Silvano Riz.
  */
 public class FixedSizeByteArrayOutputStream extends ByteArrayOutputStream {
 
-    private final int maxSize;
+    volatile private int remaining;
 
+    /**
+     * <p>
+     *     Constructs a {@link ByteArrayOutputStream} that has a maximum memory footprint.
+     * </p>
+     *
+     * @param maxSize The max size in bytes.
+     */
     public FixedSizeByteArrayOutputStream(final int maxSize) {
         super(maxSize);
-        this.maxSize = maxSize;
+        this.remaining = maxSize;
     }
 
     @Override
     public void write(int b) {
-        if (size() >= maxSize){
-            throw new IllegalStateException("Output Stream is full. Size: " + maxSize);
+        if (remaining < 1){
+            throw new IllegalStateException("Cannot write. Output Stream is full. OutputStream size: " + super.buf.length);
         }
         super.write(b);
+        remaining--;
     }
 
     @Override
     public void write(byte[] b, int off, int len) {
-        if (len - off > maxSize - size()){
-            throw new IllegalStateException("Data too long. It cannot be written to the stream. Size: " + maxSize);
+        if (remaining < len){
+            throw new IllegalStateException("Cannot write. Not enough space in the OutputStream. Available space " + remaining + "/" + super.buf.length);
         }
         super.write(b, off, len);
+        remaining = remaining - len;
     }
 
     @Override
-    public void write(byte[] b) throws IOException {
-        if (b.length > maxSize - size()){
-            throw new IllegalStateException("Data too long. It cannot be written to the stream. Size: " + maxSize);
-        }
-        super.write(b);
+    public synchronized void reset() {
+        super.reset();
+        remaining = super.buf.length;
     }
 }

@@ -34,10 +34,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.InputStream;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -60,7 +57,7 @@ public class NioMultipartParserFunctionalTest {
     @Parameterized.Parameters
     public static Collection data() {
         return MultipartTestCases.ALL_TEST_CASES;
-        //return Collections.singletonList(MultipartTestCases.FILEUPLOAD62);
+        //return Collections.singletonList(MultipartTestCases. FILE_0001);
     }
 
     @Test
@@ -85,6 +82,7 @@ public class NioMultipartParserFunctionalTest {
 
         final MultipartContext multipartContext = testCase.getMultipartContext();
         final ChunksFileReader chunksFileReader = new ChunksFileReader(testCase.getBodyInputStream(), 5, 10);
+        final DefaultBodyStreamFactory defaultBodyStreamFactory = new DefaultBodyStreamFactory(3000);// 3kb
         final NioMultipartParser parser = new NioMultipartParser(multipartContext, nioMultipartParserListener);
 
 

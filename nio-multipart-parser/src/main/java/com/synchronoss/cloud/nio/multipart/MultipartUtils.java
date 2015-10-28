@@ -63,6 +63,30 @@ public class MultipartUtils {
         return isMultipart(getHeader(CONTENT_TYPE, headers));
     }
 
+    public static long getContentLength(final Map<String, List<String>> headers) {
+        long contentLength = -1;
+        String contentLengthHeaderValue = getHeader(CONTENT_LENGTH, headers);
+        if (contentLengthHeaderValue != null && contentLengthHeaderValue.length() > 0){
+            try {
+                contentLength = Long.parseLong(contentLengthHeaderValue);
+            } catch (Exception e) {
+                contentLength = -1;
+            }
+        }
+        return contentLength;
+    }
+
+    public static String getCharEncoding(final Map<String, List<String>> headers) {
+        String contentType = getHeader(CONTENT_TYPE, headers);
+        if (contentType != null) {
+            ParameterParser parser = new ParameterParser();
+            parser.setLowerCaseNames(true);
+            Map<String, String> params = parser.parse(contentType, ';');
+            return params.get("charset");
+        }
+        return null;
+    }
+
     /**
      * <p>
      *     Returns the list of values fo a particular header.

@@ -1,4 +1,3 @@
-
 /*
  * Copyright (C) 2015 Synchronoss Technologies
  *
@@ -25,7 +24,6 @@ package com.synchronoss.cloud.nio.multipart;
  *         <li>Content Length</li>
  *         <li>Character Encoding</li>
  *     </ul>
- * <p/>
  *
  * @author Silvano Riz.
  */

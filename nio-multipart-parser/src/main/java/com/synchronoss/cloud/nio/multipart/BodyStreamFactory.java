@@ -32,7 +32,7 @@ public interface BodyStreamFactory {
     /**
      * <p>
      *     Holds an {@link OutputStream} and it's name
-     *     The name will be used to retrieve the correspondent {@link InputStream} by calling {@link BodyStreamFactory#getInputStream(String)}
+     *     The name will be used to retrieve the correspondent {@link InputStream} by calling {@link BodyStreamFactory#getInputStream(NamedOutputStreamHolder)}
      * </p>
      */
     class NamedOutputStreamHolder {
@@ -79,9 +79,9 @@ public interface BodyStreamFactory {
      * <p>
      *     Returns the {@link InputStream} to read the part body.
      * </p>
-     * @param outputStreamName The name of the of the {@link NamedOutputStreamHolder} created by the {@link #getOutputStream(Map, int)}
+     * @param namedOutputStreamHolder The {@link NamedOutputStreamHolder} created by the {@link #getOutputStream(Map, int)}
      * @return The {@link InputStream} from where to read the part body.
      */
-    InputStream getInputStream(final String outputStreamName);
+    InputStream getInputStream(final NamedOutputStreamHolder namedOutputStreamHolder);
 
 }

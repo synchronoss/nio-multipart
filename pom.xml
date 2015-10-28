@@ -53,7 +53,7 @@
         <pluginManagement>
             <plugins>
                 <plugin>
-                    <!-- Configure child modules to attach a "-sources.jar" to the build when deploying to Nexus -->
+
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-source-plugin</artifactId>
                     <version>2.1.2</version>
@@ -73,12 +73,14 @@
                 </plugin>
             </plugins>
         </pluginManagement>
+
         <plugins>
+
             <plugin>
-                <!-- Run the source plugin by default for child modules when built via this parent -->
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>
             </plugin>
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -86,12 +88,76 @@
                 <configuration>
                     <source>1.7</source>
                     <target>1.7</target>
-                    <!-- NOTE in the "bamboo" profile below, we also configure bootclasspath for Java 6 compatibility. -->
                 </configuration>
             </plugin>
 
+            <plugin>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>2.10.3</version>
+                <configuration>
+                    <notimestamp>true</notimestamp>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>attach-docs</id>
+                        <phase>post-integration-test</phase>
+                        <goals><goal>jar</goal></goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>0.7.5.201505241946</version>
+                <executions>
+                    <execution>
+                        <id>default-prepare-agent</id>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>default-report</id>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>default-check</id>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <rule>
+                                    <element>BUNDLE</element>
+                                    <limits>
+                                        <limit>
+                                            <counter>COMPLEXITY</counter>
+                                            <value>COVEREDRATIO</value>
+                                            <minimum>0.80</minimum>
+                                        </limit>
+                                    </limits>
+                                </rule>
+                            </rules>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
         </plugins>
+
     </build>
+
+    <licenses>
+        <license>
+            <name>The Apache Software License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
 
     <scm>
         <connection>ssh://git@stash.synchronoss.net:7999/scm/~sriz0001/nio-multipart.git</connection>
@@ -99,6 +165,21 @@
         <url>https://stash.synchronoss.net/scm/~sriz0001/nio-multipart.git/browse</url>
         <tag>HEAD</tag>
     </scm>
+
+    <developers>
+        <developer>
+            <id>kevinb9n</id>
+            <name>Silvano Riz</name>
+            <email>melozzola@gmail.com</email>
+            <organization>Synchronoss</organization>
+            <organizationUrl>http://www.synchronoss.com/</organizationUrl>
+            <roles>
+                <role>owner</role>
+                <role>developer</role>
+            </roles>
+            <timezone>+0</timezone>
+        </developer>
+    </developers>
 
     <distributionManagement>
         <repository>

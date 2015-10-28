@@ -38,13 +38,13 @@ public class EndOfLineBuffer {
     final CircularBuffer circularBuffer;
 
     // The output stream where to flush the buffer when full or when an enf of line sequence has been found
-    OutputStream flushOutputStream;
+    volatile OutputStream flushOutputStream;
 
     // The end of line sequence
-    byte[] endOfLineSequence;
+    volatile byte[] endOfLineSequence;
 
     // How many bytes are currently matching the end of line sequence
-    int endOfLineSequenceMatchingLength;
+    volatile int endOfLineSequenceMatchingLength;
 
     /**
      * <p>
@@ -73,7 +73,7 @@ public class EndOfLineBuffer {
      * @param endOfLineSequence The new end of line sequence.
      * @param flushOutputStream The new {@link OutputStream} where to flush the data when the buffer is full.
      */
-    public void reset(byte[] endOfLineSequence, final OutputStream flushOutputStream){
+    public void reset(final byte[] endOfLineSequence, final OutputStream flushOutputStream){
         this.circularBuffer.reset();
         this.flushOutputStream = flushOutputStream;
         this.endOfLineSequence = endOfLineSequence;

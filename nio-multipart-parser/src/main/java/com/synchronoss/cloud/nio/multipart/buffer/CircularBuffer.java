@@ -41,13 +41,13 @@ public class CircularBuffer {
     final byte[] buffer;
 
     // Pointer to the first slot with valid data
-    int startValidDataIndex = 0;
+    volatile int startValidDataIndex = 0;
 
     // Pointer to the first available slot for write
-    int nextAvailablePosition = 0;
+    volatile int nextAvailablePosition = 0;
 
     // Number of slots of valid data
-    int availableReadLength = 0;
+    volatile int availableReadLength = 0;
 
     /**
      * <p>
@@ -56,7 +56,7 @@ public class CircularBuffer {
      *
      * @param size The size of the buffer. Must be greater than 1
      */
-    public CircularBuffer(int size) {
+    public CircularBuffer(final int size) {
         if(size < 1){
             throw new IllegalArgumentException("Size cannot be zero or negative. Size: " + size);
         }
@@ -107,7 +107,7 @@ public class CircularBuffer {
      * @param chunkSize The size of the chunk. Must be less than or equal {@link #getAvailableDataLength()}
      * @throws IOException If the read fails.
      */
-    public void readChunk(final OutputStream outputStream, int chunkSize) throws IOException {
+    public void readChunk(final OutputStream outputStream, final int chunkSize) throws IOException {
 
         if (chunkSize > availableReadLength){
             throw new IllegalArgumentException("The chunk size must be smaller or equal to the amount of available data in the buffer." +
@@ -182,7 +182,7 @@ public class CircularBuffer {
         availableReadLength = 0;
     }
 
-    int forwards(int currentPosition){
+    int forwards(final int currentPosition){
         if (currentPosition == buffer.length-1){
             return 0;
         }else{
@@ -190,7 +190,7 @@ public class CircularBuffer {
         }
     }
 
-    int backwards(int currentPosition){
+    int backwards(final int currentPosition){
         if(currentPosition == 0){
             return buffer.length-1;
         }else{
@@ -198,7 +198,7 @@ public class CircularBuffer {
         }
     }
 
-    int forwards(int currentPosition, int positions){
+    int forwards(final int currentPosition, final int positions){
 
         int newPosition = currentPosition + positions;
         if (newPosition > buffer.length -1){
@@ -208,7 +208,7 @@ public class CircularBuffer {
         return newPosition;
     }
 
-    int backwards(int currentPosition, int positions){
+    int backwards(final int currentPosition, final int positions){
 
         int newPosition = currentPosition - positions;
         if (newPosition < 0){
@@ -218,7 +218,7 @@ public class CircularBuffer {
         return newPosition;
     }
 
-    void updateAvailableReadLength(boolean isWriteOperation) {
+    void updateAvailableReadLength(final boolean isWriteOperation) {
         if(nextAvailablePosition == startValidDataIndex) {
             if(isWriteOperation) {
                 availableReadLength = size;
