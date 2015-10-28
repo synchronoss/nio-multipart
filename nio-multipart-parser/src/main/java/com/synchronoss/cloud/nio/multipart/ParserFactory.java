@@ -81,6 +81,14 @@ public class ParserFactory {
             return this;
         }
 
+        public Config limitNestingPartsTo(final int nestedMultipartsAllowed){
+            if (nestedMultipartsAllowed < 1 ){
+                throw new IllegalArgumentException("Nested multiparts limit must be grater than 0");
+            }
+            this.nestedMultipartsAllowed = nestedMultipartsAllowed;
+            return this;
+        }
+
         private PartStreamsFactory partStreamsFactory(){
             if (partStreamsFactory == null){
                 return new DefaultPartStreamsFactory(tempFolder, bodySizeThreshold);

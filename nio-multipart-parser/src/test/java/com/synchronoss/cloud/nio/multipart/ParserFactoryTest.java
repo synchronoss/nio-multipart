@@ -61,7 +61,7 @@ public class ParserFactoryTest {
                 .withHeadersSizeLimit(16000)
                 .withMaxMemoryUsagePerBodyPart(100)
                 .saveTemporaryFilesTo(tempFolder.getRoot().getAbsolutePath())
-                .withMaxMemoryUsagePerBodyPart(100)
+                .limitNestingPartsTo(2)
                 .forNio();
 
         assertNotNull(parser2);
