@@ -253,7 +253,7 @@ The NIO Multipart Parser is build on top of 3 main building blocks:
 A *Circular Buffer* is a data structure where the end of the buffer is connected to the beginning forming a circle. 
 When data is read from the buffer there is no need to reshuffle its elements and when the buffer is full (if no action is taken) the oldest bytes are overwritten.
 The schema below shows how a *Circular Buffer* works
-![Circular Buffer](/docs/diagrams/nio-multipart-circular-buffer.png)
+![Circular Buffer](docs/diagrams/nio-multipart-circular-buffer.png)
 
 ##### End Of Line Buffer
 An *End Of Line Buffer* is built on top of the *Circular Buffer* and at each write it watches for an *End Of Line Sequence*
@@ -274,17 +274,17 @@ It should be clear now why the buffer size **MUST** always be bigger than the Eo
 A buffer with not enough capacity for the EoL would end up in a state where the buffer is full but it cannot be flushed because there is a partially matching EoL.
 
 The following diagram shows the *End Of Line Buffer* in action:
-![End Of Line Buffer](/docs/diagrams/nio-multipart-eol-buffer.png)
+![End Of Line Buffer](docs/diagrams/nio-multipart-eol-buffer.png)
 
 ##### The Parser Final State Machine
 The parsing logic is implemented as a Final State Machine.
 While data is written into the parser, the final state machine is executed.
 The following diagram shows the states and transitions of the Final State Machine executed by the parser:
 
-![Final State Machine](/docs/diagrams/nio-multipart-fsm.png)
+![Final State Machine](docs/diagrams/nio-multipart-fsm.png)
 
 In the following schema, the left side is an example of multipart message, while the right side is showing what are the EoL sequences the parser is looking for.
-![Multipart Message Structure](/docs/diagrams/nio-multipart-message-structure.png)
+![Multipart Message Structure](docs/diagrams/nio-multipart-message-structure.png)
 
 References
 ----------
