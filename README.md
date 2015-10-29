@@ -237,6 +237,55 @@ NioMultipartParser parser = newParser(context, listener)
                 .forNio();
 ```
 
+This kind of customization can be used to achieve numerous goals. For example it might be possible to compute the file checksum on fly while data are written to the *OutputStream*.
+Other scenarios can be the on-fly indexing of the content or metadata extraction.
+
+Nio Multipart Parser - Internal Building Blocks
+-----------------------------------------------
+This section is mainly for Developers that want to get a more detailed view of the internals of the NIO Multipart parser.
+The NIO Multipart Parser is build on top of 3 main building blocks:
+
+* A reusable, fixed-size circular buffer.
+* A reusable, fixed size End Of Line Buffer.
+* A Final State machine.
+ 
+##### Circular (or Ring) Buffer
+A *Circular Buffer* is a data structure where the end of the buffer is connected to the beginning forming a circle. 
+When data is read from the buffer there is no need to reshuffle its elements and when the buffer is full (if no action is taken) the oldest bytes are overwritten.
+The schema below shows how a *Circular Buffer* works
+![Circular Buffer](/docs/diagrams/nio-multipart-circular-buffer.png)
+
+##### End Of Line Buffer
+An *End Of Line Buffer* is built on top of the *Circular Buffer* and at each write it watches for an *End Of Line Sequence*
+A few things can happen during a write:
+
+* No End Of Line Sequence is identified and the buffer still has capacity => The data is written to the buffer and a check for the End Of Line Sequence is performed against the new data.
+* No End Of Line Sequence is identified, but the buffer is full => Before writing, the buffer data is flushed to an OutputStream. The new data is written and the End Of Line Sequence checking is performed against the new data.
+* End Of Line Sequence partially identified and the buffer still has capacity => The data is written to the buffer and a check for the End Of Line Sequence is performed against the new data. 
+* End Of Line Sequence partially identified and the buffer is full => Before writing, the buffer data (Excluded the EoL sequence) is flushed to an OutputStream. The new data is written and the End Of Line Sequence checking is continued against the new data.
+* If the buffer has a partial match of the EoL and the new data written is not matching the rest of the EoL sequence, the state of the EoL matching is re-set.
+* If the buffer has a partial match of the EoL and the new data written matches the rest of the EoL sequence it means that an End Of Line Sequence has been identified. The buffer data (End Of Line Sequence excluded) is flushed to the OutputStream and the buffer is than non writable anymore.
+
+The *End Of Line Buffer* is used by the parser to identify the different sections of the multipart (Preamble, Headers, Body, Epilogue). 
+Each of these section is separated by a well defined End Of Line Sequence (e.g. multipart boundary, CRLF).
+The Nio Multipart parser is setting up the *End Of Line Buffer* with the correct End Of Line Sequence for the specific section before starting processing the section.
+
+It should be clear now why the buffer size **MUST** always be bigger than the EoL sequence. 
+A buffer with not enough capacity for the EoL would end up in a state where the buffer is full but it cannot be flushed because there is a partially matching EoL.
+
+The following diagram shows the *End Of Line Buffer* in action:
+![End Of Line Buffer](/docs/diagrams/nio-multipart-eol-buffer.png)
+
+##### The Parser Final State Machine
+The parsing logic is implemented as a Final State Machine.
+While data is written into the parser, the final state machine is executed.
+The following diagram shows the states and transitions of the Final State Machine executed by the parser:
+
+![Final State Machine](/docs/diagrams/nio-multipart-fsm.png)
+
+In the following schema, the left side is an example of multipart message, while the right side is showing what are the EoL sequences the parser is looking for.
+![Multipart Message Structure](/docs/diagrams/nio-multipart-message-structure.png)
+
 References
 ----------
 [RFC1867](http://www.ietf.org/rfc/rfc1867.txt)
