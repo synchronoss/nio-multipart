@@ -23,6 +23,7 @@ import java.io.*;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * <p>
@@ -138,6 +139,7 @@ public class DefaultPartStreamsFactory implements PartStreamsFactory {
         boolean isInMemory = true;
         final File file;
         final int threshold;
+        final AtomicBoolean outputStreamServed = new AtomicBoolean(false);
 
         public DefaultPartStreams(File file, int threshold) throws FileNotFoundException {
             this.file = file;
@@ -155,6 +157,11 @@ public class DefaultPartStreamsFactory implements PartStreamsFactory {
 
         @Override
         public OutputStream getPartOutputStream() {
+
+            if (!outputStreamServed.compareAndSet(false, true)){
+                throw new IllegalStateException("The part output stream has already been created.");
+            }
+
             return new OutputStream() {
                 @Override
                 public void write(int b) throws IOException {

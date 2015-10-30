@@ -65,7 +65,7 @@ public class NioMultipartParser extends OutputStream {
     public static final byte[] HEADER_DELIMITER = {CR, LF, CR, LF};
 
     /**
-     * Default number of nested multipatrs body.
+     * Default number of nested multiparts body.
      */
     public static final int DEFAULT_MAX_LEVEL_OF_NESTED_MULTIPART = 1;
 
@@ -128,13 +128,13 @@ public class NioMultipartParser extends OutputStream {
             this.finished = finished;
         }
 
-        byte read() {
+        int read() {
             if (currentIndex >= indexEnd) {
                 return -1;
             } else {
                 byte ret = data[currentIndex];
                 currentIndex++;
-                return ret;
+                return ret & 0xff;
             }
         }
 
@@ -230,6 +230,7 @@ public class NioMultipartParser extends OutputStream {
      * It will be instantiated for each part via {@link BodyStreamFactory#getOutputStream(Map, int)} )}
      */
     volatile PartStreams partStreams = null;
+    volatile OutputStream partBodyOutputStream = null;
 
     /*
      * The current headers.
@@ -286,10 +287,9 @@ public class NioMultipartParser extends OutputStream {
 
     @Override
     public void close() throws IOException {
-        if (partStreams != null && partStreams.getPartOutputStream() != null) {
-            final OutputStream partOutputStream = partStreams.getPartOutputStream();
-            partOutputStream.flush();
-            partOutputStream.close();
+        if (partBodyOutputStream != null) {
+            partBodyOutputStream.flush();
+            partBodyOutputStream.close();
         }
     }
 
@@ -407,9 +407,9 @@ public class NioMultipartParser extends OutputStream {
     }
 
     void skipPreamble(final WriteContext wCtx) {
-        byte byteOfData;
+        int byteOfData;
         while ((byteOfData = wCtx.read()) != -1) {
-            if (endOfLineBuffer.write(byteOfData)) {
+            if (endOfLineBuffer.write((byte)byteOfData)) {
                 goToState(State.IDENTIFY_PREAMBLE_DELIMITER);
                 wCtx.keepGoingIfMoreData();
                 return;
@@ -428,9 +428,9 @@ public class NioMultipartParser extends OutputStream {
 
 
     void readHeaders(final WriteContext wCtx) {
-        byte byteOfData;
+        int byteOfData;
         while ((byteOfData = wCtx.read()) != -1) {
-            if (endOfLineBuffer.write(byteOfData)) {
+            if (endOfLineBuffer.write((byte)byteOfData)) {
                 parseHeaders();
                 String contentType = MultipartUtils.getHeader(MultipartUtils.CONTENT_TYPE, headers);
                 if (MultipartUtils.isMultipart(contentType)) {
@@ -457,7 +457,8 @@ public class NioMultipartParser extends OutputStream {
 
     void getReadyForBody(final WriteContext wCtx) {
         partStreams = partStreamsFactory.newPartStreams(headers, partIndex);
-        endOfLineBuffer.reset(delimiterPrefixes.peek(), partStreams.getPartOutputStream());
+        partBodyOutputStream = partStreams.getPartOutputStream();
+        endOfLineBuffer.reset(delimiterPrefixes.peek(), partBodyOutputStream);
         delimiterType.reset();
         goToState(State.READ_BODY);
         wCtx.keepGoingIfMoreData();
@@ -479,9 +480,9 @@ public class NioMultipartParser extends OutputStream {
     }
 
     void readBody(final WriteContext wCtx) {
-        byte byteOfData;
+        int byteOfData;
         while ((byteOfData = wCtx.read()) != -1) {
-            if (endOfLineBuffer.write(byteOfData)) {
+            if (endOfLineBuffer.write((byte)byteOfData)) {
                 goToState(State.IDENTIFY_BODY_DELIMITER);
                 wCtx.keepGoingIfMoreData();
                 return;
@@ -503,9 +504,9 @@ public class NioMultipartParser extends OutputStream {
     }
 
     void identifyDelimiter(final WriteContext wCtx, final State onDelimiter, final State onCloseDelimiter) {
-        byte byteOfData;
+        int byteOfData;
         while ((byteOfData = wCtx.read()) != -1) {
-            delimiterType.addDelimiterByte(byteOfData);
+            delimiterType.addDelimiterByte((byte)byteOfData);
             if (delimiterType.index >= 2) {
 
                 DelimiterType.Type type = delimiterType.getDelimiterType();
@@ -542,9 +543,8 @@ public class NioMultipartParser extends OutputStream {
 
         // First flush the output stream and close it...
         try{
-            final OutputStream partOutputStream = partStreams.getPartOutputStream();
-            partOutputStream.flush();
-            partOutputStream.close();
+            partBodyOutputStream.flush();
+            partBodyOutputStream.close();
         }catch (Exception e){
             nioMultipartParserListener.onError("Unable to read/write the body data", e);
             goToState(State.ERROR);
