@@ -16,6 +16,8 @@
 
 package com.synchronoss.cloud.nio.multipart.example.config;
 
+import com.synchronoss.cloud.nio.multipart.ChecksumPartStreamsFactory;
+import com.synchronoss.cloud.nio.multipart.PartStreamsFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
@@ -30,12 +32,17 @@ import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
  * @author Silvano Riz.
  */
 @Configuration
-@ComponentScan(basePackages = {"com.synchronoss.cloud.nio.multipart.example.utils"})
+@ComponentScan(basePackages = {"com.synchronoss.cloud.nio.multipart"})
 @PropertySource("classpath:app.properties")
 public class RootApplicationConfig {
 
     @Bean
     public static PropertySourcesPlaceholderConfigurer propertySourcesPlaceholderConfigurer() {
         return new PropertySourcesPlaceholderConfigurer();
+    }
+
+    @Bean
+    public static PartStreamsFactory partStreamsFactory(){
+        return new ChecksumPartStreamsFactory("SHA-256");
     }
 }

@@ -41,28 +41,30 @@ public class ContextFinalizer implements ApplicationListener<ContextClosedEvent>
     private static final Logger log = LoggerFactory.getLogger(ContextFinalizer.class);
 
     @Override
-    public void onApplicationEvent(ContextClosedEvent e) {
-        log.info("Stopping connections");
+    public void onApplicationEvent(ContextClosedEvent event) {
+
+        if (log.isInfoEnabled()) log.info("onApplicationEvent: " + event);
+
         Enumeration<Driver> drivers = DriverManager.getDrivers();
-        Driver d = null;
+        Driver driver = null;
         while (drivers.hasMoreElements()) {
             try {
-                d = drivers.nextElement();
-                DriverManager.deregisterDriver(d);
-                log.warn(String.format("Driver %s deregistered", d));
-            } catch (SQLException ex) {
-                log.warn(String.format("Error deregistering driver %s", d), ex);
+                driver = drivers.nextElement();
+                DriverManager.deregisterDriver(driver);
+                if (log.isWarnEnabled()) log.warn(String.format("Driver %s unregistered", driver));
+            } catch (SQLException e) {
+                if (log.isWarnEnabled()) log.warn(String.format("Error unregistering driver %s", driver), e);
             }
         }
         Set<Thread> threadSet = Thread.getAllStackTraces().keySet();
         Thread[] threadArray = threadSet.toArray(new Thread[threadSet.size()]);
-        for (Thread t : threadArray) {
-            if (t.getName().contains("Abandoned connection cleanup thread")) {
-                synchronized (t) {
-                    t.stop(); //don't complain, it works
+        for (Thread thread : threadArray) {
+            if (thread.getName().contains("Abandoned connection cleanup thread")) {
+                synchronized (thread) {
+                    thread.stop(); //don't complain, it works
                 }
             }
         }
-        log.info("Finished stopping connections");
+        if (log.isInfoEnabled()) log.info("Finished processing onApplicationEvent");
     }
 }

@@ -37,7 +37,7 @@ Get started
 The simplest way to get started is using the simple fluent API provided with the library. Instantiating a parser is straightforward:
 
 ```java
-NioMultipartParser parser = newParser(context, listener).forNio();
+NioMultipartParser parser = ParserFactory.newParser(context, listener).forNio();
 ```
 
 The only two mandatory arguments are a multipart context, holding information about the current request/response, and a listener that will be notified on the progress of the parsing.
@@ -177,7 +177,7 @@ By default is 1 and it is usually sufficient for most of the cases (like http fo
 All the above configurations can be set using the fluent API:
 
 ```java
-NioMultipartParser parser = newParser(context, listener)
+NioMultipartParser parser = ParserFactory.newParser(context, listener)
                 .withBufferSize(8000)// 8kb
                 .withHeadersSizeLimit(8000)// 8kb
                 .withMaxMemoryUsagePerBodyPart(0) // Always create a temp file
@@ -233,7 +233,7 @@ The client does not need to read back the data because it's already in the datab
 The custom *PartStreamsFactory* can be passed to the parser via the appropriate constructor or using the fluent API (see example)
 
 ```java
-NioMultipartParser parser = newParser(context, listener)
+NioMultipartParser parser = ParserFactory.newParser(context, listener)
                 .withCustomPartStreamsFactory(dbPartStreamFactory)
                 .forNio();
 ```

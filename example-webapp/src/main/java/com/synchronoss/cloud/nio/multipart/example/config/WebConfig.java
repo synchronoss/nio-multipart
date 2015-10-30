@@ -29,7 +29,7 @@ import org.springframework.web.servlet.view.JstlView;
 
 /**
  * <p>
- *     Wb config
+ *     Web config
  * </p>
  *
  * @author Silvano Riz.
@@ -57,12 +57,5 @@ public class WebConfig extends WebMvcConfigurerAdapter {
         resolver.setViewClass(JstlView.class);
         return resolver;
     }
-
-//    @Bean
-//    public MultipartResolver multipartResolver() {
-//        CommonsMultipartResolver multipartResolver = new CommonsMultipartResolver();
-//        multipartResolver.setMaxUploadSize(50000000);
-//        return multipartResolver;
-//    }
 
 }

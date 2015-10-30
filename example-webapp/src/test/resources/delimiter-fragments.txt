@@ -1,6 +1,0 @@
-This content contains some delimiter fragments
-to verify the parser is not identifying them as delimiters...
---MUEYT2qJT0_ZzYUvVQLy_DlrLeADyxzms
-This should still be part of the body
---MUEYT2qJT0_ZzYUvVQLy_DlrLeADyxzms-
-The parser should continue reading the body until here!
