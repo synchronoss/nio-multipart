@@ -4,9 +4,9 @@
             <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
         </encoder>
     </appender>
-    <logger name="com.synchronoss.cloud.nio.multipart.NioMultipartParserFunctionalTest" level="DEBUG"/>
-    <logger name="com.synchronoss.cloud.nio.multipart.NioMultipartParser" level="DEBUG"/>
-    <logger name="com.synchronoss.cloud.nio.multipart.DefaultPartStreamsFactory" level="TRACE"/>
+    <logger name="com.synchronoss.cloud.nio.multipart.NioMultipartParserFunctionalTest" level="INFO"/>
+    <logger name="com.synchronoss.cloud.nio.multipart.NioMultipartParser" level="INFO"/>
+    <logger name="com.synchronoss.cloud.nio.multipart.DefaultPartStreamsFactory" level="INFO"/>
     <root level="INFO">
         <appender-ref ref="STDOUT" />
     </root>

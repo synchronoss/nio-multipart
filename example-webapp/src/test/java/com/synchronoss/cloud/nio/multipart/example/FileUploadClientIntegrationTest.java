@@ -20,9 +20,10 @@ import com.google.common.hash.Hashing;
 import com.google.common.io.Closeables;
 import com.google.common.io.Files;
 import com.google.gson.Gson;
-import com.synchronoss.cloud.nio.multipart.model.FileMetadata;
-import com.synchronoss.cloud.nio.multipart.model.Metadata;
-import com.synchronoss.cloud.nio.multipart.model.VerificationItem;
+import com.synchronoss.cloud.nio.multipart.example.model.FileMetadata;
+import com.synchronoss.cloud.nio.multipart.example.model.Metadata;
+import com.synchronoss.cloud.nio.multipart.example.model.VerificationItem;
+import com.synchronoss.cloud.nio.multipart.example.model.VerificationItems;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpStatus;
@@ -54,28 +55,26 @@ import java.util.List;
 
 /**
  * <p>
- *     Test that can be used to send a request to the running example-webapp.
+ *     Integration Test
  * </p>
  * @author Silvano Riz.
  */
 @RunWith(Parameterized.class)
-public class FileUploadClientTest {
+public class FileUploadClientIntegrationTest {
 
     private static final Logger log = LoggerFactory.getLogger(FileUploadClient.class);
 
     @Parameterized.Parameters
     public static Collection data() {
         return Arrays.asList(getTestFiles());
-        //return Collections.singletonList(getTestFile("/test-files/jeppetto.jpeg"));
     }
 
     private final File testFile;
-    public FileUploadClientTest(File testFile){
+    public FileUploadClientIntegrationTest(File testFile){
         this.testFile = testFile;
     }
 
     @Test
-    //@Ignore
     public void testNioUpload() throws Exception {
 
         log.info("File " + testFile.getAbsolutePath());
@@ -89,9 +88,10 @@ public class FileUploadClientTest {
         fileMetadata.setChecksum(Files.hash(testFile, Hashing.sha256()).toString());
         metadata.setFilesMetadata(Collections.singletonList(fileMetadata));
 
-        List<VerificationItem> verificationItems = fileUploadClient.uploadFile(testFile, metadata, "http://localhost:8080/example-webapp/nio/multipart");
+        VerificationItems verificationItems = fileUploadClient.uploadFile(testFile, metadata, "http://localhost:8080/example-webapp/nio/multipart");
 
-        for (VerificationItem verificationItem : verificationItems){
+        List<VerificationItem> verificationItemList = verificationItems.getVerificationItems();
+        for (VerificationItem verificationItem : verificationItemList){
             Assert.assertEquals("MATCHING", verificationItem.getStatus());
         }
 
@@ -99,7 +99,7 @@ public class FileUploadClientTest {
 
     static File getTestFile(final String fileName){
         try {
-            URL resourceUrl = FileUploadClientTest.class.getResource(fileName);
+            URL resourceUrl = FileUploadClientIntegrationTest.class.getResource(fileName);
             Path resourcePath = Paths.get(resourceUrl.toURI());
             return resourcePath.toFile();
         }catch (Exception e){
@@ -109,7 +109,7 @@ public class FileUploadClientTest {
 
     static File[] getTestFiles(){
         try {
-            URL resourceUrl = FileUploadClientTest.class.getResource("/test-files");
+            URL resourceUrl = FileUploadClientIntegrationTest.class.getResource("/test-files");
             Path resourcePath = Paths.get(resourceUrl.toURI());
             return resourcePath.toFile().listFiles();
         }catch (Exception e){
@@ -129,11 +129,11 @@ public class FileUploadClientTest {
             this.gson = new Gson();
         }
 
-        public List<VerificationItem> uploadFile(final File file, final Metadata metadata, final String endpoint){
+        public VerificationItems uploadFile(final File file, final Metadata metadata, final String endpoint){
             return uploadFile(file, metadata, endpoint, null);
         }
 
-        public  List<VerificationItem> uploadFile(final File file, final Metadata metadata, final String endpoint, final String boundary){
+        public  VerificationItems uploadFile(final File file, final Metadata metadata, final String endpoint, final String boundary){
 
             final HttpPost httpPost = new HttpPost(endpoint);
             final HttpEntity httpEntity;
@@ -171,7 +171,7 @@ public class FileUploadClientTest {
 
                 HttpEntity resEntity = response.getEntity();
                 responseReader = new InputStreamReader(new BufferedInputStream(resEntity.getContent()));
-                return Arrays.asList(gson.fromJson(responseReader, VerificationItem[].class));
+                return gson.fromJson(responseReader, VerificationItems.class);
 
             }catch (Exception e){
                 throw new IllegalStateException("Request failed", e);

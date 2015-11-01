@@ -102,7 +102,14 @@ public class NioMultipartParserFunctionalTest {
                 Assert.fail("Parser didn't come back in a reasonable time");
             }
         }
-        log.info("TRANSITIONS: \n" + Joiner.on('\n').join(parser.geFsmTransitions()));
+        if (log.isInfoEnabled()){
+            List<String> fsmTransitions = parser.geFsmTransitions();
+            if (fsmTransitions != null) {
+                log.info("TRANSITIONS: \n" + Joiner.on('\n').join(fsmTransitions));
+            }else{
+                log.info("To see the FSM transitions enable debug on " + NioMultipartParser.class.getName());
+            }
+        }
 
     }
 

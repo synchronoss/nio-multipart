@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Synchronoss Technologies
+ * Copyright (C) 2015 Synchronoss Technologies
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,9 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.synchronoss.cloud.nio.multipart;
 
+import com.synchronoss.cloud.nio.multipart.example.io.ChecksumInputStream;
+import com.synchronoss.cloud.nio.multipart.example.io.ChecksumOutputStream;
+import com.synchronoss.cloud.nio.multipart.example.io.ChecksumStreamUtils;
 import org.apache.commons.io.IOUtils;
 
 import java.io.FileNotFoundException;
@@ -25,6 +27,8 @@ import java.io.OutputStream;
 import java.security.MessageDigest;
 import java.util.List;
 import java.util.Map;
+
+import static com.synchronoss.cloud.nio.multipart.example.io.ChecksumStreamUtils.*;
 
 /**
  * <p>
@@ -72,7 +76,7 @@ public class ChecksumPartStreamsFactory extends DefaultPartStreamsFactory {
      */
     public static class ChecksumPartStreams implements PartStreams {
 
-        private static final char[] hexDigits = "0123456789abcdef".toCharArray();
+
         final String checksumAlgorithm;
         final PartStreams wrapped;
 
@@ -155,162 +159,10 @@ public class ChecksumPartStreamsFactory extends DefaultPartStreamsFactory {
         }
 
         private void computeInputStreamDigestAndReadBytes(){
-
             final ChecksumInputStream inputStream = (ChecksumInputStream)getPartInputStream();
-            try {
-                byte[] buffer = new byte[5000];
-                while (-1 != inputStream.read(buffer)){
-                    // Do nothing...
-                }
-                inputStreamDigest = digestAsHexString(inputStream.getDigest());
-                inputStreamReadBytes = inputStream.getReadBytes();
-
-            }catch (Exception e){
-                throw new IllegalStateException("Unable to compute the hash for of the part input stream", e);
-            }finally {
-                IOUtils.closeQuietly(inputStream);
-            }
-        }
-
-        public static String digestAsHexString(byte[] bytes) {
-            StringBuilder sb = new StringBuilder(2 * bytes.length);
-            for (byte b : bytes) {
-                sb.append(hexDigits[(b >> 4) & 0xf]).append(hexDigits[b & 0xf]);
-            }
-            return sb.toString();
-        }
-
-
-    }
-
-    /**
-     * {@link OutputStream} that computes the number of bytes written and the checksum
-     */
-    public static class ChecksumOutputStream extends OutputStream {
-
-        final MessageDigest digest;
-        final OutputStream target;
-        long writtenBytes = 0;
-
-        public ChecksumOutputStream(final OutputStream target, final String algorithm) {
-            try{
-                this.digest = MessageDigest.getInstance(algorithm);
-                this.target = target;
-            }catch (Exception e){
-                throw new IllegalArgumentException("Cannot create the ChecksumOutputStream", e);
-            }
-
-        }
-
-        @Override
-        public void write(byte[] b, int off, int len) throws IOException {
-            target.write(b, off, len);
-            digest.update(b, off, len);
-            writtenBytes +=len-off;
-        }
-
-        @Override
-        public void write(int b) throws IOException {
-            target.write(b);
-            digest.update((byte)b);
-            writtenBytes++;
-        }
-
-        @Override
-        public void flush() throws IOException {
-            target.flush();
-        }
-
-        @Override
-        public void close() throws IOException {
-            target.close();
-        }
-
-        public byte[] getDigest(){
-            return digest.digest();
-        }
-
-        public long getWrittenBytes(){
-            return writtenBytes;
-        }
-
-    }
-
-    /**
-     * {@link InputStream} that computes the number of bytes read and the checksum
-     */
-    public static class ChecksumInputStream extends InputStream {
-
-        final MessageDigest digest;
-        final InputStream target;
-        int readBytes = 0;
-
-        public ChecksumInputStream(final InputStream target, final String algorithm) {
-            try{
-                this.digest = MessageDigest.getInstance(algorithm);
-                this.target = target;
-            }catch (Exception e){
-                throw new IllegalArgumentException("Cannot create the ChecksumInputStream", e);
-            }
-
-        }
-
-        @Override
-        public int read(byte[] b, int off, int len) throws IOException {
-            int read = target.read(b, off, len);
-            if (read !=-1 ) {
-                digest.update(b, off, read);
-                readBytes += read;
-            }
-            return read;
-        }
-
-        @Override
-        public int read() throws IOException {
-            int read = target.read();
-            if (read !=-1 ) {
-                digest.update((byte) read);
-                readBytes++;
-            }
-            return read;
-        }
-
-        @Override
-        public long skip(long n) throws IOException {
-            return target.skip(n);
-        }
-
-        @Override
-        public int available() throws IOException {
-            return target.available();
-        }
-
-        @Override
-        public void close() throws IOException {
-            target.close();
-        }
-
-        @Override
-        public synchronized void mark(int readlimit) {
-            target.mark(readlimit);
-        }
-
-        @Override
-        public synchronized void reset() throws IOException {
-            target.reset();
-        }
-
-        @Override
-        public boolean markSupported() {
-            return target.markSupported();
-        }
-
-        public byte[] getDigest(){
-            return digest.digest();
-        }
-
-        public long getReadBytes(){
-            return readBytes;
+            ChecksumAndReadBytes checksumAndReadBytes = computeChecksumAndReadBytes(inputStream);
+            inputStreamReadBytes = checksumAndReadBytes.getReadBytes();
+            inputStreamDigest = checksumAndReadBytes.getChecksum();
         }
 
     }

@@ -13,15 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.synchronoss.cloud.nio.multipart.example.config;
 
+import com.synchronoss.cloud.nio.multipart.example.spring.ReadListenerDeferredResultProcessingInterceptor;
 import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.support.ReloadableResourceBundleMessageSource;
 import org.springframework.web.servlet.ViewResolver;
+import org.springframework.web.servlet.config.annotation.AsyncSupportConfigurer;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
 import org.springframework.web.servlet.view.InternalResourceViewResolver;
@@ -56,6 +57,11 @@ public class WebConfig extends WebMvcConfigurerAdapter {
         resolver.setCache(false);
         resolver.setViewClass(JstlView.class);
         return resolver;
+    }
+
+    @Override
+    public void configureAsyncSupport(AsyncSupportConfigurer configurer) {
+        configurer.registerDeferredResultInterceptors(new ReadListenerDeferredResultProcessingInterceptor());
     }
 
 }
