@@ -24,6 +24,11 @@ import java.io.UnsupportedEncodingException;
 
 import static org.junit.Assert.*;
 
+/**
+ * <p>
+ * Class taken from the apache commons file upload project <a href="https://commons.apache.org/proper/commons-fileupload/">commons-fileupload</a>
+ * </p>
+ */
 public class Base64DecoderTest {
 
     private static final String US_ASCII_CHARSET = "US-ASCII";

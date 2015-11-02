@@ -25,7 +25,8 @@ import java.util.Map;
 
 /**
  * <p>
- *     Utility methods to parse the headers section into a {@link Map} of header name - list of header values
+ * Class partially taken from the apache commons httpclient project <a href="https://hc.apache.org/httpclient-legacy/index.html">commons-httpclient</a>
+ * The code has been adapted for the specific use case of the nio multipart project.
  * </p>
  * @author Silvano Riz.
  */

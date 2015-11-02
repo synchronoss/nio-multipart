@@ -24,9 +24,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
 /**
- * Unit tests for {@link ParameterParser}.
- *
- * @version $Id$
+ * <p>
+ * Class taken from the apache commons file upload project <a href="https://commons.apache.org/proper/commons-fileupload/">commons-fileupload</a>
+ * </p>
  */
 public class ParameterParserTest {
 

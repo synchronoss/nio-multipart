@@ -5,7 +5,7 @@ usage()
 cat << EOF
 usage: $0 [-h] -p <application server port>
 
-Opens jmeter loading the upload-test.jmx setting the needed properties.
+Opens Jmeter loading the upload-test.jmx setting the needed properties (files.folder, tmp.folder, application.server.port).
 
 OPTIONS:
   -h    Show this help.
@@ -18,7 +18,7 @@ TEST_FILES_FOLDER="$SCRIPT_DIR/src/test/resources/test-files"
 TEMP_FOLDER="$SCRIPT_DIR/target"
 LOG_FOLDER="$SCRIPT_DIR/target"
 
-while getopts "hvft:p:" OPTION
+while getopts "hp:" OPTION
 do
      case ${OPTION} in
          h)
