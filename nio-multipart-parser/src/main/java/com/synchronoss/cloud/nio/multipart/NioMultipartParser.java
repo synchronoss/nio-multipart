@@ -57,7 +57,7 @@ public class NioMultipartParser extends OutputStream {
      * The default buffer size: 16Kb
      * The buffer size needs to be bigger than the separator. (usually no more than 70 Characters)
      */
-    public static final int DEFAULT_BUFFER_SIZE = 16000;
+    public static final int DEFAULT_BUFFER_SIZE = 16384;
 
     /**
      * Sequence of bytes that represents the end of a headers section
@@ -246,18 +246,59 @@ public class NioMultipartParser extends OutputStream {
     // ------------
     // Constructors
     // ------------
+
+    /**
+     * <p>
+     * Constructs a {@link NioMultipartParser}. The default values for the buffer size, headers section size and nested multipart limit will be used.
+     * The {@link PartStreamsFactory} used will be the default implementation provided with the library. See {@link DefaultPartStreamsFactory}.
+     *
+     * @param multipartContext The {@link MultipartContext}
+     * @param nioMultipartParserListener The {@link NioMultipartParserListener} that will be notified
+     */
     public NioMultipartParser(final MultipartContext multipartContext, final NioMultipartParserListener nioMultipartParserListener) {
         this(multipartContext, nioMultipartParserListener, null, DEFAULT_BUFFER_SIZE, DEFAULT_BUFFER_SIZE, DEFAULT_MAX_LEVEL_OF_NESTED_MULTIPART);
     }
 
+    /**
+     * <p>
+     * Constructs a {@link NioMultipartParser} with default values for the buffer size, headers section size and nested multipart limit.
+     * It wants the {@link PartStreamsFactory} to use instead of using the default implementation.
+     * </p>
+     *
+     * @param multipartContext The {@link MultipartContext}
+     * @param nioMultipartParserListener The {@link NioMultipartParserListener} that will be notified
+     * @param partStreamsFactory The {@link PartStreamsFactory} to use.
+     */
     public NioMultipartParser(final MultipartContext multipartContext, final NioMultipartParserListener nioMultipartParserListener, final PartStreamsFactory partStreamsFactory) {
         this(multipartContext, nioMultipartParserListener, partStreamsFactory, DEFAULT_BUFFER_SIZE, DEFAULT_BUFFER_SIZE, DEFAULT_MAX_LEVEL_OF_NESTED_MULTIPART);
     }
 
+    /**
+     * <p>
+     * Constructs a {@link NioMultipartParser} with default values for the headers section size and nested multipart limit and {@link PartStreamsFactory}.
+     * It wants the size of the buffer to use.
+     * </p>
+     *
+     * @param multipartContext The {@link MultipartContext}
+     * @param nioMultipartParserListener The {@link NioMultipartParserListener} that will be notified
+     * @param bufferSize The buffer size
+     */
     public NioMultipartParser(final MultipartContext multipartContext, final NioMultipartParserListener nioMultipartParserListener, final int bufferSize) {
         this(multipartContext, nioMultipartParserListener, null, bufferSize, DEFAULT_BUFFER_SIZE, DEFAULT_MAX_LEVEL_OF_NESTED_MULTIPART);
     }
 
+    /**
+     * <p>
+     * Constructs a {@link NioMultipartParser}.
+     * </p>
+     *
+     * @param multipartContext The {@link MultipartContext}
+     * @param nioMultipartParserListener The {@link NioMultipartParserListener} that will be notified
+     * @param partStreamsFactory The {@link PartStreamsFactory} to use.
+     * @param bufferSize The buffer size
+     * @param maxHeadersSectionSize The max size of the headers section
+     * @param maxLevelOfNestedMultipart the max number of nested multipart
+     */
     public NioMultipartParser(final MultipartContext multipartContext,
                               final NioMultipartParserListener nioMultipartParserListener,
                               final PartStreamsFactory partStreamsFactory,

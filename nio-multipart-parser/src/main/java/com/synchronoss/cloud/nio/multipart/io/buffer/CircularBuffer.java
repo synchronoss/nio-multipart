@@ -54,7 +54,7 @@ public class CircularBuffer {
      *     Constructor.
      * </p>
      *
-     * @param size The size of the buffer. Must be greater than 1
+     * @param size The size of the buffer. Must be greater than or equal to 1
      */
     public CircularBuffer(final int size) {
         if(size < 1){

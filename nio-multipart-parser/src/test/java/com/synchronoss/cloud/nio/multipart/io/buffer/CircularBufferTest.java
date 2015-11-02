@@ -60,6 +60,22 @@ public class CircularBufferTest {
     }
 
     @Test
+    public void testWrite_bufferSize_1() throws Exception {
+        final CircularBuffer buffer = new CircularBuffer(1);
+        assertEquals(0, buffer.startValidDataIndex);
+        assertEquals(0, buffer.nextAvailablePosition);
+        assertEquals(0, buffer.availableReadLength);
+
+        for(int i=0; i<10; i++){
+            buffer.write((byte)i);
+            assertEquals(0, buffer.startValidDataIndex);
+            assertEquals(0, buffer.nextAvailablePosition);
+            assertEquals(1, buffer.availableReadLength);
+            assertEquals((byte)i,buffer.buffer[0]);
+        }
+    }
+
+    @Test
     public void testWrite() throws Exception {
 
         final CircularBuffer buffer = new CircularBuffer(10);

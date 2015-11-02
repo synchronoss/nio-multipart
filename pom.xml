@@ -116,14 +116,22 @@
                             <configuration>
                                 <rules>
                                     <rule>
-                                        <element>BUNDLE</element>
+                                        <element>BUNDLE</element><!-- BUNDLE, PACKAGE, CLASS, SOURCEFILE, METHOD -->
                                         <limits>
                                             <limit>
-                                                <counter>COMPLEXITY</counter>
+                                                <counter>LINE</counter><!-- INSTRUCTION, LINE, BRANCH, COMPLEXITY, METHOD, CLASS -->
                                                 <value>COVEREDRATIO</value>
-                                                <minimum>0.75</minimum>
+                                                <minimum>0.80</minimum>
+                                            </limit>
+                                            <limit>
+                                                <counter>BRANCH</counter><!-- TOTALCOUNT, COVEREDCOUNT, MISSEDCOUNT, COVEREDRATIO, MISSEDRATIO -->
+                                                <value>COVEREDRATIO</value>
+                                                <minimum>0.80</minimum>
                                             </limit>
                                         </limits>
+                                        <!--<excludes>-->
+                                            <!--<exclude></exclude>-->
+                                        <!--</excludes>-->
                                     </rule>
                                 </rules>
                             </configuration>
@@ -168,7 +176,7 @@
 
     <developers>
         <developer>
-            <id>kevinb9n</id>
+            <id>silvano.riz</id>
             <name>Silvano Riz</name>
             <email>melozzola@gmail.com</email>
             <organization>Synchronoss</organization>
