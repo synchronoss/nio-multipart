@@ -30,6 +30,7 @@ import com.synchronoss.cloud.nio.multipart.example.model.FileMetadata;
 import com.synchronoss.cloud.nio.multipart.example.model.Metadata;
 import com.synchronoss.cloud.nio.multipart.example.model.VerificationItem;
 import com.synchronoss.cloud.nio.multipart.example.model.VerificationItems;
+import com.synchronoss.cloud.nio.multipart.example.spring.CloseableReadListenerDeferredResult;
 import com.synchronoss.cloud.nio.multipart.example.spring.ReadListenerDeferredResult;
 import org.apache.commons.fileupload.FileItemIterator;
 import org.apache.commons.fileupload.FileItemStream;
@@ -51,7 +52,8 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.*;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.synchronoss.cloud.nio.multipart.ParserFactory.newParser;
@@ -126,11 +128,11 @@ public class MultipartController {
      */
     @RequestMapping(value = "/nio/dr/multipart", method = RequestMethod.POST)
     public @ResponseBody
-    ReadListenerDeferredResult<VerificationItems> nioDeferredResultMultipart(final HttpServletRequest request) throws IOException {
+    CloseableReadListenerDeferredResult<VerificationItems> nioDeferredResultMultipart(final HttpServletRequest request) throws IOException {
 
         assertRequestIsMultipart(request);
 
-        return new ReadListenerDeferredResult<VerificationItems>() {
+        final CloseableReadListenerDeferredResult<VerificationItems> readListenerDeferredResult = new CloseableReadListenerDeferredResult<VerificationItems>() {
 
             final AtomicInteger synchronizer = new AtomicInteger(0);
 
@@ -186,6 +188,8 @@ public class MultipartController {
                     if(log.isInfoEnabled()) log.info("PARSER LISTENER - onError");
                     sendErrorOrSkip(message, cause);
                 }
+
+
             };
 
             final NioMultipartParser parser = ParserFactory.newParser(ctx, listener).withCustomPartStreamsFactory(partStreamsFactory).forNio();
@@ -214,6 +218,11 @@ public class MultipartController {
                 sendErrorOrSkip(null, t);
             }
 
+            @Override
+            public void close() throws IOException {
+                parser.close();
+            }
+
             void sendResponseOrSkip(){
                 if (synchronizer.getAndAdd(1) == 0) {
                     this.setResult(verificationItems);
@@ -226,13 +235,6 @@ public class MultipartController {
                 if (synchronizer.getAndAdd(1) == 0) {
                     this.setErrorResult(messageOrUnknown);
                 }
-            }
-
-            @Override
-            public void onCompletion(Runnable callback) {
-                if(log.isInfoEnabled())log.info("onCompletion");
-                super.onCompletion(callback);
-                IOUtils.closeQuietly(parser);
             }
 
             synchronized Metadata unmarshalMetadataOrThrow(final String json){
@@ -250,6 +252,22 @@ public class MultipartController {
             }
 
         };
+
+        readListenerDeferredResult.onCompletion(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    // called from a container thread when an async request completed for any reason including timeout and network error
+                    // In this case we make sure we close.
+                    if (log.isDebugEnabled()) log.debug("Closing ReadListenerDeferredResult");
+                    readListenerDeferredResult.close();
+                }catch (Exception e){
+                    log.warn("Failed to close the ReadListenerDeferredResult", e);
+                }
+            }
+        });
+
+        return readListenerDeferredResult;
     }
 
     /**

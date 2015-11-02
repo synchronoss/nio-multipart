@@ -48,10 +48,7 @@ import java.io.Reader;
 import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 /**
  * <p>
@@ -64,38 +61,54 @@ public class FileUploadClientIntegrationTest {
 
     private static final Logger log = LoggerFactory.getLogger(FileUploadClient.class);
 
+    private static final List<String> URLS = Arrays.asList(
+            "http://localhost:%d/integration-tests/nio/multipart",
+            "http://localhost:%d/integration-tests/nio/dr/multipart",
+            "http://localhost:%d/integration-tests/blockingio/multipart"
+    );
+
     @Parameterized.Parameters
     public static Collection data() {
-        return Arrays.asList(getTestFiles());
+        return getTestCases();
     }
 
-    private final File testFile;
-    private final int applicationServerPort;
-    private final String url;
-    public FileUploadClientIntegrationTest(File testFile){
+    static class TestCase{
+        private final File testFile;
+        private final String url;
 
-        this.testFile = testFile;
-        this.applicationServerPort = Integer.parseInt(System.getProperty("application.server.port", "8080"));
-        this.url = String.format("http://localhost:%d/integration-tests/nio/multipart", applicationServerPort);
+        public TestCase(File testFile, String url) {
+            this.testFile = testFile;
+            this.url = url;
+        }
+
+        @Override
+        public String toString() {
+            return "TestCase{" +
+                    "testFile=" + testFile +
+                    ", url='" + url + '\'' +
+                    '}';
+        }
+    }
+
+    private final TestCase testCase;
+    public FileUploadClientIntegrationTest(final TestCase testCase){
+        this.testCase = testCase;
     }
 
     @Test
     public void testNioUpload() throws Exception {
-        if (log.isInfoEnabled()) {
-            log.info("File " + testFile.getAbsolutePath());
-            log.info("Url " + url);
-        }
+        if (log.isInfoEnabled()) log.info("TestCase: " + testCase);
 
         FileUploadClient fileUploadClient = new FileUploadClient();
 
         Metadata metadata = new Metadata();
         FileMetadata fileMetadata = new FileMetadata();
-        fileMetadata.setFile(testFile.getAbsolutePath());
-        fileMetadata.setSize(testFile.length());
-        fileMetadata.setChecksum(Files.hash(testFile, Hashing.sha256()).toString());
+        fileMetadata.setFile(testCase.testFile.getAbsolutePath());
+        fileMetadata.setSize(testCase.testFile.length());
+        fileMetadata.setChecksum(Files.hash(testCase.testFile, Hashing.sha256()).toString());
         metadata.setFilesMetadata(Collections.singletonList(fileMetadata));
 
-        VerificationItems verificationItems = fileUploadClient.uploadFile(testFile, metadata, url);
+        VerificationItems verificationItems = fileUploadClient.uploadFile(testCase.testFile, metadata, testCase.url);
 
         List<VerificationItem> verificationItemList = verificationItems.getVerificationItems();
         for (VerificationItem verificationItem : verificationItemList){
@@ -104,21 +117,25 @@ public class FileUploadClientIntegrationTest {
 
     }
 
-    static File getTestFile(final String fileName){
-        try {
-            URL resourceUrl = FileUploadClientIntegrationTest.class.getResource(fileName);
-            Path resourcePath = Paths.get(resourceUrl.toURI());
-            return resourcePath.toFile();
-        }catch (Exception e){
-            throw new IllegalStateException("Cannot find the test file", e);
-        }
-    }
-
-    static File[] getTestFiles(){
+    static Collection<TestCase> getTestCases(){
         try {
             URL resourceUrl = FileUploadClientIntegrationTest.class.getResource("/test-files");
             Path resourcePath = Paths.get(resourceUrl.toURI());
-            return resourcePath.toFile().listFiles();
+            File[] files = resourcePath.toFile().listFiles();
+
+            if (files == null){
+                log.warn("Empty test-files folder");
+                return Collections.emptyList();
+            }
+
+            int applicationServerPort = Integer.parseInt(System.getProperty("application.server.port", "8080"));
+            List<TestCase> testCases = new ArrayList<TestCase>();
+            for(File file : files){
+                for (String url : URLS){
+                    testCases.add(new TestCase(file, String.format(url, applicationServerPort)));
+                }
+            }
+            return testCases;
         }catch (Exception e){
             throw new IllegalStateException("Cannot find the test file", e);
         }
