@@ -167,7 +167,7 @@ props.put(&quot;name_main&quot;, &quot;metadata&quot;);</stringProp>
           <stringProp name="HTTPSampler.response_timeout"></stringProp>
           <stringProp name="HTTPSampler.protocol"></stringProp>
           <stringProp name="HTTPSampler.contentEncoding"></stringProp>
-          <stringProp name="HTTPSampler.path">http://localhost:8080/example-webapp/nio/multipart</stringProp>
+          <stringProp name="HTTPSampler.path">http://localhost:${__property(application.server.port)}/integration-tests/nio/multipart</stringProp>
           <stringProp name="HTTPSampler.method">POST</stringProp>
           <boolProp name="HTTPSampler.follow_redirects">false</boolProp>
           <boolProp name="HTTPSampler.auto_redirects">false</boolProp>
@@ -235,7 +235,7 @@ props.put(&quot;name_main&quot;, &quot;metadata&quot;);</stringProp>
           <stringProp name="HTTPSampler.response_timeout"></stringProp>
           <stringProp name="HTTPSampler.protocol"></stringProp>
           <stringProp name="HTTPSampler.contentEncoding"></stringProp>
-          <stringProp name="HTTPSampler.path">http://localhost:8080/example-webapp/nio/dr/multipart</stringProp>
+          <stringProp name="HTTPSampler.path">http://localhost:${__property(application.server.port)}/integration-tests/nio/dr/multipart</stringProp>
           <stringProp name="HTTPSampler.method">POST</stringProp>
           <boolProp name="HTTPSampler.follow_redirects">false</boolProp>
           <boolProp name="HTTPSampler.auto_redirects">false</boolProp>
@@ -303,7 +303,7 @@ props.put(&quot;name_main&quot;, &quot;metadata&quot;);</stringProp>
           <stringProp name="HTTPSampler.response_timeout"></stringProp>
           <stringProp name="HTTPSampler.protocol"></stringProp>
           <stringProp name="HTTPSampler.contentEncoding"></stringProp>
-          <stringProp name="HTTPSampler.path">http://localhost:8080/example-webapp/blockingio/multipart</stringProp>
+          <stringProp name="HTTPSampler.path">http://localhost:${__property(application.server.port)}/integration-tests/blockingio/multipart</stringProp>
           <stringProp name="HTTPSampler.method">POST</stringProp>
           <boolProp name="HTTPSampler.follow_redirects">false</boolProp>
           <boolProp name="HTTPSampler.auto_redirects">false</boolProp>

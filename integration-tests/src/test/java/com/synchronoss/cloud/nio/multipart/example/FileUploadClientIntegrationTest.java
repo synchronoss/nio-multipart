@@ -70,14 +70,21 @@ public class FileUploadClientIntegrationTest {
     }
 
     private final File testFile;
+    private final int applicationServerPort;
+    private final String url;
     public FileUploadClientIntegrationTest(File testFile){
+
         this.testFile = testFile;
+        this.applicationServerPort = Integer.parseInt(System.getProperty("application.server.port", "8080"));
+        this.url = String.format("http://localhost:%d/integration-tests/nio/multipart", applicationServerPort);
     }
 
     @Test
     public void testNioUpload() throws Exception {
-
-        log.info("File " + testFile.getAbsolutePath());
+        if (log.isInfoEnabled()) {
+            log.info("File " + testFile.getAbsolutePath());
+            log.info("Url " + url);
+        }
 
         FileUploadClient fileUploadClient = new FileUploadClient();
 
@@ -88,7 +95,7 @@ public class FileUploadClientIntegrationTest {
         fileMetadata.setChecksum(Files.hash(testFile, Hashing.sha256()).toString());
         metadata.setFilesMetadata(Collections.singletonList(fileMetadata));
 
-        VerificationItems verificationItems = fileUploadClient.uploadFile(testFile, metadata, "http://localhost:8080/example-webapp/nio/multipart");
+        VerificationItems verificationItems = fileUploadClient.uploadFile(testFile, metadata, url);
 
         List<VerificationItem> verificationItemList = verificationItems.getVerificationItems();
         for (VerificationItem verificationItem : verificationItemList){
