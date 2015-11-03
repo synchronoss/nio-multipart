@@ -146,16 +146,15 @@ public class NioMultipartParser extends OutputStream {
             }
         }
 
-        // TODO - change names.
-        void keepGoing() {
+        void setNotFinished() {
             finished = false;
         }
 
-        void keepGoingIfMoreData() {
+        void setFinishedIfNoMOreData() {
             finished = currentIndex >= indexEnd;
         }
 
-        void stop() {
+        void setFinished() {
             finished = true;
         }
     }
@@ -455,11 +454,11 @@ public class NioMultipartParser extends OutputStream {
         while ((byteOfData = wCtx.read()) != -1) {
             if (endOfLineBuffer.write((byte)byteOfData)) {
                 goToState(State.IDENTIFY_PREAMBLE_DELIMITER);
-                wCtx.keepGoingIfMoreData();
+                wCtx.setFinishedIfNoMOreData();
                 return;
             }
         }
-        wCtx.keepGoingIfMoreData();
+        wCtx.setFinishedIfNoMOreData();
     }
 
     void getReadyForHeaders(final WriteContext wCtx) {
@@ -467,7 +466,7 @@ public class NioMultipartParser extends OutputStream {
         endOfLineBuffer.reset(HEADER_DELIMITER, headersByteArrayOutputStream);
         headers = new HashMap<String, List<String>>();
         goToState(State.READ_HEADERS);
-        wCtx.keepGoingIfMoreData();
+        wCtx.setFinishedIfNoMOreData();
     }
 
 
@@ -482,11 +481,11 @@ public class NioMultipartParser extends OutputStream {
                 } else {
                     goToState(State.GET_READY_FOR_BODY);
                 }
-                wCtx.keepGoingIfMoreData();
+                wCtx.setFinishedIfNoMOreData();
                 return;
             }
         }
-        wCtx.keepGoingIfMoreData();
+        wCtx.setFinishedIfNoMOreData();
     }
 
     void parseHeaders() {
@@ -504,7 +503,7 @@ public class NioMultipartParser extends OutputStream {
         endOfLineBuffer.reset(delimiterPrefixes.peek(), partBodyByteStore);
         delimiterType.reset();
         goToState(State.READ_BODY);
-        wCtx.keepGoingIfMoreData();
+        wCtx.setFinishedIfNoMOreData();
     }
 
     void getReadyForNestedMultipart(final WriteContext wCtx) {
@@ -519,7 +518,7 @@ public class NioMultipartParser extends OutputStream {
             goToState(State.SKIP_PREAMBLE);
             nioMultipartParserListener.onNestedPartStarted(headers);
         }
-        wCtx.keepGoingIfMoreData();
+        wCtx.setFinishedIfNoMOreData();
     }
 
     void readBody(final WriteContext wCtx) {
@@ -527,11 +526,11 @@ public class NioMultipartParser extends OutputStream {
         while ((byteOfData = wCtx.read()) != -1) {
             if (endOfLineBuffer.write((byte)byteOfData)) {
                 goToState(State.IDENTIFY_BODY_DELIMITER);
-                wCtx.keepGoingIfMoreData();
+                wCtx.setFinishedIfNoMOreData();
                 return;
             }
         }
-        wCtx.keepGoingIfMoreData();
+        wCtx.setFinishedIfNoMOreData();
     }
 
     void identifyPreambleDelimiter(final WriteContext wCtx) {
@@ -556,30 +555,30 @@ public class NioMultipartParser extends OutputStream {
 
                 if (DelimiterType.Type.ENCAPSULATION == type) {
                     goToState(onDelimiter);
-                    wCtx.keepGoingIfMoreData();
+                    wCtx.setFinishedIfNoMOreData();
                     return;
                 } else if (DelimiterType.Type.CLOSE == type) {
                     goToState(onCloseDelimiter);
                     // Need to continue because we encountered a close delimiter and we might not have more data coming
                     // but we want to switch state and notify.
-                    wCtx.keepGoing();
+                    wCtx.setNotFinished();
                     return;
                 } else {
                     goToState(State.ERROR);
                     nioMultipartParserListener.onError("Unexpected characters follow a boundary", null);
-                    wCtx.stop();
+                    wCtx.setFinished();
                     return;
                 }
             }
         }
-        wCtx.keepGoingIfMoreData();
+        wCtx.setFinishedIfNoMOreData();
 
     }
 
     void allPartsRead(final WriteContext wCtx) {
         nioMultipartParserListener.onAllPartsFinished();
         goToState(State.SKIP_EPILOGUE);
-        wCtx.keepGoingIfMoreData();
+        wCtx.setFinishedIfNoMOreData();
     }
 
     void partComplete(final WriteContext wCtx){
@@ -628,7 +627,7 @@ public class NioMultipartParser extends OutputStream {
             goToState(State.GET_READY_FOR_HEADERS);
         }
         partIndex++;
-        wCtx.keepGoingIfMoreData();
+        wCtx.setFinishedIfNoMOreData();
 
     }
 
@@ -638,11 +637,11 @@ public class NioMultipartParser extends OutputStream {
         endOfLineBuffer.reset(getPreambleDelimiterPrefix(delimiterPrefixes.peek()), null);
         goToState(State.SKIP_PREAMBLE);
         nioMultipartParserListener.onNestedPartFinished();
-        wCtx.keepGoingIfMoreData();
+        wCtx.setFinishedIfNoMOreData();
     }
 
     void skipEpilogue(final WriteContext wCtx){
-        wCtx.stop();
+        wCtx.setFinished();
     }
 
     static byte[] getBoundary(final String contentType) {
