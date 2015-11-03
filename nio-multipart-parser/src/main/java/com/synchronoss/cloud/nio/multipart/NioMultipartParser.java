@@ -16,7 +16,7 @@
 
 package com.synchronoss.cloud.nio.multipart;
 
-import com.synchronoss.cloud.nio.multipart.PartStreamsFactory.PartStreams;
+import com.synchronoss.cloud.nio.multipart.io.ByteStore;
 import com.synchronoss.cloud.nio.multipart.io.FixedSizeByteArrayOutputStream;
 import com.synchronoss.cloud.nio.multipart.io.buffer.EndOfLineBuffer;
 import com.synchronoss.cloud.nio.multipart.util.HeadersParser;
@@ -30,8 +30,16 @@ import java.util.*;
 
 /**
  * <p>
- *    {@link OutputStream} implementing a Non blocking IO Multipart Parser.
- *</p>
+ *     The main class for parsing a multipart request/response in an NIO mode. A new instance can be created and the
+ *     data can be written invoking the {@link #write(byte[], int, int)}, {@link #write(byte[])} or {@link #write(int)} methods.
+ *     As data is written, the parser is identifying the various parts and notifying the client via the {@link NioMultipartParserListener} listener.
+ * </p>
+ * <p>
+ *    The class extends {@link OutputStream} and it can be seen as a 'splitter' where the main stream (the multipart body) is saved into different streams (one for each part).
+ *    Each individual stream can be read back by the client when it's notified.
+ *    For more information about the events raised by the parser see {@link NioMultipartParserListener}.
+ * </p>
+ *
  * @author Silvano Riz.
  */
 public class NioMultipartParser extends OutputStream {
@@ -138,6 +146,7 @@ public class NioMultipartParser extends OutputStream {
             }
         }
 
+        // TODO - change names.
         void keepGoing() {
             finished = false;
         }
@@ -182,7 +191,7 @@ public class NioMultipartParser extends OutputStream {
      * Factory that will be used to get an OutputStream where to store a multipart body and retrieve its related
      * OutputStream
      */
-    final PartStreamsFactory partStreamsFactory;
+    final PartBodyByteStoreFactory partBodyByteStoreFactory;
 
     /*
      * A reusable buffer to identify when a preamble, part section or headers section is finished.
@@ -229,8 +238,7 @@ public class NioMultipartParser extends OutputStream {
      * Current output stream where to flush the body data.
      * It will be instantiated for each part via {@link BodyStreamFactory#getOutputStream(Map, int)} )}
      */
-    volatile PartStreams partStreams = null;
-    volatile OutputStream partBodyOutputStream = null;
+    volatile ByteStore partBodyByteStore = null;
 
     /*
      * The current headers.
@@ -250,7 +258,7 @@ public class NioMultipartParser extends OutputStream {
     /**
      * <p>
      * Constructs a {@link NioMultipartParser}. The default values for the buffer size, headers section size and nested multipart limit will be used.
-     * The {@link PartStreamsFactory} used will be the default implementation provided with the library. See {@link DefaultPartStreamsFactory}.
+     * The {@link PartBodyByteStoreFactory} used will be the default implementation provided with the library. See {@link DefaultPartBodyByteStoreFactory}.
      *
      * @param multipartContext The {@link MultipartContext}
      * @param nioMultipartParserListener The {@link NioMultipartParserListener} that will be notified
@@ -262,20 +270,20 @@ public class NioMultipartParser extends OutputStream {
     /**
      * <p>
      * Constructs a {@link NioMultipartParser} with default values for the buffer size, headers section size and nested multipart limit.
-     * It wants the {@link PartStreamsFactory} to use instead of using the default implementation.
+     * It wants the {@link PartBodyByteStoreFactory} to use instead of using the default implementation.
      * </p>
      *
      * @param multipartContext The {@link MultipartContext}
      * @param nioMultipartParserListener The {@link NioMultipartParserListener} that will be notified
-     * @param partStreamsFactory The {@link PartStreamsFactory} to use.
+     * @param partBodyByteStoreFactory The {@link PartBodyByteStoreFactory} to use.
      */
-    public NioMultipartParser(final MultipartContext multipartContext, final NioMultipartParserListener nioMultipartParserListener, final PartStreamsFactory partStreamsFactory) {
-        this(multipartContext, nioMultipartParserListener, partStreamsFactory, DEFAULT_BUFFER_SIZE, DEFAULT_BUFFER_SIZE, DEFAULT_MAX_LEVEL_OF_NESTED_MULTIPART);
+    public NioMultipartParser(final MultipartContext multipartContext, final NioMultipartParserListener nioMultipartParserListener, final PartBodyByteStoreFactory partBodyByteStoreFactory) {
+        this(multipartContext, nioMultipartParserListener, partBodyByteStoreFactory, DEFAULT_BUFFER_SIZE, DEFAULT_BUFFER_SIZE, DEFAULT_MAX_LEVEL_OF_NESTED_MULTIPART);
     }
 
     /**
      * <p>
-     * Constructs a {@link NioMultipartParser} with default values for the headers section size and nested multipart limit and {@link PartStreamsFactory}.
+     * Constructs a {@link NioMultipartParser} with default values for the headers section size and nested multipart limit and {@link PartBodyByteStoreFactory}.
      * It wants the size of the buffer to use.
      * </p>
      *
@@ -294,14 +302,14 @@ public class NioMultipartParser extends OutputStream {
      *
      * @param multipartContext The {@link MultipartContext}
      * @param nioMultipartParserListener The {@link NioMultipartParserListener} that will be notified
-     * @param partStreamsFactory The {@link PartStreamsFactory} to use.
+     * @param partBodyByteStoreFactory The {@link PartBodyByteStoreFactory} to use.
      * @param bufferSize The buffer size
      * @param maxHeadersSectionSize The max size of the headers section
      * @param maxLevelOfNestedMultipart the max number of nested multipart
      */
     public NioMultipartParser(final MultipartContext multipartContext,
                               final NioMultipartParserListener nioMultipartParserListener,
-                              final PartStreamsFactory partStreamsFactory,
+                              final PartBodyByteStoreFactory partBodyByteStoreFactory,
                               final int bufferSize,
                               final int maxHeadersSectionSize,
                               final int maxLevelOfNestedMultipart) {
@@ -316,10 +324,10 @@ public class NioMultipartParser extends OutputStream {
             this.headersByteArrayOutputStream = new FixedSizeByteArrayOutputStream(maxHeadersSectionSize);
         }
 
-        if (partStreamsFactory != null) {
-            this.partStreamsFactory = partStreamsFactory;
+        if (partBodyByteStoreFactory != null) {
+            this.partBodyByteStoreFactory = partBodyByteStoreFactory;
         } else {
-            this.partStreamsFactory = new DefaultPartStreamsFactory();
+            this.partBodyByteStoreFactory = new DefaultPartBodyByteStoreFactory();
         }
 
         // At the beginning set up the endOfLineBuffer to skip the preamble.
@@ -328,15 +336,10 @@ public class NioMultipartParser extends OutputStream {
 
     @Override
     public void close() throws IOException {
-        if (partBodyOutputStream != null) {
-            partBodyOutputStream.flush();
-            partBodyOutputStream.close();
+        if (partBodyByteStore != null) {
+            partBodyByteStore.flush();
+            partBodyByteStore.close();
         }
-    }
-
-    @Override
-    public void flush() throws IOException {
-        // nothing to do.
     }
 
     @Override
@@ -497,9 +500,8 @@ public class NioMultipartParser extends OutputStream {
     }
 
     void getReadyForBody(final WriteContext wCtx) {
-        partStreams = partStreamsFactory.newPartStreams(headers, partIndex);
-        partBodyOutputStream = partStreams.getPartOutputStream();
-        endOfLineBuffer.reset(delimiterPrefixes.peek(), partBodyOutputStream);
+        partBodyByteStore = partBodyByteStoreFactory.newByteStoreForPartBody(headers, partIndex);
+        endOfLineBuffer.reset(delimiterPrefixes.peek(), partBodyByteStore);
         delimiterType.reset();
         goToState(State.READ_BODY);
         wCtx.keepGoingIfMoreData();
@@ -584,8 +586,8 @@ public class NioMultipartParser extends OutputStream {
 
         // First flush the output stream and close it...
         try{
-            partBodyOutputStream.flush();
-            partBodyOutputStream.close();
+            partBodyByteStore.flush();
+            partBodyByteStore.close();
         }catch (Exception e){
             nioMultipartParserListener.onError("Unable to read/write the body data", e);
             goToState(State.ERROR);
@@ -596,7 +598,7 @@ public class NioMultipartParser extends OutputStream {
 
         if (MultipartUtils.isFormField(headers)){
             // It's a form field, need to read the input stream into String and notify via onFormFieldPartReady(...)
-            final InputStream partBodyInputStream =  partStreams.getPartInputStream();
+            final InputStream partBodyInputStream =  partBodyByteStore.getInputStream();
             try {
                 final String fieldName = MultipartUtils.getFieldName(headers);
                 final String value = IOUtils.inputStreamAsString(partBodyInputStream, MultipartUtils.getCharEncoding(headers));
@@ -613,7 +615,7 @@ public class NioMultipartParser extends OutputStream {
 
             // Not a form field. Provide the raw input stream to the client.
 
-            nioMultipartParserListener.onPartReady(partStreams, headers);
+            nioMultipartParserListener.onPartReady(partBodyByteStore, headers);
         }
 
         if (delimiterType.getDelimiterType() == DelimiterType.Type.CLOSE){

@@ -18,6 +18,7 @@ package com.synchronoss.cloud.nio.multipart;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
+import com.synchronoss.cloud.nio.multipart.io.ByteStore;
 import com.synchronoss.cloud.nio.multipart.testutil.ChunksFileReader;
 import com.synchronoss.cloud.nio.multipart.testutil.MultipartTestCases;
 import com.synchronoss.cloud.nio.multipart.testutil.MultipartTestCases.MultipartTestCase;
@@ -34,7 +35,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.InputStream;
-import java.util.*;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -81,7 +85,7 @@ public class NioMultipartParserFunctionalTest {
 
         final MultipartContext multipartContext = testCase.getMultipartContext();
         final ChunksFileReader chunksFileReader = new ChunksFileReader(testCase.getBodyInputStream(), 5, 10);
-        final DefaultPartStreamsFactory defaultBodyStreamFactory = new DefaultPartStreamsFactory(3000);// 3kb
+        final DefaultPartBodyByteStoreFactory defaultBodyStreamFactory = new DefaultPartBodyByteStoreFactory(3000);// 3kb
         final NioMultipartParser parser = new NioMultipartParser(multipartContext, nioMultipartParserListener);
 
 
@@ -120,12 +124,12 @@ public class NioMultipartParserFunctionalTest {
             AtomicInteger partIndex = new AtomicInteger(0);
 
             @Override
-            public void onPartReady(PartStreamsFactory.PartStreams partStreams, Map<String, List<String>> headersFromPart) {
+            public void onPartReady(ByteStore partBodyByteStore, Map<String, List<String>> headersFromPart) {
                 log.info("<<<<< On part complete [" + (partIndex.addAndGet(1)) + "] >>>>>>");
                 assertFileItemIteratorHasNext(true);
                 final FileItemStream fileItemStream = fileItemIteratorNext();
                 assertHeadersAreEqual(fileItemStream.getHeaders(), headersFromPart);
-                assertInputStreamsAreEqual(fileItemStreamInputStream(fileItemStream), partStreams.getPartInputStream());
+                assertInputStreamsAreEqual(fileItemStreamInputStream(fileItemStream), partBodyByteStore.getInputStream());
             }
 
             @Override
@@ -266,13 +270,13 @@ public class NioMultipartParserFunctionalTest {
             AtomicInteger partIndex = new AtomicInteger(0);
 
             @Override
-            public void onPartReady(PartStreamsFactory.PartStreams partStreams, Map<String, List<String>> headersFromPart) {
+            public void onPartReady(ByteStore partBodyByteStore, Map<String, List<String>> headersFromPart) {
                 log.info("-- NIO MULTIPART PARSER : On part complete " + (partIndex.addAndGet(1)));
                 log.info("-- Part " + partIndex.get());
                 for (Map.Entry<String, List<String>> headersEntry : headersFromPart.entrySet()){
                     log.info("Header: " + headersEntry.getKey() + ": " + Joiner.on(',').join(headersEntry.getValue()));
                 }
-                InputStream partInputStream = partStreams.getPartInputStream();
+                InputStream partInputStream = partBodyByteStore.getInputStream();
                 try {
                     log.info("Body:\n" + IOUtils.toString(partInputStream));
                 }catch (Exception e){

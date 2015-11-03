@@ -42,7 +42,7 @@ public class ParserFactoryTest {
         MultipartContext context = mock(MultipartContext.class);
         when(context.getContentType()).thenReturn("multipart/form-data;boundary=MUEYT2qJT0_ZzYUvVQLy_DlrLeADyxzmsA");
         NioMultipartParserListener listener = mock(NioMultipartParserListener.class);
-        PartStreamsFactory partStreamsFactory = mock(PartStreamsFactory.class);
+        PartBodyByteStoreFactory partBodyByteStoreFactory = mock(PartBodyByteStoreFactory.class);
 
         NioMultipartParser parser = newParser(context, listener).forNio();
         assertNotNull(parser);
@@ -70,7 +70,7 @@ public class ParserFactoryTest {
                 .withBufferSize(500)
                 .withHeadersSizeLimit(16000)
                 .withMaxMemoryUsagePerBodyPart(100)
-                .withCustomPartStreamsFactory(partStreamsFactory)
+                .usePartBodyByteStoreFactory(partBodyByteStoreFactory)
                 .forNio();
 
         assertNotNull(parser3);

@@ -15,8 +15,8 @@
  */
 package com.synchronoss.cloud.nio.multipart;
 
-import com.synchronoss.cloud.nio.multipart.DefaultPartStreamsFactory.DefaultPartStreams;
-import com.synchronoss.cloud.nio.multipart.PartStreamsFactory.PartStreams;
+import com.synchronoss.cloud.nio.multipart.io.ByteStore;
+import com.synchronoss.cloud.nio.multipart.io.DeferredFileByteStore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -34,13 +34,13 @@ import static org.junit.Assert.*;
 
 /**
  * <p>
- *     Unit tests for {@link DefaultPartStreamsFactory}
+ *     Unit tests for {@link DefaultPartBodyByteStoreFactory}
  * </p>
  * @author Silvano Riz.
  */
-public class DefaultPartStreamsFactoryTest {
+public class DefaultPartBodyByteStoreFactoryTest {
 
-    private static final Logger log = LoggerFactory.getLogger(DefaultPartStreamsFactoryTest.class);
+    private static final Logger log = LoggerFactory.getLogger(DefaultPartBodyByteStoreFactoryTest.class);
 
     @Rule
     public TemporaryFolder tempFolder = new TemporaryFolder();
@@ -48,13 +48,13 @@ public class DefaultPartStreamsFactoryTest {
     @Test
     public void testConstructors() throws Exception{
 
-        assertNotNull(new DefaultPartStreamsFactory());
-        assertNotNull(new DefaultPartStreamsFactory(3000));
-        assertNotNull(new DefaultPartStreamsFactory(-1));
-        assertNotNull(new DefaultPartStreamsFactory(0));
+        assertNotNull(new DefaultPartBodyByteStoreFactory());
+        assertNotNull(new DefaultPartBodyByteStoreFactory(3000));
+        assertNotNull(new DefaultPartBodyByteStoreFactory(-1));
+        assertNotNull(new DefaultPartBodyByteStoreFactory(0));
         String folder = tempFolder.newFolder().getAbsolutePath();
-        assertNotNull(new DefaultPartStreamsFactory(folder));
-        assertNotNull(new DefaultPartStreamsFactory(folder, 3000));
+        assertNotNull(new DefaultPartBodyByteStoreFactory(folder));
+        assertNotNull(new DefaultPartBodyByteStoreFactory(folder, 3000));
 
     }
 
@@ -65,7 +65,7 @@ public class DefaultPartStreamsFactoryTest {
         File folder = tempFolder.newFolder();
         try {
             assertTrue(folder.setWritable(false));
-            new DefaultPartStreamsFactory(new File(folder, "testConstructor_error").getAbsolutePath());
+            new DefaultPartBodyByteStoreFactory(new File(folder, "testConstructor_error").getAbsolutePath());
         }catch (Exception e){
             expected = e;
         }finally {
@@ -79,39 +79,39 @@ public class DefaultPartStreamsFactoryTest {
     public void testNewPartIOStreams() throws IOException {
 
         // Content length unknown. Should decide to go in memory first
-        DefaultPartStreamsFactory defaultPartIOStreamsFactory = new DefaultPartStreamsFactory(tempFolder.newFolder("testGetOutputStream").getAbsolutePath());
+        DefaultPartBodyByteStoreFactory defaultPartIOStreamsFactory = new DefaultPartBodyByteStoreFactory(tempFolder.newFolder("testGetOutputStream").getAbsolutePath());
 
-        PartStreams partStreams = defaultPartIOStreamsFactory.newPartStreams(new HashMap<String, List<String>>(), 1);
-        assertNotNull(partStreams);
-        assertTrue(partStreams instanceof DefaultPartStreams);
-        DefaultPartStreams defaultPartIOStreams = (DefaultPartStreams) partStreams;
-        assertTrue(defaultPartIOStreams.isInMemory);
+        ByteStore byteStore = defaultPartIOStreamsFactory.newByteStoreForPartBody(new HashMap<String, List<String>>(), 1);
+        assertNotNull(byteStore);
+        assertTrue(byteStore instanceof DeferredFileByteStore);
+        DeferredFileByteStore deferredFileByteStore = (DeferredFileByteStore) byteStore;
+        assertTrue(deferredFileByteStore.isInMemory());
 
 
         // Content length smaller than the threshold. Should decide to go in memory first
-        defaultPartIOStreamsFactory = new DefaultPartStreamsFactory(tempFolder.newFolder("testGetOutputStream1").getAbsolutePath(), 100);
+        defaultPartIOStreamsFactory = new DefaultPartBodyByteStoreFactory(tempFolder.newFolder("testGetOutputStream1").getAbsolutePath(), 100);
 
         Map<String, List<String>> headers = new HashMap<String, List<String>>();
         headers.put("content-length", Collections.singletonList("99"));
 
-        partStreams = defaultPartIOStreamsFactory.newPartStreams(headers, 1);
-        assertNotNull(partStreams);
-        assertTrue(partStreams instanceof DefaultPartStreams);
-        defaultPartIOStreams = (DefaultPartStreams) partStreams;
-        assertTrue(defaultPartIOStreams.isInMemory);
+        byteStore = defaultPartIOStreamsFactory.newByteStoreForPartBody(headers, 1);
+        assertNotNull(byteStore);
+        assertTrue(byteStore instanceof DeferredFileByteStore);
+        deferredFileByteStore = (DeferredFileByteStore) byteStore;
+        assertTrue(deferredFileByteStore.isInMemory());
 
         // Content length greater than the threshold. Should decide to go directly to file...
-        defaultPartIOStreamsFactory = new DefaultPartStreamsFactory(tempFolder.newFolder("testGetOutputStream2").getAbsolutePath(), 100);
+        defaultPartIOStreamsFactory = new DefaultPartBodyByteStoreFactory(tempFolder.newFolder("testGetOutputStream2").getAbsolutePath(), 100);
 
         headers = new HashMap<String, List<String>>();
         headers.put("content-length", Collections.singletonList("140"));
 
-        partStreams = defaultPartIOStreamsFactory.newPartStreams(headers, 1);
-        partStreams = defaultPartIOStreamsFactory.newPartStreams(headers, 1);
-        assertNotNull(partStreams);
-        assertTrue(partStreams instanceof DefaultPartStreams);
-        defaultPartIOStreams = (DefaultPartStreams) partStreams;
-        assertFalse(defaultPartIOStreams.isInMemory);
+        byteStore = defaultPartIOStreamsFactory.newByteStoreForPartBody(headers, 1);
+        byteStore = defaultPartIOStreamsFactory.newByteStoreForPartBody(headers, 1);
+        assertNotNull(byteStore);
+        assertTrue(byteStore instanceof DeferredFileByteStore);
+        deferredFileByteStore = (DeferredFileByteStore) byteStore;
+        assertFalse(deferredFileByteStore.isInMemory());
 
     }
 
@@ -121,11 +121,11 @@ public class DefaultPartStreamsFactoryTest {
         File folder = tempFolder.newFolder("testGetOutputStream_error");
 
         // Content length unknown. Should decide to go in memory first
-        DefaultPartStreamsFactory defaultBodyStreamFactory = new DefaultPartStreamsFactory(folder.getAbsolutePath(), 0);
+        DefaultPartBodyByteStoreFactory defaultBodyStreamFactory = new DefaultPartBodyByteStoreFactory(folder.getAbsolutePath(), 0);
         assertTrue(folder.delete());// Delete the folder so that we have an error creating the file
         Exception expected = null;
         try {
-            defaultBodyStreamFactory.newPartStreams(new HashMap<String, List<String>>(), 1);
+            defaultBodyStreamFactory.newByteStoreForPartBody(new HashMap<String, List<String>>(), 1);
         }catch (Exception e){
             expected = e;
         }

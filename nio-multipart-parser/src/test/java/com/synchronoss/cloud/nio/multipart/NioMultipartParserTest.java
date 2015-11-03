@@ -16,6 +16,7 @@
 
 package com.synchronoss.cloud.nio.multipart;
 
+import com.synchronoss.cloud.nio.multipart.io.ByteStore;
 import org.junit.Assert;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -24,7 +25,10 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 
 import static org.junit.Assert.assertNotNull;
+import static org.mockito.Matchers.anyInt;
+import static org.mockito.Matchers.anyMap;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
@@ -44,7 +48,7 @@ public class NioMultipartParserTest {
         when(context.getContentType()).thenReturn("multipart/form-data;boundary=MUEYT2qJT0_ZzYUvVQLy_DlrLeADyxzmsA");
 
         NioMultipartParserListener listener = mock(NioMultipartParserListener.class);
-        PartStreamsFactory partStreamsFactory = mock(PartStreamsFactory.class);
+        PartBodyByteStoreFactory partBodyByteStoreFactory = mock(PartBodyByteStoreFactory.class);
 
         NioMultipartParser parser = new NioMultipartParser(context, listener);
         assertNotNull(parser);
@@ -52,10 +56,10 @@ public class NioMultipartParserTest {
         NioMultipartParser parser1 = new NioMultipartParser(context, listener, 5000);
         assertNotNull(parser1);
 
-        NioMultipartParser parser2 = new NioMultipartParser(context, listener, partStreamsFactory);
+        NioMultipartParser parser2 = new NioMultipartParser(context, listener, partBodyByteStoreFactory);
         assertNotNull(parser2);
 
-        NioMultipartParser parser3 = new NioMultipartParser(context, listener, partStreamsFactory, 5000, 5000, 1);
+        NioMultipartParser parser3 = new NioMultipartParser(context, listener, partBodyByteStoreFactory, 5000, 5000, 1);
         assertNotNull(parser3);
 
     }
@@ -183,6 +187,32 @@ public class NioMultipartParserTest {
             expected = e;
         }
         Assert.assertNotNull(expected);
+
+    }
+
+    @Test
+    public void testClose() throws IOException {
+
+        MultipartContext context = mock(MultipartContext.class);
+        when(context.getContentType()).thenReturn("multipart/form-data;boundary=AAA");
+
+        NioMultipartParserListener listener = mock(NioMultipartParserListener.class);
+        PartBodyByteStoreFactory partBodyByteStoreFactory = mock(PartBodyByteStoreFactory.class);
+        ByteStore byteStore = mock(ByteStore.class);
+        when(partBodyByteStoreFactory.newByteStoreForPartBody(anyMap(), anyInt())).thenReturn(byteStore);
+
+        NioMultipartParser parser = new NioMultipartParser(context, listener, partBodyByteStoreFactory);
+
+        byte[] part = "--AAA\r\nContent-Type: text/plain\r\n\r\nThis is a body".getBytes();
+
+        for (byte aPartByte : part) {
+            parser.write(aPartByte);
+        }
+
+        parser.close();
+
+        verify(byteStore).close();
+
 
     }
 

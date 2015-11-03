@@ -61,6 +61,16 @@ public class WebConfig extends WebMvcConfigurerAdapter {
 
     @Override
     public void configureAsyncSupport(AsyncSupportConfigurer configurer) {
+//        <mvc:annotation-driven>
+//        <mvc:async-support default-timeout="2500" task-executor="executor">
+//        <mvc:callable-interceptors>
+//        <bean class="org.springframework.web.servlet.config.MvcNamespaceTests.TestCallableProcessingInterceptor" />
+//        </mvc:callable-interceptors>
+//        <mvc:deferred-result-interceptors>
+//        <bean class="org.springframework.web.servlet.config.MvcNamespaceTests.TestDeferredResultProcessingInterceptor" />
+//        </mvc:deferred-result-interceptors>
+//        </mvc:async-support>
+//        </mvc:annotation-driven>
         configurer.registerDeferredResultInterceptors(new ReadListenerDeferredResultProcessingInterceptor());
     }
 

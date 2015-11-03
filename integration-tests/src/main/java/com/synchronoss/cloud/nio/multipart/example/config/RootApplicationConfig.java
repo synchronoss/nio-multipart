@@ -16,8 +16,8 @@
 
 package com.synchronoss.cloud.nio.multipart.example.config;
 
-import com.synchronoss.cloud.nio.multipart.ChecksumPartStreamsFactory;
-import com.synchronoss.cloud.nio.multipart.PartStreamsFactory;
+import com.synchronoss.cloud.nio.multipart.ChecksumPartBodyByteStoreFactory;
+import com.synchronoss.cloud.nio.multipart.PartBodyByteStoreFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
@@ -42,7 +42,7 @@ public class RootApplicationConfig {
     }
 
     @Bean
-    public static PartStreamsFactory partStreamsFactory(){
-        return new ChecksumPartStreamsFactory("SHA-256");
+    public static PartBodyByteStoreFactory partStreamsFactory(){
+        return new ChecksumPartBodyByteStoreFactory("SHA-256");
     }
 }

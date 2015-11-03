@@ -15,6 +15,7 @@
  */
 package com.synchronoss.cloud.nio.multipart.example.io;
 
+import com.synchronoss.cloud.nio.multipart.example.io.ChecksumByteStore.ChecksumInputStream;
 import com.synchronoss.cloud.nio.multipart.util.IOUtils;
 import java.io.InputStream;
 
@@ -57,11 +58,19 @@ public class ChecksumStreamUtils {
             while (-1 != checksumInputStream.read(buffer)) {
                 // Do nothing...
             }
-            return new ChecksumAndReadBytes(digestAsHexString(checksumInputStream.getDigest()), checksumInputStream.getReadBytes());
+            return new ChecksumAndReadBytes(digestAsHexString(checksumInputStream.getChecksum()), checksumInputStream.getReadBytes());
         }catch (Exception e){
             throw new IllegalStateException("Unable to compute the hash for of the part input stream", e);
         }finally {
             IOUtils.closeQuietly(checksumInputStream);
+        }
+    }
+
+    public static ChecksumAndReadBytes computeChecksumAndReadBytes(final InputStream inputStream) {
+        if (inputStream instanceof ChecksumInputStream) {
+            return computeChecksumAndReadBytes((ChecksumInputStream)inputStream);
+        }else{
+            throw new IllegalStateException("Input stream is not a ChecksumInputStream");
         }
     }
 

@@ -28,14 +28,14 @@ public class ParserFactory {
     /**
      * Configuration for a {@link NioMultipartParser}
      */
-    public static class Config{
+    public static class Config {
 
         private MultipartContext context;
         private NioMultipartParserListener listener;
         private int bufferSize = 16000;//16Kb
         private int headersSizeLimit = 16000;//16Kb
         private int nestedMultipartsAllowed = 1;
-        private PartStreamsFactory partStreamsFactory;
+        private PartBodyByteStoreFactory partBodyByteStoreFactory;
         private String tempFolder = System.getProperty("java.io.tmpdir");
         private int bodySizeThreshold = 10240;// 10Kb
 
@@ -76,8 +76,8 @@ public class ParserFactory {
             return this;
         }
 
-        public Config withCustomPartStreamsFactory(final PartStreamsFactory partStreamsFactory){
-            this.partStreamsFactory = partStreamsFactory;
+        public Config usePartBodyByteStoreFactory(final PartBodyByteStoreFactory partBodyByteStoreFactory){
+            this.partBodyByteStoreFactory = partBodyByteStoreFactory;
             return this;
         }
 
@@ -89,11 +89,11 @@ public class ParserFactory {
             return this;
         }
 
-        private PartStreamsFactory partStreamsFactory(){
-            if (partStreamsFactory == null){
-                return new DefaultPartStreamsFactory(tempFolder, bodySizeThreshold);
+        private PartBodyByteStoreFactory partStreamsFactory(){
+            if (partBodyByteStoreFactory == null){
+                return new DefaultPartBodyByteStoreFactory(tempFolder, bodySizeThreshold);
             }else{
-                return partStreamsFactory;
+                return partBodyByteStoreFactory;
             }
         }
 

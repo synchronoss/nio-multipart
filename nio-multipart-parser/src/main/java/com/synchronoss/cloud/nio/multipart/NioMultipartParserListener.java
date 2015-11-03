@@ -16,7 +16,8 @@
 
 package com.synchronoss.cloud.nio.multipart;
 
-import com.synchronoss.cloud.nio.multipart.PartStreamsFactory.PartStreams;
+
+import com.synchronoss.cloud.nio.multipart.io.ByteStore;
 
 import java.util.List;
 import java.util.Map;
@@ -33,10 +34,10 @@ public interface NioMultipartParserListener {
      * <p>
      *     Called when a part has been parsed.
      * </p>
-     * @param partStreams The {@link PartStreams} from where the part body can be read using the stream returned by {@link PartStreams#getPartInputStream()}
+     * @param partBodyByteStore The {@link ByteStore} from where the part body can be read using the stream returned by {@link ByteStore#getInputStream()}
      * @param headersFromPart The part headers.
      */
-    void onPartReady(final PartStreams partStreams, final Map<String, List<String>> headersFromPart);
+    void onPartReady(final ByteStore partBodyByteStore, final Map<String, List<String>> headersFromPart);
 
     /**
      * <p>

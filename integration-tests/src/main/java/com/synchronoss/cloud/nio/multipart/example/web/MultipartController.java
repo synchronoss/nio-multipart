@@ -20,10 +20,9 @@ import com.google.common.base.Function;
 import com.google.common.collect.Maps;
 import com.google.common.io.Files;
 import com.google.gson.Gson;
-import com.synchronoss.cloud.nio.multipart.ChecksumPartStreamsFactory.ChecksumPartStreams;
 import com.synchronoss.cloud.nio.multipart.*;
-import com.synchronoss.cloud.nio.multipart.PartStreamsFactory.PartStreams;
 import com.synchronoss.cloud.nio.multipart.example.config.RootApplicationConfig;
+import com.synchronoss.cloud.nio.multipart.example.io.ChecksumByteStore;
 import com.synchronoss.cloud.nio.multipart.example.io.ChecksumStreamUtils;
 import com.synchronoss.cloud.nio.multipart.example.io.ChecksumStreamUtils.ChecksumAndReadBytes;
 import com.synchronoss.cloud.nio.multipart.example.model.FileMetadata;
@@ -32,6 +31,7 @@ import com.synchronoss.cloud.nio.multipart.example.model.VerificationItem;
 import com.synchronoss.cloud.nio.multipart.example.model.VerificationItems;
 import com.synchronoss.cloud.nio.multipart.example.spring.CloseableReadListenerDeferredResult;
 import com.synchronoss.cloud.nio.multipart.example.spring.ReadListenerDeferredResult;
+import com.synchronoss.cloud.nio.multipart.io.ByteStore;
 import org.apache.commons.fileupload.FileItemIterator;
 import org.apache.commons.fileupload.FileItemStream;
 import org.apache.commons.fileupload.servlet.ServletFileUpload;
@@ -84,7 +84,7 @@ import static com.synchronoss.cloud.nio.multipart.ParserFactory.newParser;
  *     </ul>
  *     The response will also contain if all the item matched.
  * <p>
- *     When the NIO Multipart parser is used, the checksum and size are computed for both the streams returned by the {@link PartStreams}.
+ *     When the NIO Multipart parser is used, the checksum and size are computed for both the streams returned by the {@link ByteStore}.
  *     This is not the case when the commons fileupload is used and the
  *     {@link VerificationItem#getPartOutputStreamChecksum()} and {@link VerificationItem#getPartOutputStreamWrittenBytes()}
  *     will not be populated and checked.
@@ -104,7 +104,7 @@ public class MultipartController {
     public static final String METADATA_FIELD_NAME = "metadata";
 
     @Autowired
-    private PartStreamsFactory partStreamsFactory;
+    private PartBodyByteStoreFactory partBodyByteStoreFactory;
 
     private static Gson GSON = new Gson();
 
@@ -145,14 +145,14 @@ public class MultipartController {
             final NioMultipartParserListener listener = new NioMultipartParserListener() {
 
                 @Override
-                public void onPartReady(PartStreams partStreams, Map<String, List<String>> headersFromPart) {
+                public void onPartReady(ByteStore partBodyByteStore, Map<String, List<String>> headersFromPart) {
                     if(log.isInfoEnabled()) log.info("PARSER LISTENER - onPartReady");
-                    final ChecksumPartStreams checksumPartStreams = getChecksumPartStreamsOrThrow(partStreams);
+                    final ChecksumByteStore checksumByteStore = getChecksumByteStoreOrThrow(partBodyByteStore);
                     final String fieldName = MultipartUtils.getFieldName(headersFromPart);
                     if (METADATA_FIELD_NAME.equals(fieldName)){
-                        metadata = unmarshalMetadataOrThrow(checksumPartStreams);
+                        metadata = unmarshalMetadataOrThrow(checksumByteStore);
                     }else{
-                        VerificationItem verificationItem = buildVerificationItem(checksumPartStreams, fieldName);
+                        VerificationItem verificationItem = buildVerificationItem(checksumByteStore, fieldName);
                         verificationItems.getVerificationItems().add(verificationItem);
                     }
                 }
@@ -192,7 +192,7 @@ public class MultipartController {
 
             };
 
-            final NioMultipartParser parser = ParserFactory.newParser(ctx, listener).withCustomPartStreamsFactory(partStreamsFactory).forNio();
+            final NioMultipartParser parser = ParserFactory.newParser(ctx, listener).usePartBodyByteStoreFactory(partBodyByteStoreFactory).forNio();
 
             @Override
             public void onDataAvailable() throws IOException {
@@ -244,11 +244,11 @@ public class MultipartController {
                 return unmarshalMetadata(json);
             }
 
-            synchronized Metadata unmarshalMetadataOrThrow(final ChecksumPartStreams checksumPartStreams){
+            synchronized Metadata unmarshalMetadataOrThrow(final ChecksumByteStore checksumPartStreams){
                 if (metadata != null){
                     throw new IllegalStateException("Found two metadata fields");
                 }
-                return unmarshalMetadata(checksumPartStreams.getPartInputStream());
+                return unmarshalMetadata(checksumPartStreams.getInputStream());
             }
 
         };
@@ -297,10 +297,10 @@ public class MultipartController {
             Metadata metadata;
 
             @Override
-            public void onPartReady(final PartStreams partStreams, final Map<String, List<String>> headersFromPart) {
+            public void onPartReady(final ByteStore partBodyByteStore, final Map<String, List<String>> headersFromPart) {
                 if(log.isInfoEnabled())log.info("PARSER LISTENER - onPartReady") ;
                 final String fieldName = MultipartUtils.getFieldName(headersFromPart);
-                final ChecksumPartStreams checksumPartStreams = getChecksumPartStreamsOrThrow(partStreams);
+                final ChecksumByteStore checksumPartStreams = getChecksumByteStoreOrThrow(partBodyByteStore);
                 if (METADATA_FIELD_NAME.equals(fieldName)){
                     metadata = unmarshalMetadataOrThrow(checksumPartStreams);
                 }else{
@@ -347,18 +347,18 @@ public class MultipartController {
                 return unmarshalMetadata(json);
             }
 
-            synchronized Metadata unmarshalMetadataOrThrow(final ChecksumPartStreams checksumPartStreams){
+            synchronized Metadata unmarshalMetadataOrThrow(final ChecksumByteStore checksumPartStreams){
                 if (metadata != null){
                     throw new IllegalStateException("Found more than one metadata fields");
                 }
-                return unmarshalMetadata(checksumPartStreams.getPartInputStream());
+                return unmarshalMetadata(checksumPartStreams.getInputStream());
             }
 
         };
 
         final MultipartContext ctx = getMultipartContext(request);
 
-        try(final NioMultipartParser parser = newParser(ctx, listener).withCustomPartStreamsFactory(partStreamsFactory).forNio()){
+        try(final NioMultipartParser parser = newParser(ctx, listener).usePartBodyByteStoreFactory(partBodyByteStoreFactory).forNio()){
 
             inputStream.setReadListener(new ReadListener() {
 
@@ -480,11 +480,11 @@ public class MultipartController {
         }
     }
 
-    static ChecksumPartStreams getChecksumPartStreamsOrThrow(final PartStreams partStreams){
-        if (partStreams instanceof ChecksumPartStreams){
-            return (ChecksumPartStreams)partStreams;
+    static ChecksumByteStore getChecksumByteStoreOrThrow(final ByteStore byteStore){
+        if (byteStore instanceof ChecksumByteStore){
+            return (ChecksumByteStore) byteStore;
         }else{
-            throw new IllegalStateException("Expected ChecksumPartStreams but got " + partStreams.getClass().getName());
+            throw new IllegalStateException("Expected ChecksumPartStreams but got " + byteStore.getClass().getName());
         }
     }
 
@@ -500,19 +500,20 @@ public class MultipartController {
         return GSON.fromJson(json, Metadata.class);
     }
 
-    static VerificationItem buildVerificationItem(final ChecksumPartStreams checksumPartStreams, final String fieldName){
+    static VerificationItem buildVerificationItem(final ChecksumByteStore checksumByteStore, final String fieldName){
 
-        final String outputStreamDigest = checksumPartStreams.getOutputStreamDigest();
-        final String inputStreamDigest = checksumPartStreams.getInputStreamDigest();
+        final String outputStreamChecksum = ChecksumStreamUtils.digestAsHexString(checksumByteStore.getChecksum());
+        final long outputStreamWrittenBytes = checksumByteStore.getWrittenBytes();
 
-        final long outputStreamWrittenBytes = checksumPartStreams.getOutputStreamWrittenBytes();
-        final long inputStreamReadBytes = checksumPartStreams.getInputStreamReadBytes();
+        final ChecksumAndReadBytes checksumAndReadBytes =  ChecksumStreamUtils.computeChecksumAndReadBytes(checksumByteStore.getInputStream());
+        final String inputStreamChecksum = checksumAndReadBytes.getChecksum();
+        final long inputStreamReadBytes = checksumAndReadBytes.getReadBytes();
 
         VerificationItem verificationItem = new VerificationItem();
         verificationItem.setFile(fieldName);
         verificationItem.setPartInputStreamReadBytes(inputStreamReadBytes);
-        verificationItem.setPartInputStreamStreamChecksum(inputStreamDigest);
-        verificationItem.setPartOutputStreamChecksum(outputStreamDigest);
+        verificationItem.setPartInputStreamStreamChecksum(inputStreamChecksum);
+        verificationItem.setPartOutputStreamChecksum(outputStreamChecksum);
         verificationItem.setPartOutputStreamWrittenBytes(outputStreamWrittenBytes);
         return verificationItem;
 
