@@ -19,9 +19,7 @@ import java.io.*;
 import java.nio.charset.Charset;
 
 /**
- * <p>
- *     Bunch of IO utilities
- * </p>
+ * <p> Bunch of IO utilities
  *
  * @author Silvano Riz
  */
@@ -30,13 +28,11 @@ public class IOUtils {
     public static final String SYSTEM_CHAR_SET = Charset.defaultCharset().name();
 
     /**
-     * <p>
-     *     Reads an {@link InputStream} into a String with the specified char encoding
-     * </p>
+     * <p> Reads an {@code InputStream} into a String with the specified char encoding
      *
-     * @param inputStream The {@link InputStream} to read from
+     * @param inputStream The {@code InputStream} to read from
      * @param charEncoding The charEncoding to use. If null the system default is used.
-     * @return The {@link String} read.
+     * @return The {@code String} read.
      * @throws IOException If the read fails
      */
     public static String inputStreamAsString(final InputStream inputStream, String charEncoding) throws IOException {
@@ -56,11 +52,9 @@ public class IOUtils {
     }
 
     /**
-     * <p>
-     *     Closes an {@link InputStream} silently
-     * </p>
+     * <p> Closes an {@code InputStream} silently
      *
-     * @param inputStream The {@link InputStream} to close.
+     * @param inputStream The {@code InputStream} to close.
      */
     public static void closeQuietly(final InputStream inputStream){
         try{

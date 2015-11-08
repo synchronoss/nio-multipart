@@ -21,21 +21,18 @@ import java.io.InputStream;
 import java.io.OutputStream;
 
 /**
- * <p>
- *     Defines a storage that allows to store bytes and read them back.
- *     This class extends {@link OutputStream} to allow the write operations, and it exposes the {@link #getInputStream()} method
+ * <p> Defines a storage that allows to store bytes and read them back.
+ *     This class extends {@code OutputStream} to allow the write operations, and it exposes the {@link #getInputStream()} method
  *     to read the data back.
- * </p>
  *
  * @author Silvano Riz.
  */
 public abstract class ByteStore extends OutputStream {
 
     /**
-     * <p>
-     *     Returns the {@link InputStream} to read back data from the store.
-     * </p>
-     * @return the {@link InputStream} to read back data from the store.
+     * <p> Returns the {@code InputStream} to read back data from the store.
+     *
+     * @return the {@code InputStream} to read back data from the store.
      */
     public abstract InputStream getInputStream();
 

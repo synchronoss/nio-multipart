@@ -24,11 +24,10 @@ import org.springframework.web.servlet.config.annotation.AsyncSupportConfigurer;
 import javax.servlet.ServletRequest;
 
 /**
- * <p>
- *     {@link DeferredResultProcessingInterceptor} that attaches the {@link ReadListenerDeferredResult} to the
- *     {@link javax.servlet.ServletInputStream}. <br>
+ * <p> {@code DeferredResultProcessingInterceptor} that attaches the {@link ReadListenerDeferredResult} to the
+ *     {@link javax.servlet.ServletInputStream}.
  *     This interceptor needs to be configured in the spring context. See {@link AsyncSupportConfigurer}
- * </p>
+ *
  * @author Silvano Riz.
  */
 public class ReadListenerDeferredResultProcessingInterceptor implements DeferredResultProcessingInterceptor{

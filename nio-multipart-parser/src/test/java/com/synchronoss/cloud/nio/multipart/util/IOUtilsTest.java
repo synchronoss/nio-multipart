@@ -29,9 +29,8 @@ import static org.mockito.Matchers.anyInt;
 import static org.mockito.Mockito.*;
 
 /**
- * <p>
- *     Unit tests for {@link IOUtils}
- * </p>
+ * <p> Unit tests for {@link IOUtils}
+ *
  * @author Silvano Riz
  */
 public class IOUtilsTest {

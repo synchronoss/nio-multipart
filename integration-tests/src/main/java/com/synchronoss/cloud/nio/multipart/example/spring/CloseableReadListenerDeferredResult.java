@@ -18,9 +18,8 @@ package com.synchronoss.cloud.nio.multipart.example.spring;
 import java.io.Closeable;
 
 /**
- * <p>
- *     {@link ReadListenerDeferredResult} that is also a {@link Closeable}
- * </p>
+ * <p> {@code ReadListenerDeferredResult} that is also a {@code Closeable}
+ *
  * @author Silvano Riz.
  */
 public abstract class CloseableReadListenerDeferredResult<T> extends ReadListenerDeferredResult<T> implements Closeable{

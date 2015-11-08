@@ -26,9 +26,8 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 
 /**
- * <p>
- *     {@link FileInputStream} that will purge the file when {@link #close()} is called.
- * </p>
+ * <p> {@code FileInputStream} that will purge the file when {@link #close()} is called.
+ *
  * @author Silvano Riz
  */
 public class PurgeOnCloseFileInputStream extends FileInputStream {
@@ -38,9 +37,8 @@ public class PurgeOnCloseFileInputStream extends FileInputStream {
     private final File fileToPurge;
 
     /**
-     * <p>
-     *     Creates a new <code>PurgeOnCloseFileInputStream</code>
-     * </p>
+     * <p> Constructor.
+     *
      * @param file The file.
      * @throws FileNotFoundException if the file does not exist, is a directory or it cannot be opened for reading.
      */
@@ -50,10 +48,9 @@ public class PurgeOnCloseFileInputStream extends FileInputStream {
     }
 
     /**
-     * <p>
-     *     Closes the stream and deletes the file.
+     * <p> Closes the stream and deletes the file.
      *     The close will not fail if the file is already deleted or it cannot be deleted.
-     * </p>
+     *
      * @throws IOException if an I/O error occurs.
      */
     @Override

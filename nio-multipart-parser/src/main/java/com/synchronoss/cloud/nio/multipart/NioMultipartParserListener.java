@@ -23,26 +23,23 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * <p>
- *     Listener that will be notified with the progress of the multipart parsing.
- * </p>
+ * <p> Listener that will be notified with the progress of the multipart parsing.
+ *
  * @author Silvano Riz.
  */
 public interface NioMultipartParserListener {
 
     /**
-     * <p>
-     *     Called when a part has been parsed.
-     * </p>
-     * @param partBodyByteStore The {@link ByteStore} from where the part body can be read using the stream returned by {@link ByteStore#getInputStream()}
+     * <p> Called when a part has been parsed.
+     *
+     * @param partBodyByteStore The {@code ByteStore} from where the part body can be read.
      * @param headersFromPart The part headers.
      */
     void onPartReady(final ByteStore partBodyByteStore, final Map<String, List<String>> headersFromPart);
 
     /**
-     * <p>
-     *     Called when a part that is a form field has been parsed
-     * </p>
+     * <p> Called when a part that is a form field has been parsed
+     *
      * @param fieldName The field name
      * @param fieldValue The field value
      * @param headersFromPart The part headers.
@@ -50,31 +47,25 @@ public interface NioMultipartParserListener {
     void onFormFieldPartReady(final String fieldName, final String fieldValue, final Map<String, List<String>> headersFromPart);
 
     /**
-     * <p>
-     *     Called when all the parts have been read.
-     * </p>
+     * <p> Called when all the parts have been read.
      */
     void onAllPartsFinished();
 
     /**
-     * <p>
-     *     Called when the parser is about to start a nested multipart.
-     * </p>
+     * <p> Called when the parser is about to start a nested multipart.
+     *
      * @param headersFromParentPart The headers from the parent part.
      */
     void onNestedPartStarted(final Map<String, List<String>> headersFromParentPart);
 
     /**
-     * <p>
-     *     Called when a nested part has completed.
-     * </p>
+     * <p> Called when a nested part has completed.
      */
     void onNestedPartFinished();
 
     /**
-     * <p>
-     *     Called if an error occurs during the multipart parsing.
-     * </p>
+     * <p> Called if an error occurs during the multipart parsing.
+     *
      * @param message The error message
      * @param cause The error cause or null if there is no cause.
      */

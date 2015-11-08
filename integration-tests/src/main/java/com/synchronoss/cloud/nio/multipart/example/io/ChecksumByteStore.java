@@ -24,6 +24,8 @@ import java.io.InputStream;
 import java.security.MessageDigest;
 
 /**
+ * <p> Extension of {@code DeferredFileByteStore} that is capable of computing the checksum and size of the data going through the streams.
+ *
  * @author Silvano Riz
  */
 public class ChecksumByteStore extends DeferredFileByteStore {
@@ -51,14 +53,24 @@ public class ChecksumByteStore extends DeferredFileByteStore {
     public void write(byte[] b, int off, int len) throws IOException {
         super.write(b, off, len);
         digest.update(b, off, len);
-        writtenBytes +=len-off;
+        writtenBytes += len;
     }
 
     @Override
     public void write(byte[] b) throws IOException {
         super.write(b);
         digest.update(b);
-        writtenBytes+=b.length;
+        writtenBytes += b.length;
+    }
+
+    @Override
+    public void flush() throws IOException {
+        super.flush();
+    }
+
+    @Override
+    public void close() throws IOException {
+        super.close();
     }
 
     @Override

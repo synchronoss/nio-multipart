@@ -1,0 +1,122 @@
+/*
+ * Copyright 2015 Synchronoss Technologies
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.synchronoss.cloud.nio.multipart;
+
+import com.synchronoss.cloud.nio.multipart.BlockingIOAdapter.PartItem;
+import com.synchronoss.cloud.nio.multipart.util.collect.CloseableIterator;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
+
+import java.io.InputStream;
+
+import static com.synchronoss.cloud.nio.multipart.Multipart.multipart;
+import static org.junit.Assert.assertNotNull;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+/**
+ * <p> Unit test for {@link Multipart}
+ *
+ * @author Silvano Riz.
+ */
+public class MultipartTest {
+
+    @Rule
+    public TemporaryFolder tempFolder = new TemporaryFolder();
+
+    @Test
+    public void testMultipart_forNio() throws Exception {
+
+        MultipartContext context = mock(MultipartContext.class);
+        when(context.getContentType()).thenReturn("multipart/form-data;boundary=MUEYT2qJT0_ZzYUvVQLy_DlrLeADyxzmsA");
+        NioMultipartParserListener listener = mock(NioMultipartParserListener.class);
+        PartBodyByteStoreFactory partBodyByteStoreFactory = mock(PartBodyByteStoreFactory.class);
+
+        NioMultipartParser parser = multipart(context).forNIO(listener);
+        assertNotNull(parser);
+
+
+        NioMultipartParser parser1 = multipart(context)
+                .withBufferSize(500)
+                .withHeadersSizeLimit(16000)
+                .withMaxMemoryUsagePerBodyPart(100)
+                .forNIO(listener);
+
+        assertNotNull(parser1);
+
+        NioMultipartParser parser2 = multipart(context)
+                .withBufferSize(500)
+                .withHeadersSizeLimit(16000)
+                .withMaxMemoryUsagePerBodyPart(100)
+                .saveTemporaryFilesTo(tempFolder.getRoot().getAbsolutePath())
+                .limitNestingPartsTo(2)
+                .forNIO(listener);
+
+        assertNotNull(parser2);
+
+        NioMultipartParser parser3 = multipart(context)
+                .withBufferSize(500)
+                .withHeadersSizeLimit(16000)
+                .withMaxMemoryUsagePerBodyPart(100)
+                .usePartBodyByteStoreFactory(partBodyByteStoreFactory)
+                .forNIO(listener);
+
+        assertNotNull(parser3);
+
+    }
+
+    @Test
+    public void testMultipart_forBlockingIO() throws Exception {
+
+        MultipartContext context = mock(MultipartContext.class);
+        when(context.getContentType()).thenReturn("multipart/form-data;boundary=MUEYT2qJT0_ZzYUvVQLy_DlrLeADyxzmsA");
+        PartBodyByteStoreFactory partBodyByteStoreFactory = mock(PartBodyByteStoreFactory.class);
+        InputStream inputStream = mock(InputStream.class);
+
+        CloseableIterator<PartItem> parts = multipart(context).forBlockingIO(inputStream);
+        assertNotNull(parts);
+
+        CloseableIterator<PartItem> parts1 = multipart(context)
+                .withBufferSize(500)
+                .withHeadersSizeLimit(16000)
+                .withMaxMemoryUsagePerBodyPart(100)
+                .forBlockingIO(inputStream);
+
+        assertNotNull(parts1);
+
+        CloseableIterator<PartItem> parts2 = multipart(context)
+                .withBufferSize(500)
+                .withHeadersSizeLimit(16000)
+                .withMaxMemoryUsagePerBodyPart(100)
+                .saveTemporaryFilesTo(tempFolder.getRoot().getAbsolutePath())
+                .limitNestingPartsTo(2)
+                .forBlockingIO(inputStream);
+
+        assertNotNull(parts2);
+
+        CloseableIterator<PartItem> parts3 = multipart(context)
+                .withBufferSize(500)
+                .withHeadersSizeLimit(16000)
+                .withMaxMemoryUsagePerBodyPart(100)
+                .usePartBodyByteStoreFactory(partBodyByteStoreFactory)
+                .forBlockingIO(inputStream);
+
+        assertNotNull(parts3);
+
+    }
+}

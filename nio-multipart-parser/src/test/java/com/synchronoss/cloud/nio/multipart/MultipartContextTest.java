@@ -23,9 +23,8 @@ import org.slf4j.LoggerFactory;
 import static org.junit.Assert.*;
 
 /**
- * <p>
- *     Unit tests for {@link MultipartContext}
- * </p>
+ * <p> Unit tests for {@link MultipartContext}
+ *
  * @author Silvano Riz.
  */
 public class MultipartContextTest {

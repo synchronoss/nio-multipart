@@ -22,11 +22,10 @@ import org.slf4j.LoggerFactory;
 import java.io.OutputStream;
 
 /**
- * <p>
- *     A reusable buffer that is watching for end of line sequences.
- *     Every time the buffer is full or if an end of line is encountered the data (excluded the end of line sequence) will be flushed to an {@link OutputStream}.
- *     After an end of line sequence has been found, the buffer is not writable anymore and {@link #reset(byte[], OutputStream)} must be call to reuse it.
- * </p>
+ * <p> A reusable buffer that is watching for end of line sequences.
+ *     Every time the buffer is full or if an end of line is encountered the data (excluded the end of line sequence) will be flushed to an {@code OutputStream}.
+ *     After an end of line sequence has been found, the buffer is not writable anymore and {@link #recycle(byte[], OutputStream)} must be call to reuse it.
+ *
  * @author Silvano Riz.
  */
 public class EndOfLineBuffer {
@@ -47,12 +46,11 @@ public class EndOfLineBuffer {
     volatile int endOfLineSequenceMatchingLength;
 
     /**
-     * <p>
-     *     Constructor
-     * </p>
+     * <p> Constructor
+     *
      * @param size The size of the buffer. Must be greater than the bigger end of line sequence
      * @param endOfLineSequence The end of line sequence. The {@link #write(byte)} method will return true when the end of line sequence is encountered
-     * @param flushOutputStream The {@link OutputStream} where to flush the data when the buffer is full. If set to null the buffer can be used to skip bytes until an end of line marker.
+     * @param flushOutputStream The {@code OutputStream} where to flush the data when the buffer is full. If set to null the buffer can be used to skip bytes until an end of line marker.
      */
     public EndOfLineBuffer(final int size, byte[] endOfLineSequence, final OutputStream flushOutputStream) {
 
@@ -67,13 +65,12 @@ public class EndOfLineBuffer {
     }
 
     /**
-     * <p>
-     *     Resets the buffer
-     * </p>
+     * <p> Recycles the buffer
+     *
      * @param endOfLineSequence The new end of line sequence.
-     * @param flushOutputStream The new {@link OutputStream} where to flush the data when the buffer is full.
+     * @param flushOutputStream The new {@code OutputStream} where to flush the data when the buffer is full.
      */
-    public void reset(final byte[] endOfLineSequence, final OutputStream flushOutputStream){
+    public void recycle(final byte[] endOfLineSequence, final OutputStream flushOutputStream){
         this.circularBuffer.reset();
         this.flushOutputStream = flushOutputStream;
         this.endOfLineSequence = endOfLineSequence;
@@ -81,16 +78,15 @@ public class EndOfLineBuffer {
     }
 
     /**
-     * <p>
-     *     Writes a byte of data in the buffer. If the buffer already encountered an end of line sequence, and exception will be thrown.
-     * </p>
+     * <p> Writes a byte of data in the buffer. If the buffer already encountered an end of line sequence, and exception will be thrown.
+     *
      * @param data The byte of data.
      * @return true if the buffer encountered one of the end of line sequences, false otherwise.
      */
     public boolean write(final byte data){
 
         if (isEndOfLine()){
-            throw new IllegalStateException("Buffer is in an end of line state. You need to reset it before writing.");
+            throw new IllegalStateException("Buffer is in an end of line state. You need to recycle it before writing.");
         }
 
         flushIfNeeded();
@@ -105,9 +101,8 @@ public class EndOfLineBuffer {
     }
 
     /**
-     * <p>
-     *     Returns if an end of line has been encountered.
-     * </p>
+     * <p> Returns if an end of line has been encountered.
+     *
      * @return true if an end of line sequence has been encountered, false otherwise
      */
     public boolean isEndOfLine() {

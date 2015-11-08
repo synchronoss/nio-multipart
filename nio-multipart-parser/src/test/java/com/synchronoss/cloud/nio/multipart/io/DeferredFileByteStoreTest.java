@@ -28,9 +28,8 @@ import java.io.InputStream;
 import static org.junit.Assert.*;
 
 /**
- * <p>
- *     Unit test for {@link DeferredFileByteStore}
- * </p>
+ * <p> Unit test for {@link DeferredFileByteStore}
+ *
  * @author Silvano Riz.
  */
 public class DeferredFileByteStoreTest {

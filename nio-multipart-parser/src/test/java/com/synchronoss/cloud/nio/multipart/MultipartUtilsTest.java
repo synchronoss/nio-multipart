@@ -23,9 +23,8 @@ import java.util.*;
 import static org.junit.Assert.*;
 
 /**
- * <p>
- *     Unit Tests for {@link MultipartUtils}
- * </p>
+ * <p> Unit Tests for {@link MultipartUtils}
+ *
  * @author Silvano Riz.
  */
 public class MultipartUtilsTest {

@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
+ * <p> A list of {@code VerificationItem}
  *
  * @author Silvano Riz.
  */

@@ -285,7 +285,7 @@ props.put(&quot;name_main&quot;, &quot;metadata&quot;);</stringProp>
           <stringProp name="HTTPSampler.embedded_url_re"></stringProp>
         </HTTPSamplerProxy>
         <hashTree/>
-        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="HTTP Request BLOCKING IO" enabled="true">
+        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="HTTP Request BLOCKING IO (Adapter)" enabled="true">
           <boolProp name="HTTPSampler.postBodyRaw">true</boolProp>
           <elementProp name="HTTPsampler.Arguments" elementType="Arguments">
             <collectionProp name="Arguments.arguments">
@@ -303,7 +303,75 @@ props.put(&quot;name_main&quot;, &quot;metadata&quot;);</stringProp>
           <stringProp name="HTTPSampler.response_timeout"></stringProp>
           <stringProp name="HTTPSampler.protocol"></stringProp>
           <stringProp name="HTTPSampler.contentEncoding"></stringProp>
-          <stringProp name="HTTPSampler.path">http://localhost:${__property(application.server.port)}/integration-tests/blockingio/multipart</stringProp>
+          <stringProp name="HTTPSampler.path">http://localhost:${__property(application.server.port)}/integration-tests/blockingio/adapter/multipart</stringProp>
+          <stringProp name="HTTPSampler.method">POST</stringProp>
+          <boolProp name="HTTPSampler.follow_redirects">false</boolProp>
+          <boolProp name="HTTPSampler.auto_redirects">false</boolProp>
+          <boolProp name="HTTPSampler.use_keepalive">false</boolProp>
+          <boolProp name="HTTPSampler.DO_MULTIPART_POST">true</boolProp>
+          <stringProp name="HTTPSampler.implementation">HttpClient3.1</stringProp>
+          <elementProp name="HTTPsampler.Files" elementType="HTTPFileArgs">
+            <collectionProp name="HTTPFileArgs.files">
+              <elementProp name="${__P(part_main)}" elementType="HTTPFileArg">
+                <stringProp name="File.path">${__P(part_main)}</stringProp>
+                <stringProp name="File.paramname">${__P(name_main)}</stringProp>
+                <stringProp name="File.mimetype">${__P(mime_main)}</stringProp>
+              </elementProp>
+              <elementProp name="${__P(part_0)}" elementType="HTTPFileArg">
+                <stringProp name="File.path">${__P(part_0)}</stringProp>
+                <stringProp name="File.paramname">${__P(name_0)}</stringProp>
+                <stringProp name="File.mimetype">${__P(mime_0)}</stringProp>
+              </elementProp>
+              <elementProp name="${__P(part_1)}" elementType="HTTPFileArg">
+                <stringProp name="File.path">${__P(part_1)}</stringProp>
+                <stringProp name="File.paramname">${__P(name_1)}</stringProp>
+                <stringProp name="File.mimetype">${__P(mime_1)}</stringProp>
+              </elementProp>
+              <elementProp name="${__P(part_2)}" elementType="HTTPFileArg">
+                <stringProp name="File.path">${__P(part_2)}</stringProp>
+                <stringProp name="File.paramname">${__P(name_2)}</stringProp>
+                <stringProp name="File.mimetype">${__P(mime_2)}</stringProp>
+              </elementProp>
+              <elementProp name="${__P(part_3)}" elementType="HTTPFileArg">
+                <stringProp name="File.path">${__P(part_3)}</stringProp>
+                <stringProp name="File.paramname">${__P(name_3)}</stringProp>
+                <stringProp name="File.mimetype">${__P(mime_3)}</stringProp>
+              </elementProp>
+              <elementProp name="${__P(part_4)}" elementType="HTTPFileArg">
+                <stringProp name="File.path">${__P(part_4)}</stringProp>
+                <stringProp name="File.paramname">${__P(name_4)}</stringProp>
+                <stringProp name="File.mimetype">${__P(mime_4)}</stringProp>
+              </elementProp>
+              <elementProp name="${__P(part_5)}" elementType="HTTPFileArg">
+                <stringProp name="File.path">${__P(part_5)}</stringProp>
+                <stringProp name="File.paramname">${__P(name_5)}</stringProp>
+                <stringProp name="File.mimetype">${__P(mime_5)}</stringProp>
+              </elementProp>
+            </collectionProp>
+          </elementProp>
+          <boolProp name="HTTPSampler.monitor">false</boolProp>
+          <stringProp name="HTTPSampler.embedded_url_re"></stringProp>
+        </HTTPSamplerProxy>
+        <hashTree/>
+        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="HTTP Request BLOCKING IO (fileupload)" enabled="true">
+          <boolProp name="HTTPSampler.postBodyRaw">true</boolProp>
+          <elementProp name="HTTPsampler.Arguments" elementType="Arguments">
+            <collectionProp name="Arguments.arguments">
+              <elementProp name="" elementType="HTTPArgument">
+                <boolProp name="HTTPArgument.always_encode">false</boolProp>
+                <stringProp name="Argument.value">&#xd;
+</stringProp>
+                <stringProp name="Argument.metadata">=</stringProp>
+              </elementProp>
+            </collectionProp>
+          </elementProp>
+          <stringProp name="HTTPSampler.domain"></stringProp>
+          <stringProp name="HTTPSampler.port"></stringProp>
+          <stringProp name="HTTPSampler.connect_timeout"></stringProp>
+          <stringProp name="HTTPSampler.response_timeout"></stringProp>
+          <stringProp name="HTTPSampler.protocol"></stringProp>
+          <stringProp name="HTTPSampler.contentEncoding"></stringProp>
+          <stringProp name="HTTPSampler.path">http://localhost:${__property(application.server.port)}/integration-tests/blockingio/fileupload/multipart</stringProp>
           <stringProp name="HTTPSampler.method">POST</stringProp>
           <boolProp name="HTTPSampler.follow_redirects">false</boolProp>
           <boolProp name="HTTPSampler.auto_redirects">false</boolProp>

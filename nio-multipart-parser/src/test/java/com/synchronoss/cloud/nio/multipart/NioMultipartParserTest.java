@@ -32,9 +32,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * <p>
- *     Unit tests for {@link NioMultipartParser}
- * </p>
+ * <p> Unit tests for {@link NioMultipartParser}
+ *
  * @author Silvano Riz.
  */
 public class NioMultipartParserTest {

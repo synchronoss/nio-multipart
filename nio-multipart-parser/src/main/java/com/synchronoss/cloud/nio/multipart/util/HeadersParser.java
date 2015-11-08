@@ -24,10 +24,9 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * <p>
- * Class partially taken from the apache commons httpclient project <a href="https://hc.apache.org/httpclient-legacy/index.html">commons-httpclient</a>
- * The code has been adapted for the specific use case of the nio multipart project.
- * </p>
+ * <p> Class partially taken from the apache commons httpclient project <a href="https://hc.apache.org/httpclient-legacy/index.html">commons-httpclient</a>
+ *     The code has been adapted for the specific use case of the nio multipart project.
+ *
  * @author Silvano Riz.
  */
 public class HeadersParser {

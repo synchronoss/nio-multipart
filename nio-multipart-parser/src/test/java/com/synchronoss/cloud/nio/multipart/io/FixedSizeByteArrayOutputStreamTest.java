@@ -23,9 +23,8 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 /**
- * <p>
- *     Unit tests for {@link FixedSizeByteArrayOutputStream}
- * </p>
+ * <p> Unit tests for {@link FixedSizeByteArrayOutputStream}
+ *
  * @author Silvano Riz.
  */
 public class FixedSizeByteArrayOutputStreamTest {

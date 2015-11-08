@@ -20,6 +20,8 @@ import com.synchronoss.cloud.nio.multipart.util.IOUtils;
 import java.io.InputStream;
 
 /**
+ * <p> Checksum utilities.
+ *
  * @author Silvano Riz.
  */
 public class ChecksumStreamUtils {

@@ -13,15 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.synchronoss.cloud.nio.multipart;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
+import com.synchronoss.cloud.nio.multipart.BlockingIOAdapter.Attachment;
+import com.synchronoss.cloud.nio.multipart.BlockingIOAdapter.FormParameter;
+import com.synchronoss.cloud.nio.multipart.BlockingIOAdapter.PartItem;
 import com.synchronoss.cloud.nio.multipart.io.ByteStore;
 import com.synchronoss.cloud.nio.multipart.testutil.ChunksFileReader;
 import com.synchronoss.cloud.nio.multipart.testutil.MultipartTestCases;
 import com.synchronoss.cloud.nio.multipart.testutil.MultipartTestCases.MultipartTestCase;
+import com.synchronoss.cloud.nio.multipart.util.collect.CloseableIterator;
 import org.apache.commons.fileupload.FileItemHeaders;
 import org.apache.commons.fileupload.FileItemIterator;
 import org.apache.commons.fileupload.FileItemStream;
@@ -34,6 +37,7 @@ import org.junit.runners.Parameterized;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collection;
 import java.util.Iterator;
@@ -42,19 +46,23 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.synchronoss.cloud.nio.multipart.BlockingIOAdapter.PartItem.Type.NESTED_END;
+import static com.synchronoss.cloud.nio.multipart.BlockingIOAdapter.PartItem.Type.NESTED_START;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 /**
- * <p>
- *     Functional test that verifies the library is compliant with the apache commons fileupload.
- * </p>
+ * <p> Functional test that verifies the library is compliant with the apache commons fileupload.
+ *
  * @author Silvano Riz.
  */
 @RunWith(Parameterized.class)
-public class NioMultipartParserFunctionalTest {
+public class FunctionalTest {
 
-    private static final Logger log = LoggerFactory.getLogger(NioMultipartParserFunctionalTest.class);
+    private static final Logger log = LoggerFactory.getLogger(FunctionalTest.class);
 
     final MultipartTestCase testCase;
-    public NioMultipartParserFunctionalTest(final MultipartTestCase testCase){
+    public FunctionalTest(final MultipartTestCase testCase){
         this.testCase = testCase;
     }
 
@@ -64,9 +72,9 @@ public class NioMultipartParserFunctionalTest {
     }
 
     @Test
-    public void parse() throws Exception {
+    public void nioParserFunctionalTest() throws Exception {
 
-        log.info("============= Test Case: " + testCase.getDescription());
+        log.info("NIO PARSER FUNCTIONAL TEST [ " + testCase.getDescription() + " ]");
 
         if (log.isDebugEnabled()){
             log.debug("Request body\n" + IOUtils.toString(testCase.getBodyInputStream()));
@@ -85,9 +93,7 @@ public class NioMultipartParserFunctionalTest {
 
         final MultipartContext multipartContext = testCase.getMultipartContext();
         final ChunksFileReader chunksFileReader = new ChunksFileReader(testCase.getBodyInputStream(), 5, 10);
-        final DefaultPartBodyByteStoreFactory defaultBodyStreamFactory = new DefaultPartBodyByteStoreFactory(3000);// 3kb
         final NioMultipartParser parser = new NioMultipartParser(multipartContext, nioMultipartParserListener);
-
 
         byte[] chunk;
         while (true) {
@@ -103,7 +109,7 @@ public class NioMultipartParserFunctionalTest {
         while(!finished.get()){
             Thread.sleep(100);
             if (++attempts > 3){
-                Assert.fail("Parser didn't come back in a reasonable time");
+                fail("Parser didn't come back in a reasonable time");
             }
         }
         if (log.isInfoEnabled()){
@@ -115,6 +121,91 @@ public class NioMultipartParserFunctionalTest {
             }
         }
 
+    }
+
+    @Test
+    public void blockingIOAdapterFunctionalTest() throws Exception {
+
+        log.info("BLOCKING IO ADAPTER FUNCTIONAL TEST [ " + testCase.getDescription() + " ]");
+
+        if (log.isDebugEnabled()){
+            log.debug("Request body\n" + IOUtils.toString(testCase.getBodyInputStream()));
+        }
+
+        final FileUpload fileUpload = new FileUpload();
+        final FileItemIterator fileItemIterator = fileUpload.getItemIterator(testCase.getRequestContext());
+
+        try(final CloseableIterator<PartItem> parts = Multipart.multipart(testCase.getMultipartContext()).forBlockingIO(testCase.getBodyInputStream())) {
+
+            while (parts.hasNext()) {
+
+                PartItem partItem = parts.next();
+                PartItem.Type partItemType = partItem.getType();
+                if (NESTED_END.equals(partItemType) || NESTED_START.equals(partItemType)) {
+                    // Commons file upload is not returning an item representing the start/end of a nested multipart.
+                    continue;
+                }
+                assertTrue(fileItemIterator.hasNext());
+                FileItemStream fileItemStream = fileItemIterator.next();
+                assertEquals(partItem, fileItemStream);
+            }
+        }
+
+    }
+
+    static void assertEquals(final PartItem partItem, final FileItemStream fileItemStream) throws IOException {
+
+        if (partItem instanceof FormParameter){
+            FormParameter formParameter = (FormParameter) partItem;
+            assertHeadersAreEqual(fileItemStream.getHeaders(), formParameter.getHeaders());
+            Assert.assertEquals(formParameter.getFieldValue(), IOUtils.toString(fileItemStream.openStream()));
+        }else if (partItem instanceof Attachment){
+            Attachment attachment = (Attachment) partItem;
+            assertHeadersAreEqual(fileItemStream.getHeaders(), attachment.getHeaders());
+            assertInputStreamsAreEqual(attachment.getPartBody(), fileItemStream.openStream());
+        }else{
+            fail("Invalid part item type " + partItem.getClass());
+        }
+
+    }
+
+    static void assertHeadersAreEqual(final FileItemHeaders fileItemHeaders, final Map<String, List<String>> headersFromPart){
+        int i = 0;
+        final Iterator<String> headerNamesIterator = fileItemHeaders.getHeaderNames();
+        while (headerNamesIterator.hasNext()){
+            i++;
+
+            String headerName = headerNamesIterator.next();
+            List<String> headerValues = Lists.newArrayList(fileItemHeaders.getHeaders(headerName));
+            List<String> headerValues1 = headersFromPart.get(headerName);
+
+            if (log.isDebugEnabled()){
+                log.debug("Commons io header values for    '" + headerName + "': " + (headerValues != null ? Joiner.on(",").join(headerValues) : "null"));
+                log.debug("Nio multipart header values for '" + headerName + "': " + (headerValues1 != null ? Joiner.on(",").join(headerValues1) : "null"));
+            }
+
+            Assert.assertEquals(headerValues, headerValues1);
+        }
+        Assert.assertEquals(i, headersFromPart.size());
+    }
+
+    static void assertInputStreamsAreEqual(InputStream fileItemInputStream, InputStream partBodyInputStream){
+        try {
+            while (true) {
+                int bOne = fileItemInputStream.read();
+                int bTwo = partBodyInputStream.read();
+                Assert.assertEquals("Byte from commons file upload: " + bTwo + ", Byte from nio: " + bOne ,bOne, bTwo);
+
+                if (bOne == -1){
+                    break;
+                }
+            }
+        }catch (Exception e){
+            throw new IllegalStateException("Unable to verify the input streams", e);
+        }finally {
+            IOUtils.closeQuietly(fileItemInputStream);
+            IOUtils.closeQuietly(partBodyInputStream);
+        }
     }
 
     NioMultipartParserListener nioMultipartParserListenerVerifier(final FileItemIterator fileItemIterator, final AtomicBoolean finished){
@@ -137,7 +228,7 @@ public class NioMultipartParserFunctionalTest {
                 log.info("<<<<< On form field complete [" + (partIndex.addAndGet(1)) + "] >>>>>>");
                 assertFileItemIteratorHasNext(true);
                 final FileItemStream fileItemStream = fileItemIteratorNext();
-                Assert.assertTrue(fileItemStream.isFormField());
+                assertTrue(fileItemStream.isFormField());
                 Assert.assertEquals(fieldName, fileItemStream.getFieldName());
                 try {
                     Assert.assertEquals(fieldValue, IOUtils.toString(fileItemStream.openStream()));
@@ -169,7 +260,7 @@ public class NioMultipartParserFunctionalTest {
                 log.info("<<<<< On error. Part " + partIndex.get() + "] >>>>>>");
                 finished.set(true);
                 log.error(message, cause);
-                Assert.fail("Got an error from the parser");
+                fail("Got an error from the parser");
             }
 
             InputStream fileItemStreamInputStream(final FileItemStream fileItemStream){
@@ -182,7 +273,7 @@ public class NioMultipartParserFunctionalTest {
 
             void assertFileItemIteratorHasNext(boolean hasNext){
                 try{
-                    Assert.assertTrue("File iterator has next is not " + hasNext, hasNext == fileItemIterator.hasNext());
+                    assertTrue("File iterator has next is not " + hasNext, hasNext == fileItemIterator.hasNext());
                 }catch (Exception e){
                     throw new IllegalStateException("Unable to verify if the FileItemIterator has a next", e);
                 }
@@ -193,45 +284,6 @@ public class NioMultipartParserFunctionalTest {
                     return fileItemIterator.next();
                 }catch (Exception e){
                     throw new IllegalStateException("Unable to retrieve the next FileItemStream", e);
-                }
-            }
-
-            void assertHeadersAreEqual(final FileItemHeaders fileItemHeaders, final Map<String, List<String>> headersFromPart){
-                int i = 0;
-                final Iterator<String> headerNamesIterator = fileItemHeaders.getHeaderNames();
-                while (headerNamesIterator.hasNext()){
-                    i++;
-
-                    String headerName = headerNamesIterator.next();
-                    List<String> headerValues = Lists.newArrayList(fileItemHeaders.getHeaders(headerName));
-                    List<String> headerValues1 = headersFromPart.get(headerName);
-
-                    if (log.isDebugEnabled()){
-                        log.debug("Commons io header values for    '" + headerName + "': " + (headerValues != null ? Joiner.on(",").join(headerValues) : "null"));
-                        log.debug("Nio multipart header values for '" + headerName + "': " + (headerValues1 != null ? Joiner.on(",").join(headerValues1) : "null"));
-                    }
-
-                    Assert.assertEquals(headerValues, headerValues1);
-                }
-                Assert.assertEquals(i, headersFromPart.size());
-            }
-
-            void assertInputStreamsAreEqual(InputStream fileItemInputStream, InputStream partBodyInputStream){
-                try {
-                    while (true) {
-                        int bOne = fileItemInputStream.read();
-                        int bTwo = partBodyInputStream.read();
-                        Assert.assertEquals("Byte from commons file upload: " + bTwo + ", Byte from nio: " + bOne ,bOne, bTwo);
-
-                        if (bOne == -1){
-                            break;
-                        }
-                    }
-                }catch (Exception e){
-                    throw new IllegalStateException("Unable to verify the input streams", e);
-                }finally {
-                    IOUtils.closeQuietly(fileItemInputStream);
-                    IOUtils.closeQuietly(partBodyInputStream);
                 }
             }
 

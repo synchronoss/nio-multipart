@@ -17,11 +17,10 @@
 package com.synchronoss.cloud.nio.multipart.example.model;
 
 /**
- * <p>
- *     Contains the hash and size of the part input stream, the part output streams and the metadata sent in the request.
+ * <p> Contains the hash and size of the part input stream, the part output streams and the metadata sent in the request.
  *     It can be used to verify the parts are not missing any bytes.
- * </p>
- * Created by sriz0001 on 30/10/2015.
+ *
+ * @author Silvano Riz.
  */
 public class VerificationItem {
 
@@ -96,5 +95,19 @@ public class VerificationItem {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    @Override
+    public String toString() {
+        return "VerificationItem{" +
+                "file='" + file + '\'' +
+                ", partInputStreamReadBytes=" + partInputStreamReadBytes +
+                ", partOutputStreamWrittenBytes=" + partOutputStreamWrittenBytes +
+                ", partOutputStreamChecksum='" + partOutputStreamChecksum + '\'' +
+                ", partInputStreamStreamChecksum='" + partInputStreamStreamChecksum + '\'' +
+                ", receivedSize=" + receivedSize +
+                ", receivedChecksum='" + receivedChecksum + '\'' +
+                ", status='" + status + '\'' +
+                '}';
     }
 }

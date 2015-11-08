@@ -22,11 +22,10 @@ import org.slf4j.LoggerFactory;
 import java.io.*;
 
 /**
- * <p>
- *    A {@link ByteStore} that uses a combination of memory and file to store the data.
+ * <p> A {@code ByteStore} that uses a combination of memory and file to store the data.
  *    If the data is smaller than a configurable threshold the data is kept in memory, if the threshold is reached the
  *    bytes are flushed to disk.
- * </p>
+ *
  * @author Silvano Riz
  */
 public class DeferredFileByteStore extends ByteStore {
@@ -50,9 +49,8 @@ public class DeferredFileByteStore extends ByteStore {
     // ------------
 
     /**
-     * <p>
-     *     Constructor.
-     * </p>
+     * <p> Constructor.
+     *
      * @param file The file that will be used to store the data if the threshold is reached.
      * @param threshold The threshold in bytes. Data smaller than the threshold are kept in memory. If the threshold is reached, the data is flushed to disk.
      * @param purgeFileAfterReadComplete boolean flag that if true it will purge the file after the data has been read. The purge happens when the close method is called on the input stream served by the instance.
@@ -71,9 +69,8 @@ public class DeferredFileByteStore extends ByteStore {
     }
 
     /**
-     * <p>
-     *     Constructor that uses the default threshold of 10kb
-     * </p>
+     * <p> Constructor that uses the default threshold of 10kb
+     *
      * @param file The file that will be used to store the data if the threshold is reached.
      * @param purgeFileAfterReadComplete boolean flag that if true it will purge the file after the data has been read. The purge happens when the close method is called on the input stream served by the instance.
      */
@@ -82,9 +79,8 @@ public class DeferredFileByteStore extends ByteStore {
     }
 
     /**
-     * <p>
-     *     Constructor that sets the purgeFileAfterReadComplete to true by default.
-     * </p>
+     * <p> Constructor that sets the purgeFileAfterReadComplete to true by default.
+     *
      * @param file The file that will be used to store the data if the threshold is reached.
      * @param threshold The threshold in bytes. Data smaller than the threshold are kept in memory. If the threshold is reached, the data is flushed to disk.
      */
@@ -93,15 +89,17 @@ public class DeferredFileByteStore extends ByteStore {
     }
 
     /**
-     * <p>
-     *     Constructor that uses the default threshold of 10kb and sets the purgeFileAfterReadComplete to true.
-     * </p>
+     * <p> Constructor that uses the default threshold of 10kb and sets the purgeFileAfterReadComplete to true.
+     *
      * @param file The file that will be used to store the data if the threshold is reached.
      */
     public DeferredFileByteStore(final File file){
         this(file, DEFAULT_THRESHOLD, true);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void write(int b) throws IOException {
         assertIsOpen();
@@ -112,6 +110,9 @@ public class DeferredFileByteStore extends ByteStore {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void write(byte[] b, int off, int len) throws IOException {
         assertIsOpen();
@@ -122,6 +123,9 @@ public class DeferredFileByteStore extends ByteStore {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void write(byte[] b) throws IOException {
         assertIsOpen();
@@ -132,6 +136,9 @@ public class DeferredFileByteStore extends ByteStore {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void flush() throws IOException {
         assertIsOpen();
@@ -140,6 +147,9 @@ public class DeferredFileByteStore extends ByteStore {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void close() throws IOException {
         isClosed = true;
@@ -148,6 +158,9 @@ public class DeferredFileByteStore extends ByteStore {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public InputStream getInputStream() {
         assertIsClosed();
@@ -158,6 +171,11 @@ public class DeferredFileByteStore extends ByteStore {
         }
     }
 
+    /**
+     * <p> Returns if the data has been flushed to disk or if it's still in memory.
+     *
+     * @return true if the data is in memory, false otherwise
+     */
     public boolean isInMemory() {
         return isInMemory;
     }

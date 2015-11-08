@@ -24,9 +24,7 @@ import java.util.Locale;
 import java.util.Map;
 
 /**
- * <p>
- * Class taken from the apache commons file upload project <a href="https://commons.apache.org/proper/commons-fileupload/">commons-fileupload</a>
- * </p>
+ * <p> Class taken from the apache commons file upload project <a href="https://commons.apache.org/proper/commons-fileupload/">commons-fileupload</a>
  */
 public final class MimeUtility {
 

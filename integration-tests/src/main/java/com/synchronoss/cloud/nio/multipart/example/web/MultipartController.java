@@ -21,6 +21,9 @@ import com.google.common.collect.Maps;
 import com.google.common.io.Files;
 import com.google.gson.Gson;
 import com.synchronoss.cloud.nio.multipart.*;
+import com.synchronoss.cloud.nio.multipart.BlockingIOAdapter.Attachment;
+import com.synchronoss.cloud.nio.multipart.BlockingIOAdapter.FormParameter;
+import com.synchronoss.cloud.nio.multipart.BlockingIOAdapter.PartItem;
 import com.synchronoss.cloud.nio.multipart.example.config.RootApplicationConfig;
 import com.synchronoss.cloud.nio.multipart.example.io.ChecksumByteStore;
 import com.synchronoss.cloud.nio.multipart.example.io.ChecksumStreamUtils;
@@ -32,6 +35,7 @@ import com.synchronoss.cloud.nio.multipart.example.model.VerificationItems;
 import com.synchronoss.cloud.nio.multipart.example.spring.CloseableReadListenerDeferredResult;
 import com.synchronoss.cloud.nio.multipart.example.spring.ReadListenerDeferredResult;
 import com.synchronoss.cloud.nio.multipart.io.ByteStore;
+import com.synchronoss.cloud.nio.multipart.util.collect.CloseableIterator;
 import org.apache.commons.fileupload.FileItemIterator;
 import org.apache.commons.fileupload.FileItemStream;
 import org.apache.commons.fileupload.servlet.ServletFileUpload;
@@ -52,30 +56,32 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.*;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.synchronoss.cloud.nio.multipart.ParserFactory.newParser;
+import static com.synchronoss.cloud.nio.multipart.BlockingIOAdapter.PartItem.Type.ATTACHMENT;
+import static com.synchronoss.cloud.nio.multipart.BlockingIOAdapter.PartItem.Type.FORM;
+import static com.synchronoss.cloud.nio.multipart.Multipart.multipart;
 
 /**
- * <p>
- *     A show case of multipart parsing and a useful test tool.
+ * <p> A show case of multipart parsing and a useful test tool.
  *     The Controller defines 3 APIs:
  *     <ul>
  *         <li>POST: /nio/dr/multipart - Nio Multipart processing integrated with spring DeferredResult.</li>
  *         <li>POST: /nio/multipart - Plain Nio Multipart Processing using directly the Servlet 3.1 features.</li>
  *         <li>POST: /blockingio/multipart - Multipart processing using apache commons fileupload. Blocking IO.</li>
  *     </ul>
- * <p>
- *     In all three cases the request is composed by:
+ *
+ * <p> In all three cases the request is composed by:
  *     <ul>
  *         <li>Metadata: The first part whose field name MUST be "metatata". It contains a json object containing file path, checksum and size of all the following file attachments.</li>
  *         <li>File attachments: Actual file parts. The field name must be the file name.</li>
  *     </ul>
  *     See {@link Metadata} and {@link FileMetadata}.
- * <p>
- *     The response (see {@link VerificationItem} and {@link VerificationItems}) is list of verification items containing for each attached file:
+ *
+ * <p> The response (see {@link VerificationItem} and {@link VerificationItems}) is list of verification items containing for each attached file:
  *     <ul>
  *        <li>Original Checksum specified in the metadata</li>
  *        <li>Original Size specified in the metadata</li>
@@ -83,15 +89,14 @@ import static com.synchronoss.cloud.nio.multipart.ParserFactory.newParser;
  *        <li>Size part body processed</li>
  *     </ul>
  *     The response will also contain if all the item matched.
- * <p>
- *     When the NIO Multipart parser is used, the checksum and size are computed for both the streams returned by the {@link ByteStore}.
+ *
+ * <p> When the NIO Multipart parser is used, the checksum and size are computed for both the streams returned by the {@link ByteStore}.
  *     This is not the case when the commons fileupload is used and the
  *     {@link VerificationItem#getPartOutputStreamChecksum()} and {@link VerificationItem#getPartOutputStreamWrittenBytes()}
  *     will not be populated and checked.
- * <p>
- *     This controller, it is a showcase of how the NIO multipart parser can be used and it is also a good integration test
+ *
+ * <p> This controller, it is a showcase of how the NIO multipart parser can be used and it is also a good integration test
  *     that verifies the correct behaviour of the nio multipart parser.
- * </p>
  *
  * @author Silvano Riz.
  */
@@ -109,21 +114,10 @@ public class MultipartController {
     private static Gson GSON = new Gson();
 
     /**
-     * <p>
-     *     This is an example how the NIO Parser can be used in combination with the Spring DeferredResult.
-     * </p>
-     * <p>
-     *     A {@link com.synchronoss.cloud.nio.multipart.example.spring.ReadListenerDeferredResultProcessingInterceptor}
-     *     is registered at start-up (see {@link com.synchronoss.cloud.nio.multipart.example.config.WebConfig}) to the {@link org.springframework.web.servlet.config.annotation.AsyncSupportConfigurer}.
-     *     The interceptor will attach the {@link ReadListenerDeferredResult} (which is a {@link ReadListener}) to the
-     *     {@link ServletInputStream} after switching it to async mode.
-     * </p>
-     * <p>
-     *     At this point it's possible to use the {@link ReadListenerDeferredResult} to implement the nio parsing.
-     * </p>
+     * <p> This is an example how the NIO Parser can be used in combination with the Spring DeferredResult.
      *
-     * @param request The {@link HttpServletRequest}
-     * @return The {@link ReadListenerDeferredResult}
+     * @param request The {@code HttpServletRequest}
+     * @return The {@code ReadListenerDeferredResult}
      * @throws IOException if an IO exception happens
      */
     @RequestMapping(value = "/nio/dr/multipart", method = RequestMethod.POST)
@@ -132,6 +126,9 @@ public class MultipartController {
 
         assertRequestIsMultipart(request);
 
+        // A ReadListenerDeferredResultProcessingInterceptor is registered in the WebConfig.
+        // The interceptor checks the type of the deferred result and if it's a ReadListenerDeferredResult it
+        // attaches it to the servlet input stream.
         final CloseableReadListenerDeferredResult<VerificationItems> readListenerDeferredResult = new CloseableReadListenerDeferredResult<VerificationItems>() {
 
             final AtomicInteger synchronizer = new AtomicInteger(0);
@@ -192,7 +189,7 @@ public class MultipartController {
 
             };
 
-            final NioMultipartParser parser = ParserFactory.newParser(ctx, listener).usePartBodyByteStoreFactory(partBodyByteStoreFactory).forNio();
+            final NioMultipartParser parser = Multipart.multipart(ctx).usePartBodyByteStoreFactory(partBodyByteStoreFactory).forNIO(listener);
 
             @Override
             public void onDataAvailable() throws IOException {
@@ -271,15 +268,9 @@ public class MultipartController {
     }
 
     /**
-     * <p>
-     *     This is an example how the NIO Parser can be used in a plain Servlet 3.1 fashion.
-     *     No {@link org.springframework.web.context.request.async.DeferredResult} is used, but the
-     *     {@link HttpServletRequest} is switched into an async mode and a {@link ReadListener} is attached directly in the
-     *     controller.
-     *     <br>
-     *     The response is then generated writing directly into the response.
+     * <p> This is an example how the NIO Parser can be used in a plain Servlet 3.1 fashion.
      *
-     * @param request The {@link HttpServletRequest}
+     * @param request The {@code HttpServletRequest}
      * @throws IOException if an IO exception happens
      */
     @RequestMapping(value = "/nio/multipart", method = RequestMethod.POST)
@@ -358,7 +349,7 @@ public class MultipartController {
 
         final MultipartContext ctx = getMultipartContext(request);
 
-        try(final NioMultipartParser parser = newParser(ctx, listener).usePartBodyByteStoreFactory(partBodyByteStoreFactory).forNio()){
+        try(final NioMultipartParser parser = multipart(ctx).usePartBodyByteStoreFactory(partBodyByteStoreFactory).forNIO(listener)){
 
             inputStream.setReadListener(new ReadListener() {
 
@@ -424,15 +415,60 @@ public class MultipartController {
     }
 
     /**
-     * <p>
-     *     Example of parsing the multipart request using commons file upload.
-     *     In this case the parsing happens in blocking io.
+     * <p> Example of parsing the multipart request with in a blocking IO mode using the {@link BlockingIOAdapter}.
      *
-     * @param request The {@link HttpServletRequest}
-     * @return The {@link VerificationItems}
+     * @param request The {@code HttpServletRequest}
+     * @return The {@code VerificationItems}
      * @throws Exception if an exception happens during the parsing
      */
-    @RequestMapping(value = "/blockingio/multipart", method = RequestMethod.POST)
+    @RequestMapping(value = "/blockingio/adapter/multipart", method = RequestMethod.POST)
+    public @ResponseBody VerificationItems blockingIoAdapterMultipart(final HttpServletRequest request) throws Exception {
+
+        assertRequestIsMultipart(request);
+
+        final VerificationItems verificationItems = new VerificationItems();
+        Metadata metadata = null;
+
+        try (final CloseableIterator<PartItem> parts = Multipart.multipart(getMultipartContext(request)).forBlockingIO(request.getInputStream())){
+            while (parts.hasNext()) {
+                PartItem partItem = parts.next();
+                if (FORM.equals(partItem.getType())) {
+                    FormParameter formParameter = (FormParameter) partItem;
+                    if (METADATA_FIELD_NAME.equals(formParameter.getFieldName())) {
+                        if (metadata != null) {
+                            throw new IllegalStateException("Found more than one metadata field");
+                        }
+                        metadata = unmarshalMetadata(formParameter.getFieldValue());
+                    }
+                } else if (ATTACHMENT.equals(partItem.getType())) {
+                    Attachment attachment = (Attachment) partItem;
+                    final String fieldName = MultipartUtils.getFieldName(attachment.getHeaders());
+                    if (METADATA_FIELD_NAME.equals(fieldName)) {
+                        metadata = unmarshalMetadata(attachment.getPartBody());
+                    } else {
+
+                        VerificationItem verificationItem = buildVerificationItem(attachment.getPartBody(), fieldName);
+                        verificationItems.getVerificationItems().add(verificationItem);
+                    }
+                } else {
+                    throw new IllegalStateException("Invalid part type " + partItem.getClass().getName());
+                }
+            }
+        }catch (Exception e){
+            throw new IllegalStateException("Parsing error", e);
+        }
+        processVerificationItems(verificationItems, metadata, false);
+        return verificationItems;
+    }
+
+    /**
+     * <p> Example of parsing the multipart request using commons file upload. In this case the parsing happens in blocking io.
+     *
+     * @param request The {@code HttpServletRequest}
+     * @return The {@code VerificationItems}
+     * @throws Exception if an exception happens during the parsing
+     */
+    @RequestMapping(value = "/blockingio/fileupload/multipart", method = RequestMethod.POST)
     public @ResponseBody VerificationItems blockingIoMultipart(final HttpServletRequest request) throws Exception {
 
         assertRequestIsMultipart(request);
@@ -457,7 +493,6 @@ public class MultipartController {
         processVerificationItems(verificationItems, metadata, false);
         return verificationItems;
     }
-
 
     // -- ----------------------------------------------------- --
     // Static utility methods

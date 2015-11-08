@@ -51,9 +51,8 @@ import java.nio.file.Paths;
 import java.util.*;
 
 /**
- * <p>
- *     Integration Test
- * </p>
+ * <p> Integration Test
+ *
  * @author Silvano Riz.
  */
 @RunWith(Parameterized.class)
@@ -64,7 +63,8 @@ public class FileUploadClientIntegrationTest {
     private static final List<String> URLS = Arrays.asList(
             "http://localhost:%d/integration-tests/nio/multipart",
             "http://localhost:%d/integration-tests/nio/dr/multipart",
-            "http://localhost:%d/integration-tests/blockingio/multipart"
+            "http://localhost:%d/integration-tests/blockingio/adapter/multipart",
+            "http://localhost:%d/integration-tests/blockingio/fileupload/multipart"
     );
 
     @Parameterized.Parameters
@@ -112,7 +112,7 @@ public class FileUploadClientIntegrationTest {
 
         List<VerificationItem> verificationItemList = verificationItems.getVerificationItems();
         for (VerificationItem verificationItem : verificationItemList){
-            Assert.assertEquals("MATCHING", verificationItem.getStatus());
+            Assert.assertEquals("Not matching " + verificationItem, "MATCHING", verificationItem.getStatus());
         }
 
     }

@@ -37,7 +37,7 @@ Get started
 The simplest way to get started is using the simple fluent API provided with the library. Instantiating a parser is straightforward:
 
 ```java
-NioMultipartParser parser = ParserFactory.newParser(context, listener).forNio();
+NioMultipartParser parser = Multipart.multipart(context).forNio(listener);
 ```
 
 The only two mandatory arguments are a multipart context, holding information about the current request/response, and a listener that will be notified on the progress of the parsing.
@@ -177,13 +177,13 @@ By default is 1 and it is usually sufficient for most of the cases (like http fo
 All the above configurations can be set using the fluent API:
 
 ```java
-NioMultipartParser parser = ParserFactory.newParser(context, listener)
+NioMultipartParser parser = Multipart.multipart(context)
                 .withBufferSize(8000)// 8kb
                 .withHeadersSizeLimit(8000)// 8kb
                 .withMaxMemoryUsagePerBodyPart(0) // Always create a temp file
                 .saveTemporaryFilesTo("/tmp/file_upload")// Different temp file location
                 .limitNestingPartsTo(2) // Allow two level of nesting
-                .forNio();
+                .forNio(listener);
 ```
 
 Alternatively the constructors can be used (useful if used along with a dependency injection framework).
@@ -234,13 +234,66 @@ The client does not need to read back the data because it's already in the datab
 The custom *PartBodyByteStoreFactory* can be passed to the parser via the appropriate constructor or using the fluent API (see example)
 
 ```java
-NioMultipartParser parser = ParserFactory.newParser(context, listener)
+NioMultipartParser parser = Multipart.multipart(context)
                 .usePartBodyByteStoreFactory(dbPartStreamFactory)
-                .forNio();
+                .forNio(listener);
 ```
 
 This kind of customization can be used to achieve numerous goals. For example it might be possible to compute the file checksum on fly while data are written to the *ByteStore*.
 Other scenarios can be the on-fly indexing of the content or file metadata extraction.
+
+Still using Blocking IO? No Problem
+-----------------------------------
+If you are still using blocking IO and for some reason you don't need to (or you cannot) switch to NIO, the library provides an adapter that makes the *NioMultipartParser* working with blocking IO.
+The adapter will simply return a *Iterator* over the parts. The *next()* and *hasNext()* methods will block if there is no available data.
+The iterator has to be closed to free the resources used by the parser, so the actual type returned by the adapter is a *CloseableIterator*.
+To parse a multipart stream in a blocking fashion, the easier way is to use the fluent API:
+
+```java
+final InputStream inputStream = request.getInputStream();
+CloseableIterator<PartItem> parts = Multipart.multipart(context).forBlockingIO(inputStream);
+
+while(parts.hasNext()){
+    PartItem partItem = parts.next();
+    PartItem.Type partItemType = partItem.getType();
+    switch(partItemType){
+        case FORM:
+            final FormParameter formParameter = (FormParameter)partItem;
+            final Map<String, List<String>> headers = formParameter.getHeaders();
+            final String fieldName = formParameter.getFieldName();
+            final String fieldValue = formParameter.getFieldValue();
+            break;
+        case ATTACHMENT:
+            Attachment attachment = (Attachment)partItem;
+            final Map<String, List<String>> headers = attachment.getHeaders();
+            final InputStream body = attachment.getPartBody();
+            break;
+        case NESTED_START:
+            // A marker to keep track of nested multipart and it gives access to the headers...
+            NestedStart nestedStart = (NestedStart)partItem;
+            final Map<String, List<String>> headers = nestedStart.getHeaders();
+            break;
+        case NESTED_END:
+            // Just a marker but it might be used to keep track of nested multipart...
+            break;
+        defaulr: 
+            break;// Impossible
+    }
+}
+
+parts.close();
+
+```
+
+Additional configuration can be added in the same way it can be added when working in NIO. 
+Moreover, if the fluent API is not the best strategy for the use case, the adapter can be instantiated directly (see the *BlockingIOAdapter* class).
+
+As it can be seen in the example above, the *PartItem* is just an interface and there are three different implementations:
+
+* FormParameter: Represents a form parameter and the field name and field value can be extracted directly via getter methods. The part's headers can be obtained as well.
+* Attachment: Represents a part that is not a form parameter. In this case the part body can be read using the *InputStream* returned by *getPartBody*.
+* NestedStart: Represents a part that is itself a multipart. It provides the headers, while the nested parts will be returned as next items in the iterator.
+* NestedEnd: Signals the end of a nested part. This is just a marker and it carries no data.
 
 Nio Multipart Parser - Internal Building Blocks
 -----------------------------------------------

@@ -23,9 +23,8 @@ import java.util.Locale;
 import java.util.Map;
 
 /**
- * <p>
- *     Utilities to parse a multipart request/response.
- * </p>
+ * <p> Utilities to parse a multipart stream.
+ *
  * @author Silvano Riz.
  */
 public class MultipartUtils {
@@ -73,9 +72,8 @@ public class MultipartUtils {
     private MultipartUtils(){}// empty private constructor
 
     /**
-     * <p>
-     *     Checks if the Content-Type header defines a multipart request.
-     * </p>
+     * <p> Checks if the Content-Type header defines a multipart request.
+     *
      * @param contentTypeHeaderValue The value of the Content-Type header.
      * @return true if the request is a multipart request, false otherwise.
      */
@@ -84,9 +82,8 @@ public class MultipartUtils {
     }
 
     /**
-     * <p>
-     *     Checks if the headers contains a Content-Type header that defines a multipart request.
-     * </p>
+     * <p> Checks if the headers contains a Content-Type header that defines a multipart request.
+     *
      * @param headers The headers map
      * @return true if the request is a multipart request, false otherwise.
      */
@@ -95,9 +92,8 @@ public class MultipartUtils {
     }
 
     /**
-     * <p>
-     *     Returns the value of the content length header if present. -1 if the header is not present or if the value cannot be converted to a long
-     * </p>
+     * <p> Returns the value of the content length header if present. -1 if the header is not present or if the value cannot be converted to a long
+     *
      * @param headers The headers map
      * @return the value of the content length header if present. -1 if the header is not present or if the value cannot be converted to a long
      */
@@ -115,9 +111,7 @@ public class MultipartUtils {
     }
 
     /**
-     * <p>
-     *     Extracts the charset parameter value from the content type header.
-     * </p>
+     * <p> Extracts the charset parameter value from the content type header.
      *
      * @param headers The headers map
      * @return the charset parameter value from the content type header or null if the header is not present of the charset parameter not defined
@@ -134,9 +128,8 @@ public class MultipartUtils {
     }
 
     /**
-     * <p>
-     *     Returns the list of values fo a particular header.
-     * </p>
+     * <p> Returns the list of values fo a particular header.
+     *
      * @param headerName The header name
      * @param headers The list of headers
      * @return The list of header values or null.
@@ -146,9 +139,8 @@ public class MultipartUtils {
     }
 
     /**
-     * <p>
-     *     Returns the first value of a particular header
-     * </p>
+     * <p> Returns the first value of a particular header
+     *
      * @param headerName The header name
      * @param headers The headers
      * @return The first value of the header or null
@@ -162,9 +154,8 @@ public class MultipartUtils {
     }
 
     /**
-     * <p>
-     *     Checks if the part is a form field.
-     * </p>
+     * <p> Checks if the part is a form field.
+     *
      * @param headers The part headers
      * @return true if the part is a form field, false otherwise.
      */
@@ -176,9 +167,8 @@ public class MultipartUtils {
     }
 
     /**
-     * <p>
-     *     Returns the 'filename' parameter of the Content-disposition header.
-     * </p>
+     * <p> Returns the 'filename' parameter of the Content-disposition header.
+     *
      * @param headers The list of headers
      * @return The 'filename' parameter of the Content-disposition header or null
      */
@@ -209,9 +199,8 @@ public class MultipartUtils {
     }
 
     /**
-     * <p>
-     *     Returns the 'name' parameter of the Content-disposition header.
-     * </p>
+     * <p> Returns the 'name' parameter of the Content-disposition header.
+     *
      * @param headers The list of headers
      * @return The 'name' parameter of the Content-disposition header or null
      */

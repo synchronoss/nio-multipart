@@ -19,10 +19,9 @@ package com.synchronoss.cloud.nio.multipart.example.model;
 import java.util.List;
 
 /**
- * <p>
- *     Metadata, a list of {@link FileMetadata}
- * </p>
- * Created by sriz0001 on 30/10/2015.
+ * <p> Metadata, a list of {@code FileMetadata} </p>
+ *
+ * @author Silvano Riz.
  */
 public class Metadata {
 

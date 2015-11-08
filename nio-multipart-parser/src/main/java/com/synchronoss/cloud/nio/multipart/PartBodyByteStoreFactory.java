@@ -22,24 +22,21 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * <p>
- *     {@link ByteStore} factory. This interface provides an extension point for the {@link NioMultipartParser}.
- *     Custom implementations of {@link PartBodyByteStoreFactory} can be provided to implement specific application logic like
- *     streaming the part directly to database or to a rest service.<br>
- *     The default implementation {@link DefaultPartBodyByteStoreFactory} uses a mix of memory and temporary files to store the
- *     part body.
- * </p>
+ * <p> Factory for a {@code ByteStore}. This is a powerful extension point and custom implementations can be provided to
+ *     implement specific application logic like streaming the part directly to database or to a rest service.
+ *
+ * <p> The default implementation is {@link DefaultPartBodyByteStoreFactory}
+ *
  * @author Silvano Riz.
  */
 public interface PartBodyByteStoreFactory {
 
     /**
-     * <p>
-     *     Creates the {@link ByteStore} for a specific part.
-     * </p>
+     * <p> Creates the {@code ByteStore} for a specific part.
+     *
      * @param partHeaders The headers of the part
      * @param partIndex The index of the part
-     * @return the {@link ByteStore} for a specific part.
+     * @return the {@code ByteStore} for a specific part.
      */
     ByteStore newByteStoreForPartBody(final Map<String, List<String>> partHeaders, final int partIndex);
 

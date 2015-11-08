@@ -23,9 +23,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 
 /**
- * <p>
- *     A reusable circular buffer
- * </p>
+ * <p> A reusable circular buffer
  *
  * @author Silvano Riz.
  */
@@ -50,9 +48,7 @@ public class CircularBuffer {
     volatile int availableReadLength = 0;
 
     /**
-     * <p>
-     *     Constructor.
-     * </p>
+     * <p> Constructor.
      *
      * @param size The size of the buffer. Must be greater than or equal to 1
      */
@@ -65,9 +61,8 @@ public class CircularBuffer {
     }
 
     /**
-     * <p>
-     *     Writes a byte in the first available slot in the buffer. If the buffer is full the oldest data written will be overwritten.
-     * </p>
+     * <p> Writes a byte in the first available slot in the buffer. If the buffer is full the oldest data written will be overwritten.
+     *
      * @param data The byte to write.
      */
     public void write(final byte data){
@@ -85,10 +80,9 @@ public class CircularBuffer {
     }
 
     /**
-     * <p>
-     *     Reads all the available valid data into an {@link OutputStream}
-     * </p>
-     * @param outputStream The {@link OutputStream} target of the read.
+     * <p> Reads all the available valid data into an {@code OutputStream}
+     *
+     * @param outputStream The {@code OutputStream} target of the read.
      * @throws IOException If the read fails.
      */
     public void readAll(final OutputStream outputStream) throws IOException {
@@ -100,10 +94,9 @@ public class CircularBuffer {
     }
 
     /**
-     * <p>
-     *     Reads a chunk of available data into an {@link OutputStream}
-     * </p>
-     * @param outputStream The {@link OutputStream}  target of the read.
+     * <p> Reads a chunk of available data into an {@code OutputStream}
+     *
+     * @param outputStream The {@code OutputStream}  target of the read.
      * @param chunkSize The size of the chunk. Must be less than or equal {@link #getAvailableDataLength()}
      * @throws IOException If the read fails.
      */
@@ -132,9 +125,8 @@ public class CircularBuffer {
     }
 
     /**
-     * <p>
-     *     Returns if the buffer is full
-     * </p>
+     * <p> Returns if the buffer is full
+     *
      * @return true if the buffer is full, false otherwise.
      */
     public boolean isFull(){
@@ -142,9 +134,8 @@ public class CircularBuffer {
     }
 
     /**
-     * <p>
-     *     Returns if the buffer is empty
-     * </p>
+     * <p> Returns if the buffer is empty
+     *
      * @return true if the buffer is empty, false otherwise.
      */
     public boolean isEmpty(){
@@ -152,9 +143,8 @@ public class CircularBuffer {
     }
 
     /**
-     * <p>
-     *     Returns the number of slots with valid data
-     * </p>
+     * <p> Returns the number of slots with valid data
+     *
      * @return the number of slots with valid data
      */
     public int getAvailableDataLength(){
@@ -162,9 +152,8 @@ public class CircularBuffer {
     }
 
     /**
-     * <p>
-     *     Returns the buffer capacity
-     * </p>
+     * <p> Returns the buffer capacity
+     *
      * @return The buffer capacity
      */
     public int getBufferSize(){
@@ -172,9 +161,7 @@ public class CircularBuffer {
     }
 
     /**
-     * <p>
-     *     Resets the buffer.
-     * </p>
+     * <p> Resets the buffer.
      */
     public void reset(){
         startValidDataIndex = 0;

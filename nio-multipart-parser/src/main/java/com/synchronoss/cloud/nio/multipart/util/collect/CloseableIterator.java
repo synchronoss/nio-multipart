@@ -13,17 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.synchronoss.cloud.nio.multipart.example.spring;
+package com.synchronoss.cloud.nio.multipart.util.collect;
 
-import org.springframework.web.context.request.async.DeferredResult;
-
-import javax.servlet.ReadListener;
+import java.io.Closeable;
+import java.util.Iterator;
 
 /**
- * <p> {@code DeferredResult} that is also a {@code ReadListener}.
+ * <p>Marker interface that defines an {@code Iterator} that is {@code Closeable}
  *
- * @author Silvano Riz.
+ * @author Silvano Riz
  */
-public abstract class ReadListenerDeferredResult<T> extends DeferredResult<T> implements ReadListener{
-
+public interface CloseableIterator<T> extends Iterator<T>, Closeable {
 }

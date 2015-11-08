@@ -32,9 +32,8 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 
 /**
- * <p>
- *     Unit tests for {@link EndOfLineBuffer}
- * </p>
+ * <p> Unit tests for {@link EndOfLineBuffer}
+ *
  * @author Silvano Riz.
  */
 public class EndOfLineBufferTest {
@@ -77,7 +76,7 @@ public class EndOfLineBufferTest {
         assertArrayEquals(new byte[]{0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07}, flush.toByteArray());
 
         flush.reset();
-        endOfLineBuffer.reset(new byte[]{0x0D, 0x0A}, flush);
+        endOfLineBuffer.recycle(new byte[]{0x0D, 0x0A}, flush);
 
         writtenBytes = writeDataToEndOfLineBuffer(endOfLineBuffer, new byte[]{0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x0D, 0x0D, 0x0A, 0x09, 0x10});
         assertEquals(10, writtenBytes);

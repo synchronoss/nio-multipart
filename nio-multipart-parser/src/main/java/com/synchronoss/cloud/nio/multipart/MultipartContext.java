@@ -17,8 +17,7 @@
 package com.synchronoss.cloud.nio.multipart;
 
 /**
- * <p>
- *     Multipart context containing:
+ * <p> Multipart context containing:
  *     <ul>
  *         <li>Content Type</li>
  *         <li>Content Length</li>
@@ -34,9 +33,8 @@ public class MultipartContext {
     private final String charEncoding;
 
     /**
-     * <p>
-     *     Constructor
-     * </p>
+     * <p> Constructor
+     *
      * @param contentType The content type of the request
      * @param contentLength The content length of the request
      * @param charEncoding The request char encoding.
@@ -52,14 +50,29 @@ public class MultipartContext {
         this.charEncoding = charEncoding;
     }
 
+    /**
+     * <p> Returns the content type
+     *
+     * @return the content type
+     */
     public String getContentType() {
         return contentType;
     }
 
+    /**
+     * <p> Returns the content length
+     *
+     * @return the content length
+     */
     public int getContentLength() {
         return contentLength;
     }
 
+    /**
+     * <p> Returns the character encoding
+     *
+     * @return the character encoding
+     */
     public String getCharEncoding() {
         return charEncoding;
     }

@@ -17,10 +17,9 @@
 package com.synchronoss.cloud.nio.multipart.example.model;
 
 /**
- * <p>
- *     File metadata: path, size, checksum
- * </p>
- * Created by sriz0001 on 30/10/2015.
+ * <p> File metadata: path, size, checksum
+ *
+ * @author Silvano Riz.
  */
 public class FileMetadata {
 

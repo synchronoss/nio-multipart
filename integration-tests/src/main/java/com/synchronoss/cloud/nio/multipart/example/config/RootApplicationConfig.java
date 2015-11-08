@@ -25,9 +25,7 @@ import org.springframework.context.annotation.PropertySource;
 import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
 
 /**
- * <p>
- *     Root application context
- * </p>
+ * <p> Root application context
  *
  * @author Silvano Riz.
  */

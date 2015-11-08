@@ -27,9 +27,8 @@ import java.io.ByteArrayOutputStream;
 import static org.junit.Assert.*;
 
 /**
- * <p>
- *     Unit tests for {@link CircularBuffer}
- * </p>
+ * <p> Unit tests for {@link CircularBuffer}
+ *
  * @author Silvano Riz.
  */
 public class CircularBufferTest {
@@ -148,7 +147,7 @@ public class CircularBufferTest {
         assertEquals(0, buffer.availableReadLength);
         buffer.reset();
         readBaos.reset();
-        log.info("Buffer after reset:\n" + circularBufferToString(buffer) + "\n");
+        log.info("Buffer after recycle:\n" + circularBufferToString(buffer) + "\n");
 
         byte[] chunk1 = {0x01};
         writeDataToCircularBuffer(buffer, chunk1);
@@ -163,7 +162,7 @@ public class CircularBufferTest {
         assertEquals(0, buffer.availableReadLength);
         buffer.reset();
         readBaos.reset();
-        log.info("Buffer after reset:\n" + circularBufferToString(buffer) + "\n");
+        log.info("Buffer after recycle:\n" + circularBufferToString(buffer) + "\n");
 
         byte[] chunk2 = {0x01, 0x02, 0x03, 0x04, 0x05};
         writeDataToCircularBuffer(buffer, chunk2);

@@ -33,9 +33,8 @@ import java.util.Map;
 import static org.junit.Assert.*;
 
 /**
- * <p>
- *     Unit tests for {@link DefaultPartBodyByteStoreFactory}
- * </p>
+ * <p> Unit tests for {@link DefaultPartBodyByteStoreFactory}
+ *
  * @author Silvano Riz.
  */
 public class DefaultPartBodyByteStoreFactoryTest {

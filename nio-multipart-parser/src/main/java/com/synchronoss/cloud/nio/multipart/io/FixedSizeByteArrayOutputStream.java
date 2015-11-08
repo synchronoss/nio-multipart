@@ -19,10 +19,9 @@ package com.synchronoss.cloud.nio.multipart.io;
 import java.io.ByteArrayOutputStream;
 
 /**
- * <p>
- *     A {@link ByteArrayOutputStream} with a limited capacity.
- *     If the data about to be written does not fir the remaining size an {@link IllegalStateException} will be thrown
- * </p>
+ * <p> A {@code ByteArrayOutputStream} with a limited capacity.
+ *     If the data about to be written does not fit the remaining capacity an {@code IllegalStateException} will be thrown
+ *
  *
  * @author Silvano Riz.
  */
@@ -31,9 +30,7 @@ public class FixedSizeByteArrayOutputStream extends ByteArrayOutputStream {
     volatile private int remaining;
 
     /**
-     * <p>
-     *     Constructs a {@link ByteArrayOutputStream} that has a maximum memory footprint.
-     * </p>
+     * <p> Constructor.
      *
      * @param maxSize The max size in bytes.
      */

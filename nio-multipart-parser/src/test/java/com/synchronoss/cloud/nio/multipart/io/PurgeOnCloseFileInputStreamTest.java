@@ -27,6 +27,8 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 /**
+ * <p> Unit tests for {@link PurgeOnCloseFileInputStream}
+ *
  * @author Silvano Riz
  */
 public class PurgeOnCloseFileInputStreamTest {

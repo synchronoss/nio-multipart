@@ -20,9 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * <p>
- *     Test utilities
- * </p>
+ * <p> Test utilities
  *
  * @author Silvano Riz.
  */

@@ -22,9 +22,8 @@ import java.io.IOException;
 import java.io.InputStream;
 
 /**
- * <p>
- *     An utility class to read an input stream in chunks. Allows to simulate the servlet 3.1 onDataAvailable(...)
- * </p>
+ * <p> An utility class to read an input stream in chunks. Allows to simulate the servlet 3.1 onDataAvailable(...)
+ *
  * @author Silvano Riz.
  */
 public class ChunksFileReader implements Closeable{

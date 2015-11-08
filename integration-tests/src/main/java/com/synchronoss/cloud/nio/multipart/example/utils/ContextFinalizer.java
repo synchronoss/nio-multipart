@@ -29,9 +29,7 @@ import java.util.Enumeration;
 import java.util.Set;
 
 /**
- * <p>
- *     Context finalizer
- * </p>
+ * <p> Context finalizer
  *
  * @author Silvano Riz.
  */

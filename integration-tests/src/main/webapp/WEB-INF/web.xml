@@ -28,7 +28,6 @@
     <servlet>
         <servlet-name>nio-multipart</servlet-name>
         <servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
-        <async-supported>true</async-supported>
         <!-- Configure DispatcherServlet to use AnnotationConfigWebApplicationContext instead of the default XmlWebApplicationContext -->
         <init-param>
             <param-name>contextClass</param-name>
@@ -39,6 +38,7 @@
             <param-name>contextConfigLocation</param-name>
             <param-value>com.synchronoss.cloud.nio.multipart.example.config.WebConfig</param-value>
         </init-param>
+        <async-supported>true</async-supported>
     </servlet>
 
     <servlet-mapping>

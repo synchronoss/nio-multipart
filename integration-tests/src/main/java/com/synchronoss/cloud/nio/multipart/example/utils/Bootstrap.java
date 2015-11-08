@@ -26,9 +26,7 @@ import org.springframework.web.context.request.async.WebAsyncManager;
 import org.springframework.web.context.request.async.WebAsyncUtils;
 
 /**
- * <p>
- *     Bootstrap
- * </p>
+ * <p> Bootstrap
  *
  * @author Silvano Riz.
  */

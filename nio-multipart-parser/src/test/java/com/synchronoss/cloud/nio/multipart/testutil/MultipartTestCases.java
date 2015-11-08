@@ -31,9 +31,8 @@ import static com.synchronoss.cloud.nio.multipart.testutil.MultipartTestCases.Mu
 import static com.synchronoss.cloud.nio.multipart.testutil.MultipartTestCases.MultipartTestCase.testCaseFromString;
 
 /**
- * <p>
- *     Test cases of multipart request bodies
- * </p>
+ * <p> Test cases of multipart request bodies
+ *
  * @author Silvano Riz.
  */
 public class MultipartTestCases {
@@ -252,7 +251,7 @@ public class MultipartTestCases {
                     "This is the content of the file\n" +
                     "\r\n" +
                     "-----1234\r\n" +
-                    "Content-Disposition: form-data; \r\n" +
+                    "Content-Disposition: form-data;\r\n" +
                     "\tname=\"field\"\r\n" +
                     "\r\n" +
                     "fieldValue\r\n" +
@@ -280,7 +279,7 @@ public class MultipartTestCases {
                     "This is the content of the file\n" +
                     "\r\n" +
                     "-----1234\r\n" +
-                    "Content-Disposition: form-data; \r\n" +
+                    "Content-Disposition: form-data;\r\n" +
                     "\tname=\"field\"\r\n" +
                     "OtherHeader: Is there\r\n" +
                     "\r\n" +

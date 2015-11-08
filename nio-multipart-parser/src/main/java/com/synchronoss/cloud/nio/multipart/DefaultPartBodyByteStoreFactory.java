@@ -27,9 +27,8 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * <p>
- *     Default implementation of the {@link PartBodyByteStoreFactory}.
- * </p>
+ * <p> Default implementation of the {@code PartBodyByteStoreFactory}.
+ *
  * @author Silvano Riz.
  */
 public class DefaultPartBodyByteStoreFactory implements PartBodyByteStoreFactory {
@@ -46,9 +45,7 @@ public class DefaultPartBodyByteStoreFactory implements PartBodyByteStoreFactory
     final int maxSizeThreshold;
 
     /**
-     * <p>
-     *     Constructor.
-     * </p>
+     * <p> Constructor.
      *
      * @param tempFolderPath The path where to store the temporary files
      * @param maxSizeThreshold The maximum amount of bytes that will be kept in memory for each part. If zero or negative no memory will be used.
@@ -65,9 +62,7 @@ public class DefaultPartBodyByteStoreFactory implements PartBodyByteStoreFactory
     }
 
     /**
-     * <p>
-     *     Constructor tha uses a default threshold of 10kb.
-     * </p>
+     * <p> Constructor tha uses a default threshold of 10kb.
      *
      * @param tempFolderPath The path where to store the temporary files
      */
@@ -76,9 +71,7 @@ public class DefaultPartBodyByteStoreFactory implements PartBodyByteStoreFactory
     }
 
     /**
-     * <p>
-     *     Constructor tha uses a default default folder ${java.io.tmpdir}/nio-file-upload
-     * </p>
+     * <p> Constructor tha uses a default default folder ${java.io.tmpdir}/nio-file-upload
      *
      * @param maxSizeThreshold The maximum amount of bytes that will be kept in memory for each part.
      */
@@ -87,14 +80,15 @@ public class DefaultPartBodyByteStoreFactory implements PartBodyByteStoreFactory
     }
 
     /**
-     * <p>
-     *     Constructor that uses a default threshold of 10kb and a default folder ${java.io.tmpdir}/nio-file-upload
-     * </p>
+     * <p> Constructor that uses a default threshold of 10kb and a default folder ${java.io.tmpdir}/nio-file-upload
      */
     public DefaultPartBodyByteStoreFactory() {
         this(DEFAULT_TEMP_FOLDER, DEFAULT_MAX_THRESHOLD);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public ByteStore newByteStoreForPartBody(final Map<String, List<String>> partHeaders, final int partIndex) {
            return new DeferredFileByteStore(getTempFile(partHeaders, partIndex), getThreshold(partHeaders));

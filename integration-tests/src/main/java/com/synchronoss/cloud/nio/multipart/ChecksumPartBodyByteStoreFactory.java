@@ -22,10 +22,10 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * <p>
- *     Extension of {@link DefaultPartBodyByteStoreFactory} that provides {@link ByteStore} capable of computing a data hash.
- *     This class is an example of how the NIO Multipart parser can be extended via a custom {@link PartBodyByteStoreFactory} and it is also used for testing purposes inside the example-webapp
- * </p>
+ * <p> Extension of {@code DefaultPartBodyByteStoreFactory} that provides {@code ByteStore} capable of computing a data hash and counting bytes read and written.
+ *     This class is an example of how the NIO Multipart parser can be extended via a custom {@code PartBodyByteStoreFactory}.
+ *     In the specific case it is used for testing purposes inside the example-webapp to verify the integrity of the data processed.
+ *
  * @author Silvano Riz.
  */
 public class ChecksumPartBodyByteStoreFactory extends DefaultPartBodyByteStoreFactory {

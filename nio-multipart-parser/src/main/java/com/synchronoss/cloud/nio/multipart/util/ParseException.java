@@ -17,9 +17,7 @@
 package com.synchronoss.cloud.nio.multipart.util;
 
 /**
- * <p>
- * Class taken from the apache commons file upload project <a href="https://commons.apache.org/proper/commons-fileupload/">commons-fileupload</a>
- * </p>
+ * <p> Class taken from the apache commons file upload project <a href="https://commons.apache.org/proper/commons-fileupload/">commons-fileupload</a>
  */
 final class ParseException extends Exception {
 
