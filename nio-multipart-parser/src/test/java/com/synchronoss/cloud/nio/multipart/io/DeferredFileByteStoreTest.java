@@ -16,6 +16,7 @@
 package com.synchronoss.cloud.nio.multipart.io;
 
 
+import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.IOUtils;
 import org.junit.Rule;
 import org.junit.Test;
@@ -207,6 +208,22 @@ public class DeferredFileByteStoreTest {
         IOUtils.closeQuietly(inputStream);
         assertTrue(file.exists());
 
+    }
+
+    @Test
+    public void testGetBase64EncodedInputStream() throws IOException {
+        File file = new File(tempFolder.getRoot(), "testGetInputStream_file.tmp");
+        byte[] fiveBytes = new byte[]{0x01, 0x02, 0x03, 0x4, 0x5};
+        byte[] fiveBytesBase64Encoded = Base64.encodeBase64(fiveBytes);
+
+        DeferredFileByteStore deferredFileByteStore = new DeferredFileByteStore(true, file, 3, false);
+        deferredFileByteStore.write(fiveBytesBase64Encoded);
+        assertEquals(fiveBytesBase64Encoded.length, file.length());
+        deferredFileByteStore.close();
+        InputStream inputStream = deferredFileByteStore.getInputStream();
+
+        assertNotNull(inputStream);
+        assertArrayEquals(fiveBytes, IOUtils.toByteArray(inputStream));
     }
 
     @Test
