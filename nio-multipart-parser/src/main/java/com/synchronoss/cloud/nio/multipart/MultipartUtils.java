@@ -40,6 +40,11 @@ public class MultipartUtils {
     public static final String CONTENT_DISPOSITION = "Content-disposition";
 
     /**
+     * Content transfer encoding header name
+     */
+    public static final String CONTENT_TRANSFER_ENCODING = "Content-transfer-encoding";
+
+    /**
      * Content length header name
      */
     public static final String CONTENT_LENGTH = "Content-length";
@@ -220,6 +225,17 @@ public class MultipartUtils {
         }
 
         return fieldName;
+    }
+
+    /**
+     * <p> Returns true if the headers contain the Content-transfer-encoding with value 'base64'.
+     *
+     * @param partHeaders The list of headers
+     * @return true if the headers contain the Content-transfer-encoding with value 'base64', false otherwise
+     */
+    public static boolean isContentTransferEncodingBase64Encoded(final Map<String, List<String>> partHeaders) {
+        String contentEncoding = MultipartUtils.getHeader(CONTENT_TRANSFER_ENCODING, partHeaders);
+        return contentEncoding != null && "base64".equalsIgnoreCase(contentEncoding);
     }
 
 }

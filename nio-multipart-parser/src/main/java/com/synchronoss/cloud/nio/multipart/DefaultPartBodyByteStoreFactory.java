@@ -91,21 +91,15 @@ public class DefaultPartBodyByteStoreFactory implements PartBodyByteStoreFactory
      */
     @Override
     public ByteStore newByteStoreForPartBody(final Map<String, List<String>> partHeaders, final int partIndex) {
-        boolean isBase64Encoded = isPartBase64Encoded(partHeaders);
-        return new DeferredFileByteStore(isBase64Encoded, getTempFile(partHeaders, partIndex), getThreshold(partHeaders), true);
+        return new DeferredFileByteStore(getTempFile(partHeaders, partIndex), getThreshold(partHeaders));
     }
 
-    boolean isPartBase64Encoded(final Map<String, List<String>> partHeaders) {
-        String contentEncoding = MultipartUtils.getHeader("Content-Transfer-Encoding", partHeaders);
-        return "base64".equalsIgnoreCase(contentEncoding);
-    }
-
-    int getThreshold(final Map<String, List<String>> partHeaders){
+    protected int getThreshold(final Map<String, List<String>> partHeaders){
         final long contentLength = MultipartUtils.getContentLength(partHeaders);
         return (contentLength > maxSizeThreshold) ? 0 : maxSizeThreshold;
     }
 
-    File getTempFile(final Map<String, List<String>> partHeaders, final int partIndex){
+    protected File getTempFile(final Map<String, List<String>> partHeaders, final int partIndex){
         final String tempFileName = String.format("nio-body-%d-%s.tmp", partIndex, UUID.randomUUID().toString());
         return new File(tempFolder, tempFileName);
     }

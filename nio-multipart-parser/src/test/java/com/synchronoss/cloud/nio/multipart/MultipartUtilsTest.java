@@ -179,5 +179,29 @@ public class MultipartUtilsTest {
 
     }
 
+    @Test
+    public void testIsContentTransferEncodingBase64Encoded(){
+        Map<String, List<String>> base64ContentTransferEncodingHeaders = new HashMap<String, List<String>>();
+        base64ContentTransferEncodingHeaders.put(MultipartUtils.CONTENT_TRANSFER_ENCODING.toLowerCase(), Collections.singletonList("base64"));
+        assertTrue(MultipartUtils.isContentTransferEncodingBase64Encoded(base64ContentTransferEncodingHeaders));
+
+        Map<String, List<String>> base64ContentTransferEncodingHeadersCaseInsensitive = new HashMap<String, List<String>>();
+        base64ContentTransferEncodingHeadersCaseInsensitive.put(MultipartUtils.CONTENT_TRANSFER_ENCODING.toLowerCase(), Collections.singletonList("bASe64"));
+        assertTrue(MultipartUtils.isContentTransferEncodingBase64Encoded(base64ContentTransferEncodingHeadersCaseInsensitive));
+
+        Map<String, List<String>> base64ContentTransferEncodingHeadersEmpty = new HashMap<String, List<String>>();
+        base64ContentTransferEncodingHeadersEmpty.put(MultipartUtils.CONTENT_TRANSFER_ENCODING.toLowerCase(), Collections.singletonList(""));
+        assertFalse(MultipartUtils.isContentTransferEncodingBase64Encoded(base64ContentTransferEncodingHeadersEmpty));
+
+        Map<String, List<String>> base64ContentTransferEncodingHeadersNull = new HashMap<String, List<String>>();
+        base64ContentTransferEncodingHeadersNull.put(MultipartUtils.CONTENT_TRANSFER_ENCODING.toLowerCase(), null);
+        assertFalse(MultipartUtils.isContentTransferEncodingBase64Encoded(base64ContentTransferEncodingHeadersNull));
+
+        Map<String, List<String>> base64ContentTransferEncodingHeadersMissing = new HashMap<String, List<String>>();
+        base64ContentTransferEncodingHeadersMissing.put(MultipartUtils.CONTENT_TRANSFER_ENCODING.toLowerCase(), null);
+        assertFalse(MultipartUtils.isContentTransferEncodingBase64Encoded(base64ContentTransferEncodingHeadersMissing));
+
+    }
+
 
 }
