@@ -115,6 +115,14 @@
     <build>
         <plugins>
 
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-war-plugin</artifactId>
+                <configuration>
+                    <failOnMissingWebXml>false</failOnMissingWebXml>
+                </configuration>
+            </plugin>
+
             <!-- Skip deploy -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -136,6 +144,10 @@
                         <zipUrlInstaller>
                             <url>http://archive.apache.org/dist/tomcat/tomcat-8/v8.0.26/bin/apache-tomcat-8.0.26.zip</url>
                         </zipUrlInstaller>
+                        <!--<containerId>jetty9x</containerId>-->
+                        <!--<zipUrlInstaller>-->
+                            <!--<url>http://download.eclipse.org/jetty/stable-9/dist/jetty-distribution-9.3.6.v20151106.zip</url>-->
+                        <!--</zipUrlInstaller>-->
                     </container>
                     <configuration>
                         <properties>

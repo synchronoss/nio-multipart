@@ -15,7 +15,6 @@
  */
 package com.synchronoss.cloud.nio.multipart.example.spring;
 
-import com.synchronoss.cloud.nio.multipart.example.spring.ReadListenerDeferredResult;
 import org.springframework.web.context.request.NativeWebRequest;
 import org.springframework.web.context.request.async.DeferredResult;
 import org.springframework.web.context.request.async.DeferredResultProcessingInterceptor;

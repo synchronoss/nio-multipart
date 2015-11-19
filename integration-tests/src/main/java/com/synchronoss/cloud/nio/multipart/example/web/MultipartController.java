@@ -33,7 +33,6 @@ import com.synchronoss.cloud.nio.multipart.example.model.Metadata;
 import com.synchronoss.cloud.nio.multipart.example.model.VerificationItem;
 import com.synchronoss.cloud.nio.multipart.example.model.VerificationItems;
 import com.synchronoss.cloud.nio.multipart.example.spring.CloseableReadListenerDeferredResult;
-import com.synchronoss.cloud.nio.multipart.example.spring.ReadListenerDeferredResult;
 import com.synchronoss.cloud.nio.multipart.io.ByteStore;
 import com.synchronoss.cloud.nio.multipart.util.collect.CloseableIterator;
 import org.apache.commons.fileupload.FileItemIterator;
@@ -56,7 +55,6 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.*;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -357,7 +355,7 @@ public class MultipartController {
                 public void onDataAvailable() throws IOException {
                     if(log.isInfoEnabled())log.info("NIO READ LISTENER - onDataAvailable");
                     int bytesRead;
-                    byte bytes[] = new byte[1024];
+                    byte bytes[] = new byte[2048];
                     while (inputStream.isReady() && (bytesRead = inputStream.read(bytes)) != -1) {
                         parser.write(bytes, 0, bytesRead);
                     }

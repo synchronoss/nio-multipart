@@ -577,8 +577,8 @@ public class NioMultipartParser extends OutputStream {
     }
 
     void allPartsRead(final WriteContext wCtx) {
-        nioMultipartParserListener.onAllPartsFinished();
         goToState(State.SKIP_EPILOGUE);
+        nioMultipartParserListener.onAllPartsFinished();
         wCtx.setFinishedIfNoMOreData();
     }
 
@@ -589,35 +589,12 @@ public class NioMultipartParser extends OutputStream {
             partBodyByteStore.flush();
             partBodyByteStore.close();
         }catch (Exception e){
-            nioMultipartParserListener.onError("Unable to read/write the body data", e);
             goToState(State.ERROR);
+            nioMultipartParserListener.onError("Unable to read/write the body data", e);
             return;
         }
 
-        // Now ask the bodyStreamFactory for the input stream...
-
-        if (MultipartUtils.isFormField(headers)){
-            // It's a form field, need to read the input stream into String and notify via onFormFieldPartReady(...)
-            final InputStream partBodyInputStream =  partBodyByteStore.getInputStream();
-            try {
-                final String fieldName = MultipartUtils.getFieldName(headers);
-                final String value = IOUtils.inputStreamAsString(partBodyInputStream, MultipartUtils.getCharEncoding(headers));
-                nioMultipartParserListener.onFormFieldPartReady(fieldName, value, headers);
-            }catch (Exception e){
-                nioMultipartParserListener.onError("Unable to read the form parameters", e);
-                goToState(State.ERROR);
-                return;
-            }finally {
-                IOUtils.closeQuietly(partBodyInputStream);
-            }
-
-        }else{
-
-            // Not a form field. Provide the raw input stream to the client.
-
-            nioMultipartParserListener.onPartReady(partBodyByteStore, headers);
-        }
-
+        // Switch state
         if (delimiterType.getDelimiterType() == DelimiterType.Type.CLOSE){
             if (delimiterPrefixes.size() > 1){
                 goToState(State.NESTED_PART_READ);
@@ -627,6 +604,28 @@ public class NioMultipartParser extends OutputStream {
         }else {
             goToState(State.GET_READY_FOR_HEADERS);
         }
+
+        // Notify
+        if (MultipartUtils.isFormField(headers)){
+            // It's a form field, need to read the input stream into String and notify via onFormFieldPartReady(...)
+            final InputStream partBodyInputStream =  partBodyByteStore.getInputStream();
+            try {
+                final String fieldName = MultipartUtils.getFieldName(headers);
+                final String value = IOUtils.inputStreamAsString(partBodyInputStream, MultipartUtils.getCharEncoding(headers));
+                nioMultipartParserListener.onFormFieldPartReady(fieldName, value, headers);
+            }catch (Exception e){
+                goToState(State.ERROR);
+                nioMultipartParserListener.onError("Unable to read the form parameters", e);
+                return;
+            }finally {
+                IOUtils.closeQuietly(partBodyInputStream);
+            }
+
+        }else{
+            // Not a form field. Provide the raw input stream to the client.
+            nioMultipartParserListener.onPartReady(partBodyByteStore, headers);
+        }
+
         partIndex++;
         wCtx.setFinishedIfNoMOreData();
 
