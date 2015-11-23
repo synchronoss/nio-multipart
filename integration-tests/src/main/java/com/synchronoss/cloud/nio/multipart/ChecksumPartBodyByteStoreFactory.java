@@ -54,7 +54,7 @@ public class ChecksumPartBodyByteStoreFactory extends DefaultPartBodyByteStoreFa
 
     @Override
     public ByteStore newByteStoreForPartBody(Map<String, List<String>> partHeaders, int partIndex) {
-        return new ChecksumByteStore(getTempFile(partHeaders, partIndex), getThreshold(partHeaders), true, checksumAlgorithm);
+        return new ChecksumByteStore(getTempFile(partIndex), getThreshold(partHeaders), true, checksumAlgorithm);
     }
 
 }

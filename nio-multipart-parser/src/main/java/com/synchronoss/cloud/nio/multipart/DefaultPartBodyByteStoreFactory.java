@@ -91,7 +91,7 @@ public class DefaultPartBodyByteStoreFactory implements PartBodyByteStoreFactory
      */
     @Override
     public ByteStore newByteStoreForPartBody(final Map<String, List<String>> partHeaders, final int partIndex) {
-        return new DeferredFileByteStore(getTempFile(partHeaders, partIndex), getThreshold(partHeaders));
+        return new DeferredFileByteStore(getTempFile(partIndex), getThreshold(partHeaders));
     }
 
     protected int getThreshold(final Map<String, List<String>> partHeaders){
@@ -99,7 +99,7 @@ public class DefaultPartBodyByteStoreFactory implements PartBodyByteStoreFactory
         return (contentLength > maxSizeThreshold) ? 0 : maxSizeThreshold;
     }
 
-    protected File getTempFile(final Map<String, List<String>> partHeaders, final int partIndex){
+    protected File getTempFile(final int partIndex){
         final String tempFileName = String.format("nio-body-%d-%s.tmp", partIndex, UUID.randomUUID().toString());
         return new File(tempFolder, tempFileName);
     }
