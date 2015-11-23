@@ -12,25 +12,7 @@ Requires JDK 1.7 or higher.
 Latest release
 --------------
 
-The most recent release is nio-multipart 0.0.1.
-
-To add a dependency on NIO Multipart Parser using Maven, use the following:
-
-```xml
-<dependency>
-  <groupId>com.synchronoss.cloud</groupId>
-  <artifactId>nio-multipart-parser</artifactId>
-  <version>0.0.1</version>
-</dependency>
-```
-
-To add a dependency using Gradle:
-
-```
-dependencies {
-  compile 'com.synchronoss.cloud:nio-multipart-parser:0.0.1'
-}
-```
+COMING SOON!
 
 Get started
 -----------
