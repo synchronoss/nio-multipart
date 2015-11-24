@@ -4,8 +4,8 @@ Non-Blocking Multipart parser
 The NIO Multipart project contains a lightweight, generic java library to process multipart requests and responses in a non blocking way and with a configurable, but constant, memory footprint.
 It integrates gracefully with the Servlet 3.1 NIO features but it can be easily used in a blocking IO fashion.
 The library is intentionally decoupled from the java servlet APIs and it's based on InputStreams and OutputStreams instead.
-This makes the library generic and usable for processing not only Http Requests, but also Http responses and potentially other transport protocols.
-It is also a good solution for Android given it's reduced dependencies tree.
+This makes the library generic and usable for processing not only Http requests, but also Http responses and potentially other transport protocols.
+It is also a good solution for Android given its reduced dependencies tree.
 
 Requires JDK 1.7 or higher.
 
@@ -22,14 +22,14 @@ The simplest way to get started is using the simple fluent API provided with the
 NioMultipartParser parser = Multipart.multipart(context).forNio(listener);
 ```
 
-The only two mandatory arguments are a multipart context, holding information about the current request/response, and a listener that will be notified on the progress of the parsing.
+The only two mandatory arguments are a multipart *context*, holding information about the current request/response, and a *listener* that will be notified on the progress of the parsing.
 The following line shows how a context can be created from an *HttpServletRequest*:
 
 ```java
 MultipartContext context = MultipartContext(request.getContentType(), request.getContentLength(), request.getCharacterEncoding())
 ```
 
-The listener is where application logic starts. The parser notifies the client when something happen via several methods defined by the *NioMultipartParserListener* interface.
+The listener is where application logic starts. The parser notifies the client when something happens via several methods defined by the *NioMultipartParserListener* interface.
 Clients can decide to inline the definition (like the example below) or create a class that implements the interface. 
 What is important is that the client reacts to the events to implement the desired behaviour.
  
@@ -98,7 +98,8 @@ inputStream.setReadListener(new ReadListener() {
     @Override
     public void onAllDataRead() throws IOException {
         // NOTE - This method might be called before the parser actually finished the parsing, so parser.close() shouldn't be called without ensuring
-        // onAllPartsFinished() or onError() has been called
+        // that listener.onAllPartsFinished() or listener.onError(String message, Throwable cause) has been called.
+        // An AsyncListener can be used for this (see below)
     }
 
     @Override
@@ -109,17 +110,46 @@ inputStream.setReadListener(new ReadListener() {
 });
 ```
 
-It is important to close the parser if an error happens, if the client decides to stop the processing and if the parsing finishes correctly.
+It is important to close the parser after using it. If an error happens, if the client decides to stop the processing or if the parsing finishes correctly, the parser should be closed 
+to ensure resources are freed.
+
+In a servlet 3.1 environment, an *AsyncListener* can be used to ensure the parser is closed after finishing the process:
+
+```java
+    asyncContext.addListener(new AsyncListener() {
+        @Override
+        public void onComplete(AsyncEvent event) throws IOException {
+            parser.close();
+        }
+
+        @Override
+        public void onTimeout(AsyncEvent event) throws IOException {
+            parser.close();
+        }
+
+        @Override
+        public void onError(AsyncEvent event) throws IOException {
+            parser.close();
+        }
+
+        @Override
+        public void onStartAsync(AsyncEvent event) throws IOException {
+            // Nothing to do.
+        }
+    });
+```
+
+Similar events are provided by Spring, like *DeferredResultProcessingInterceptor.afterCompletion(NativeWebRequest request, DeferredResult<T> deferredResult)*
 
 Advanced configuration
 ----------------------
 There are several configuration items that a client can use to tweak or change the parser behaviour:
 
-* Buffer size
-* Headers Section max size
-* Threshold after which data collected while parsing a part body is flushed to a temporary file 
-* Location of the temporary files
-* Nested multipart limit
+* Buffer size.
+* Headers section max size.
+* Threshold after which data collected while parsing a part body is flushed to a temporary file.
+* Location of the temporary files.
+* Nested multipart limit.
 
 ##### Buffer size
 The parser to execute its task is using a buffer that by default is 16kb. This buffer has just one requirement: It must be greater than the delimiter + 4.
@@ -138,7 +168,7 @@ This configuration is only valid if the *DefaultPartBodyByteStoreFactory* is use
 The *PartBodyByteStoreFactory* is providing to the parser the *ByteStore* where to store the part body. 
 The *DefaultPartBodyByteStoreFactory* is using the *DeferredFileByteStore*, where data is kept in memory until a certain threshold is reached.
 If the threshold is reached, the memory is cleared and the data is stored into a temporary file.
-This approach allows to limit the creation of temporary files (hence disk IO traffic) if the part body is small (for example if it's a form field)
+This approach allows to limit the creation of temporary files (hence disk IO traffic) if the part body is small (for example if it is a form field)
 The default value is 10kb and it can be adjusted based on the amount of memory available and/or the traffic model.
 If the value is set to 0 (or negative number) it means that no memory will be used and a temporary file will always be created.
 
@@ -209,9 +239,10 @@ public class DBPartBodyByteStoreFactory extends DefaultPartBodyByteStoreFactory{
 
 The code snipped above is an example of how a custom *PartBodyByteStoreFactory*. 
 When the parser encounters a part body, it will ask the *PartBodyByteStoreFactory* for the *ByteStore* where the data will be written.
-In the example if the part header *x-store-to-database* the *ByteStore* will a database (and not to a temporary file).
+In the example if the part header *x-store-to-database* is set, the *ByteStore* will write to a database (and not to a temporary file).
 Once the parser finishes processing the part, it will notify passing back the *ByteStore* via the callback *onPartReady*.
 The client does not need to read back the data because it's already in the database, so the *getInputStream()* method is returning null.
+In the default case, where the *ByteStore* is a temporary file, reading back the stored body is usually needed.
 
 The custom *PartBodyByteStoreFactory* can be passed to the parser via the appropriate constructor or using the fluent API (see example)
 
@@ -258,7 +289,7 @@ while(parts.hasNext()){
         case NESTED_END:
             // Just a marker but it might be used to keep track of nested multipart...
             break;
-        defaulr: 
+        default: 
             break;// Impossible
     }
 }
@@ -267,15 +298,15 @@ parts.close();
 
 ```
 
-Additional configuration can be added in the same way it can be added when working in NIO. 
+Additional configuration can be added in the same way it can be added when working in NIO mode. 
 Moreover, if the fluent API is not the best strategy for the use case, the adapter can be instantiated directly (see the *BlockingIOAdapter* class).
 
-As it can be seen in the example above, the *PartItem* is just an interface and there are three different implementations:
+As it can be seen in the example above, the *PartItem* is just an interface and there are four different implementations:
 
 * FormParameter: Represents a form parameter and the field name and field value can be extracted directly via getter methods. The part's headers can be obtained as well.
 * Attachment: Represents a part that is not a form parameter. In this case the part body can be read using the *InputStream* returned by *getPartBody*.
 * NestedStart: Represents a part that is itself a multipart. It provides the headers, while the nested parts will be returned as next items in the iterator.
-* NestedEnd: Signals the end of a nested part. This is just a marker and it carries no data.
+* NestedEnd: Signals the end of a nested part. This is just a marker and it carries no data, but it can be useful to keep track of the nesting of the multipart messages. 
 
 Nio Multipart Parser - Internal Building Blocks
 -----------------------------------------------

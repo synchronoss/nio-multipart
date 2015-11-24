@@ -200,6 +200,7 @@
         </snapshotRepository>
     </distributionManagement>
 
+    <!-- mvn clean verify -pl integration-tests -Pintegration-tests -Dapplication.server.port=8181 -Pjmeter -->
     <profiles>
         <profile>
             <id>integration-tests</id>

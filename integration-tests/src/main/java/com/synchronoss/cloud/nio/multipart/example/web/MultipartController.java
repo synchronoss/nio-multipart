@@ -48,10 +48,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
-import javax.servlet.AsyncContext;
-import javax.servlet.ReadListener;
-import javax.servlet.ServletInputStream;
-import javax.servlet.ServletResponse;
+import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.*;
@@ -248,20 +245,6 @@ public class MultipartController {
 
         };
 
-        readListenerDeferredResult.onCompletion(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    // called from a container thread when an async request completed for any reason including timeout and network error
-                    // In this case we make sure we close.
-                    if (log.isDebugEnabled()) log.debug("Closing ReadListenerDeferredResult");
-                    readListenerDeferredResult.close();
-                }catch (Exception e){
-                    log.warn("Failed to close the ReadListenerDeferredResult", e);
-                }
-            }
-        });
-
         return readListenerDeferredResult;
     }
 
@@ -346,42 +329,59 @@ public class MultipartController {
         };
 
         final MultipartContext ctx = getMultipartContext(request);
+        final NioMultipartParser parser = multipart(ctx).usePartBodyByteStoreFactory(partBodyByteStoreFactory).forNIO(listener);
 
-        try(final NioMultipartParser parser = multipart(ctx).usePartBodyByteStoreFactory(partBodyByteStoreFactory).forNIO(listener)){
+        // Add a listener to ensure the parser is closed.
+        asyncContext.addListener(new AsyncListener() {
+            @Override
+            public void onComplete(AsyncEvent event) throws IOException {
+                parser.close();
+            }
 
-            inputStream.setReadListener(new ReadListener() {
+            @Override
+            public void onTimeout(AsyncEvent event) throws IOException {
+                parser.close();
+            }
 
-                @Override
-                public void onDataAvailable() throws IOException {
-                    if(log.isInfoEnabled())log.info("NIO READ LISTENER - onDataAvailable");
-                    int bytesRead;
-                    byte bytes[] = new byte[2048];
-                    while (inputStream.isReady() && (bytesRead = inputStream.read(bytes)) != -1) {
-                        parser.write(bytes, 0, bytesRead);
-                    }
-                    if(log.isInfoEnabled())log.info("Epilogue bytes..." ) ;
+            @Override
+            public void onError(AsyncEvent event) throws IOException {
+                parser.close();
+            }
+
+            @Override
+            public void onStartAsync(AsyncEvent event) throws IOException {
+                // Nothing to do.
+            }
+        });
+
+        inputStream.setReadListener(new ReadListener() {
+
+            @Override
+            public void onDataAvailable() throws IOException {
+                if(log.isInfoEnabled())log.info("NIO READ LISTENER - onDataAvailable");
+                int bytesRead;
+                byte bytes[] = new byte[2048];
+                while (inputStream.isReady() && (bytesRead = inputStream.read(bytes)) != -1) {
+                    parser.write(bytes, 0, bytesRead);
                 }
+                if(log.isInfoEnabled())log.info("Epilogue bytes..." ) ;
+            }
 
-                @Override
-                public void onAllDataRead() throws IOException {
-                    if(log.isInfoEnabled())log.info("NIO READ LISTENER - onAllDataRead");
-                    sendResponseOrSkip(synchronizer, asyncContext, verificationItems);
-                }
+            @Override
+            public void onAllDataRead() throws IOException {
+                if(log.isInfoEnabled())log.info("NIO READ LISTENER - onAllDataRead");
+                sendResponseOrSkip(synchronizer, asyncContext, verificationItems);
+            }
 
-                @Override
-                public void onError(Throwable throwable) {
-                    log.error("onError", throwable);
-                    IOUtils.closeQuietly(parser);
-                    sendErrorOrSkip(synchronizer, asyncContext, "Unknown error");
-                }
+            @Override
+            public void onError(Throwable throwable) {
+                log.error("onError", throwable);
+                IOUtils.closeQuietly(parser);
+                sendErrorOrSkip(synchronizer, asyncContext, "Unknown error");
+            }
+        });
 
-            });
 
-        }catch (Exception e){
-            // Probably bug in the client/nio parser code...
-            log.error("Parsing error", e);
-            sendErrorOrSkip(synchronizer, asyncContext, "Unknown error");
-        }
     }
 
     void sendResponseOrSkip(final AtomicInteger synchronizer, final AsyncContext asyncContext, final VerificationItems verificationItems){
@@ -598,16 +598,16 @@ public class MultipartController {
             // Verify if all hashes and sizes are matching and set the status...
             if (checkOutputStream) {
                 if (verificationItem.getPartInputStreamReadBytes() == verificationItem.getPartOutputStreamWrittenBytes() &&
-                    verificationItem.getPartInputStreamReadBytes() == fileMetadata.getSize() &&
-                    verificationItem.getPartInputStreamStreamChecksum().equals(verificationItem.getPartOutputStreamChecksum()) &&
-                    verificationItem.getPartInputStreamStreamChecksum().equals(fileMetadata.getChecksum())) {
+                        verificationItem.getPartInputStreamReadBytes() == fileMetadata.getSize() &&
+                        verificationItem.getPartInputStreamStreamChecksum().equals(verificationItem.getPartOutputStreamChecksum()) &&
+                        verificationItem.getPartInputStreamStreamChecksum().equals(fileMetadata.getChecksum())) {
                     verificationItem.setStatus("MATCHING");
                 } else {
                     verificationItem.setStatus("NOT MATCHING");
                 }
             }else{
                 if (verificationItem.getPartInputStreamReadBytes() ==  fileMetadata.getSize() &&
-                    verificationItem.getPartInputStreamStreamChecksum().equals(fileMetadata.getChecksum())) {
+                        verificationItem.getPartInputStreamStreamChecksum().equals(fileMetadata.getChecksum())) {
                     verificationItem.setStatus("MATCHING");
                 } else {
                     verificationItem.setStatus("NOT MATCHING");

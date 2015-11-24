@@ -27,6 +27,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * <p> The main class for parsing a multipart stream in an NIO mode. A new instance can be created and the
@@ -252,6 +253,11 @@ public class NioMultipartParser extends OutputStream {
      */
     volatile int partIndex = 1;
 
+    /**
+     * Close/open status of the output stram
+     */
+    volatile AtomicBoolean closed = new AtomicBoolean(false);
+
     // ------------
     // Constructors
     // ------------
@@ -330,8 +336,10 @@ public class NioMultipartParser extends OutputStream {
 
     @Override
     public void close() throws IOException {
-        if (partBodyByteStore != null) {
-            partBodyByteStore.close();
+        if (closed.compareAndSet(false, true)) {
+            if (partBodyByteStore != null) {
+                partBodyByteStore.close();
+            }
         }
     }
 
@@ -354,6 +362,10 @@ public class NioMultipartParser extends OutputStream {
 
     @Override
     public void write(byte[] data, int indexStart, int indexEnd) {
+
+        if (closed.get()){
+            throw new IllegalStateException("Cannot write, the parser is closed.");
+        }
 
         if (data == null) {
             goToState(State.ERROR);

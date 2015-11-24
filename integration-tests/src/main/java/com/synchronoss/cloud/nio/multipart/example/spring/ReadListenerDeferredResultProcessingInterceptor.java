@@ -57,6 +57,8 @@ public class ReadListenerDeferredResultProcessingInterceptor implements Deferred
 
     @Override
     public <T> void afterCompletion(NativeWebRequest request, DeferredResult<T> deferredResult) throws Exception {
-
+        if (deferredResult instanceof  CloseableReadListenerDeferredResult){
+            ((CloseableReadListenerDeferredResult)deferredResult).close();
+        }
     }
 }
