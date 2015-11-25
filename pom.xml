@@ -1,11 +1,18 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
+    <parent>
+        <groupId>org.sonatype.oss</groupId>
+        <artifactId>oss-parent</artifactId>
+        <version>7</version>
+    </parent>
+
     <groupId>com.synchronoss.cloud</groupId>
     <artifactId>nio-multipart</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>nio-multipart</name>
+    <url>https://github.com/synchronoss/nio-multipart</url>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -66,7 +73,6 @@
                         </execution>
                     </executions>
                 </plugin>
-
 
                 <plugin>
                     <artifactId>maven-javadoc-plugin</artifactId>
@@ -154,7 +160,6 @@
                 </configuration>
             </plugin>
 
-
         </plugins>
 
     </build>
@@ -168,11 +173,15 @@
     </licenses>
 
     <scm>
-        <connection>ssh://git@stash.synchronoss.net:7999/scm/~sriz0001/nio-multipart.git</connection>
-        <developerConnection>ssh://git@stash.synchronoss.net:7999/scm/~sriz0001/nio-multipart.git</developerConnection>
-        <url>https://stash.synchronoss.net/scm/~sriz0001/nio-multipart.git/browse</url>
-        <tag>HEAD</tag>
+        <connection>scm:git:https://github.com/synchronoss/nio-multipart.git</connection>
+        <developerConnection>scm:git:git@github.com:synchronoss/nio-multipart.git</developerConnection>
+        <url>https://github.com/synchronoss/nio-multipart</url>
     </scm>
+
+    <ciManagement>
+        <system>Travis CI</system>
+        <url>https://travis-ci.org/synchronoss/nio-multipart</url>
+    </ciManagement>
 
     <developers>
         <developer>
@@ -188,17 +197,6 @@
             <timezone>+0</timezone>
         </developer>
     </developers>
-
-    <distributionManagement>
-        <repository>
-            <id>cts-releases</id>
-            <url>http://mavenrepo.synchronoss.net:8081/nexus/content/repositories/cts-releases</url>
-        </repository>
-        <snapshotRepository>
-            <id>cts-snapshots</id>
-            <url>http://mavenrepo.synchronoss.net:8081/nexus/content/repositories/cts-snapshots</url>
-        </snapshotRepository>
-    </distributionManagement>
 
     <!-- mvn clean verify -pl integration-tests -Pintegration-tests -Dapplication.server.port=8181 -Pjmeter -->
     <profiles>
