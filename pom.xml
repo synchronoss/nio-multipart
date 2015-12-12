@@ -7,9 +7,9 @@
         <version>7</version>
     </parent>
 
-    <groupId>com.synchronoss.cloud</groupId>
+    <groupId>org.synchronoss.cloud</groupId>
     <artifactId>nio-multipart</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>1.0.0-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>nio-multipart</name>
     <url>https://github.com/synchronoss/nio-multipart</url>

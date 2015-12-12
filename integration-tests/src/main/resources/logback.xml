@@ -21,7 +21,7 @@
         <!--</triggeringPolicy>-->
     <!--</appender>-->
 
-    <logger name="com.synchronoss" level="DEBUG"/>
+    <logger name="org.synchronoss" level="DEBUG"/>
     <logger name="org.springframework" level="INFO"/>
 
     <root level="INFO">
