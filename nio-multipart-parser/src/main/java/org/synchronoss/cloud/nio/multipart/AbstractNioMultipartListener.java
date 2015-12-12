@@ -29,12 +29,12 @@ import java.util.Map;
 public class AbstractNioMultipartListener implements NioMultipartParserListener{
 
     @Override
-    public void onPartReady(ByteStore partBodyByteStore, Map<String, List<String>> headersFromPart) {
+    public void onPartFinished(ByteStore partBodyByteStore, Map<String, List<String>> headersFromPart) {
         // Empty implementation
     }
 
     @Override
-    public void onFormFieldPartReady(String fieldName, String fieldValue, Map<String, List<String>> headersFromPart) {
+    public void onFormFieldPartFinished(String fieldName, String fieldValue, Map<String, List<String>> headersFromPart) {
         // Empty implementation
     }
 

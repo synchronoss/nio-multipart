@@ -137,8 +137,8 @@ public class MultipartController {
             final NioMultipartParserListener listener = new NioMultipartParserListener() {
 
                 @Override
-                public void onPartReady(ByteStore partBodyByteStore, Map<String, List<String>> headersFromPart) {
-                    if(log.isInfoEnabled()) log.info("PARSER LISTENER - onPartReady");
+                public void onPartFinished(ByteStore partBodyByteStore, Map<String, List<String>> headersFromPart) {
+                    if(log.isInfoEnabled()) log.info("PARSER LISTENER - onPartFinished");
                     final ChecksumByteStore checksumByteStore = getChecksumByteStoreOrThrow(partBodyByteStore);
                     final String fieldName = MultipartUtils.getFieldName(headersFromPart);
                     if (METADATA_FIELD_NAME.equals(fieldName)){
@@ -150,8 +150,8 @@ public class MultipartController {
                 }
 
                 @Override
-                public void onFormFieldPartReady(String fieldName, String fieldValue, Map<String, List<String>> headersFromPart) {
-                    if(log.isInfoEnabled()) log.info("PARSER LISTENER - onFormFieldPartReady");
+                public void onFormFieldPartFinished(String fieldName, String fieldValue, Map<String, List<String>> headersFromPart) {
+                    if(log.isInfoEnabled()) log.info("PARSER LISTENER - onFormFieldPartFinished");
                     // Metadata might be sent as a form field...
                     if(METADATA_FIELD_NAME.equals(fieldName)){
                         metadata = unmarshalMetadataOrThrow(fieldValue);
@@ -269,8 +269,8 @@ public class MultipartController {
             Metadata metadata;
 
             @Override
-            public void onPartReady(final ByteStore partBodyByteStore, final Map<String, List<String>> headersFromPart) {
-                if(log.isInfoEnabled())log.info("PARSER LISTENER - onPartReady") ;
+            public void onPartFinished(final ByteStore partBodyByteStore, final Map<String, List<String>> headersFromPart) {
+                if(log.isInfoEnabled())log.info("PARSER LISTENER - onPartFinished") ;
                 final String fieldName = MultipartUtils.getFieldName(headersFromPart);
                 final ChecksumByteStore checksumPartStreams = getChecksumByteStoreOrThrow(partBodyByteStore);
                 if (METADATA_FIELD_NAME.equals(fieldName)){
@@ -292,8 +292,8 @@ public class MultipartController {
             }
 
             @Override
-            public void onFormFieldPartReady(String fieldName, String fieldValue, Map<String, List<String>> headersFromPart) {
-                if(log.isInfoEnabled()) log.info("PARSER LISTENER - onFormFieldPartReady");
+            public void onFormFieldPartFinished(String fieldName, String fieldValue, Map<String, List<String>> headersFromPart) {
+                if(log.isInfoEnabled()) log.info("PARSER LISTENER - onFormFieldPartFinished");
                 if (METADATA_FIELD_NAME.equals(fieldName)) {
                     metadata = unmarshalMetadataOrThrow(fieldValue);
                 }

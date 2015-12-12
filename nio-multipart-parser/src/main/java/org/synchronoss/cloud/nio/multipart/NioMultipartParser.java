@@ -619,12 +619,12 @@ public class NioMultipartParser extends OutputStream {
 
         // Notify
         if (MultipartUtils.isFormField(headers)){
-            // It's a form field, need to read the input stream into String and notify via onFormFieldPartReady(...)
+            // It's a form field, need to read the input stream into String and notify via onFormFieldPartFinished(...)
             final InputStream partBodyInputStream =  partBodyByteStore.getInputStream();
             try {
                 final String fieldName = MultipartUtils.getFieldName(headers);
                 final String value = IOUtils.inputStreamAsString(partBodyInputStream, MultipartUtils.getCharEncoding(headers));
-                nioMultipartParserListener.onFormFieldPartReady(fieldName, value, headers);
+                nioMultipartParserListener.onFormFieldPartFinished(fieldName, value, headers);
             }catch (Exception e){
                 goToState(State.ERROR);
                 nioMultipartParserListener.onError("Unable to read the form parameters", e);
@@ -635,7 +635,7 @@ public class NioMultipartParser extends OutputStream {
 
         }else{
             // Not a form field. Provide the raw input stream to the client.
-            nioMultipartParserListener.onPartReady(partBodyByteStore, headers);
+            nioMultipartParserListener.onPartFinished(partBodyByteStore, headers);
         }
 
         partIndex++;

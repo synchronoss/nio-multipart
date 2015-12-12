@@ -35,7 +35,7 @@ public interface NioMultipartParserListener {
      * @param partBodyByteStore The {@code ByteStore} from where the part body can be read.
      * @param headersFromPart The part headers.
      */
-    void onPartReady(final ByteStore partBodyByteStore, final Map<String, List<String>> headersFromPart);
+    void onPartFinished(final ByteStore partBodyByteStore, final Map<String, List<String>> headersFromPart);
 
     /**
      * <p> Called when a part that is a form field has been parsed
@@ -44,7 +44,7 @@ public interface NioMultipartParserListener {
      * @param fieldValue The field value
      * @param headersFromPart The part headers.
      */
-    void onFormFieldPartReady(final String fieldName, final String fieldValue, final Map<String, List<String>> headersFromPart);
+    void onFormFieldPartFinished(final String fieldName, final String fieldValue, final Map<String, List<String>> headersFromPart);
 
     /**
      * <p> Called when all the parts have been read.

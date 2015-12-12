@@ -1,11 +1,7 @@
 Non-Blocking Multipart parser
 =============================
 
-| Branch        | Status        | 
-| ------------- |:-------------:|
-| Master        | [![Master build Status](https://travis-ci.org/synchronoss/nio-multipart.svg?branch=master)](https://travis-ci.org/synchronoss/nio-multipart) |
-| Develop       | [![Develop build Status](https://travis-ci.org/synchronoss/nio-multipart.svg?branch=develop)](https://travis-ci.org/synchronoss/nio-multipart) |
-
+[![Master build Status](https://travis-ci.org/synchronoss/nio-multipart.svg?branch=master)](https://travis-ci.org/synchronoss/nio-multipart)
 
 Overview
 --------
@@ -45,7 +41,7 @@ What is important is that the client reacts to the events to implement the desir
 NioMultipartParserListener listener = new NioMultipartParserListener() {
 
     @Override
-    public void onPartReady(final ByteStore partBodyByteStore, final Map<String, List<String>> headersFromPart) {
+    public void onPartFinished(final ByteStore partBodyByteStore, final Map<String, List<String>> headersFromPart) {
         // The parser completed parsing the part. 
         // The parsed headers are available in the headersFromPart map
         // The part body can be read from the partBodyByteStore which provides an InputStream
@@ -55,7 +51,7 @@ NioMultipartParserListener listener = new NioMultipartParserListener() {
     public void onNestedPartStarted(final Map<String, List<String>> headersFromParentPart) {
         // The parser identified that the current part contains a nested multipart body
         // The headers are provided in the headersFromParentPart
-        // Like for the level 0 parts, the parser will notify the sub parts completion via the methods onPartReady(...) and onFormFieldPartReady(...)
+        // Like for the level 0 parts, the parser will notify the sub parts completion via the methods onPartFinished(...) and onFormFieldPartFinished(...)
         // When the nested multipart body is finished, the parser will call onNestedPartFinished()
     }
 
@@ -65,7 +61,7 @@ NioMultipartParserListener listener = new NioMultipartParserListener() {
     }
 
     @Override
-    public void onFormFieldPartReady(String fieldName, String fieldValue, Map<String, List<String>> headersFromPart) {
+    public void onFormFieldPartFinished(String fieldName, String fieldValue, Map<String, List<String>> headersFromPart) {
         // Called when the part represents a form field.
         // Instead of a ByteStore object, the field name and filedValue are already extracted by the parser and returned to the client.
     }
@@ -185,7 +181,7 @@ Like the configuration above, this setting is is only valid if the *DefaultPartB
 By default the temporary files are stored to *${java.io.tmpdir}/nio-file-upload* with a unique name like *nio-body-${uuid}-${part-index}.tmp*.
 The path can be changed point to a different location. The folder must be writable otherwise the parser will throw an error.
 The *DefaultPartBodyByteStoreFactory* is trying to keep the disk usage as low as possible and that's why when a file is read, it is deleted.
-In other words, the *onPartReady* event is providing a *ByteStore* that can be used to retrieve the InputStream for the part body.
+In other words, the *onPartFinished* event is providing a *ByteStore* that can be used to retrieve the InputStream for the part body.
 When the InputStream is closed the underlying file (if any) is deleted.
 
 ##### Nested multipart limit
@@ -248,7 +244,7 @@ public class DBPartBodyByteStoreFactory extends DefaultPartBodyByteStoreFactory{
 The code snipped above is an example of how a custom *PartBodyByteStoreFactory*. 
 When the parser encounters a part body, it will ask the *PartBodyByteStoreFactory* for the *ByteStore* where the data will be written.
 In the example if the part header *x-store-to-database* is set, the *ByteStore* will write to a database (and not to a temporary file).
-Once the parser finishes processing the part, it will notify passing back the *ByteStore* via the callback *onPartReady*.
+Once the parser finishes processing the part, it will notify passing back the *ByteStore* via the callback *onPartFinished*.
 The client does not need to read back the data because it's already in the database, so the *getInputStream()* method is returning null.
 In the default case, where the *ByteStore* is a temporary file, reading back the stored body is usually needed.
 

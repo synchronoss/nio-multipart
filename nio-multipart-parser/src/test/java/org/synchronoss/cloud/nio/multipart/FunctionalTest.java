@@ -211,7 +211,7 @@ public class FunctionalTest {
             AtomicInteger partIndex = new AtomicInteger(0);
 
             @Override
-            public void onPartReady(ByteStore partBodyByteStore, Map<String, List<String>> headersFromPart) {
+            public void onPartFinished(ByteStore partBodyByteStore, Map<String, List<String>> headersFromPart) {
                 log.info("<<<<< On part complete [" + (partIndex.addAndGet(1)) + "] >>>>>>");
                 assertFileItemIteratorHasNext(true);
                 final FileItemStream fileItemStream = fileItemIteratorNext();
@@ -220,7 +220,7 @@ public class FunctionalTest {
             }
 
             @Override
-            public void onFormFieldPartReady(String fieldName, String fieldValue, Map<String, List<String>> headersFromPart) {
+            public void onFormFieldPartFinished(String fieldName, String fieldValue, Map<String, List<String>> headersFromPart) {
                 log.info("<<<<< On form field complete [" + (partIndex.addAndGet(1)) + "] >>>>>>");
                 assertFileItemIteratorHasNext(true);
                 final FileItemStream fileItemStream = fileItemIteratorNext();
@@ -318,7 +318,7 @@ public class FunctionalTest {
             AtomicInteger partIndex = new AtomicInteger(0);
 
             @Override
-            public void onPartReady(ByteStore partBodyByteStore, Map<String, List<String>> headersFromPart) {
+            public void onPartFinished(ByteStore partBodyByteStore, Map<String, List<String>> headersFromPart) {
                 log.info("-- NIO MULTIPART PARSER : On part complete " + (partIndex.addAndGet(1)));
                 log.info("-- Part " + partIndex.get());
                 for (Map.Entry<String, List<String>> headersEntry : headersFromPart.entrySet()){
@@ -345,7 +345,7 @@ public class FunctionalTest {
             }
 
             @Override
-            public void onFormFieldPartReady(String fieldName, String fieldValue, Map<String, List<String>> headersFromPart) {
+            public void onFormFieldPartFinished(String fieldName, String fieldValue, Map<String, List<String>> headersFromPart) {
                 log.info("-- NIO MULTIPART PARSER : On form field complete " + partIndex.addAndGet(1));
                 log.info("-- Part " + (partIndex.get()));
                 for (Map.Entry<String, List<String>> headersEntry : headersFromPart.entrySet()){

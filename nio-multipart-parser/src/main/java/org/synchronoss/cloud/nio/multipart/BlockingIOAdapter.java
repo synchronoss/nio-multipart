@@ -128,12 +128,12 @@ public class BlockingIOAdapter {
 
             final NioMultipartParserListener listener = new NioMultipartParserListener() {
                 @Override
-                public void onPartReady(ByteStore partBodyByteStore, Map<String, List<String>> headersFromPart) {
+                public void onPartFinished(ByteStore partBodyByteStore, Map<String, List<String>> headersFromPart) {
                     partItems.add(new Attachment(headersFromPart, partBodyByteStore));
                 }
 
                 @Override
-                public void onFormFieldPartReady(String fieldName, String fieldValue, Map<String, List<String>> headersFromPart) {
+                public void onFormFieldPartFinished(String fieldName, String fieldValue, Map<String, List<String>> headersFromPart) {
                     partItems.add(new FormParameter(headersFromPart, fieldName, fieldValue));
                 }
 
