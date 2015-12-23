@@ -24,6 +24,9 @@ import java.io.OutputStream;
  * <p> Defines a storage that allows to store bytes and read them back.
  *     This class extends {@code OutputStream} to allow the write operations, and it exposes the {@link #getInputStream()} method
  *     to read the data back.
+ * <p> For each part the {@link org.synchronoss.cloud.nio.multipart.NioMultipartParser} will ask the
+ *     {@link org.synchronoss.cloud.nio.multipart.PartBodyByteStoreFactory} for a {@code ByteStore} where the bytes will be written.
+ *     Once the parser finished to write, it calls the {@link #close()} method.
  *
  * @author Silvano Riz.
  */

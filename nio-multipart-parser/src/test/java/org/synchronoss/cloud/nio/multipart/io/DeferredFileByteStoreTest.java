@@ -61,12 +61,12 @@ public class DeferredFileByteStoreTest {
         deferredFileByteStore.write(0x02);
         deferredFileByteStore.write(0x03);
 
-        assertTrue(deferredFileByteStore.isInMemory);
+        assertEquals(deferredFileByteStore.storageMode, DeferredFileByteStore.StorageMode.MEMORY);
         assertFalse(file.exists());
         assertEquals(3, deferredFileByteStore.byteArrayOutputStream.size());
 
         deferredFileByteStore.write(0x04);
-        assertFalse(deferredFileByteStore.isInMemory);
+        assertEquals(deferredFileByteStore.storageMode, DeferredFileByteStore.StorageMode.DISK);
         assertTrue(file.exists());
         assertEquals(4, file.length());
         assertNull(deferredFileByteStore.byteArrayOutputStream);
@@ -79,18 +79,18 @@ public class DeferredFileByteStoreTest {
         File file = new File(tempFolder.getRoot(), "testWrite1.tmp");
 
         DeferredFileByteStore deferredFileByteStore = new DeferredFileByteStore(file, 3);
-        assertTrue(deferredFileByteStore.isInMemory);
+        assertEquals(deferredFileByteStore.storageMode, DeferredFileByteStore.StorageMode.MEMORY);
         assertFalse(file.exists());
         assertEquals(0, deferredFileByteStore.byteArrayOutputStream.size());
 
         deferredFileByteStore.write(new byte[]{0x01, 0x02, 0x03});
 
-        assertTrue(deferredFileByteStore.isInMemory);
+        assertEquals(deferredFileByteStore.storageMode, DeferredFileByteStore.StorageMode.MEMORY);
         assertFalse(file.exists());
         assertEquals(3, deferredFileByteStore.byteArrayOutputStream.size());
 
         deferredFileByteStore.write(new byte[]{0x04, 0x05, 0x06});
-        assertFalse(deferredFileByteStore.isInMemory);
+        assertEquals(deferredFileByteStore.storageMode, DeferredFileByteStore.StorageMode.DISK);
         assertTrue(file.exists());
         assertEquals(6, file.length());
         assertNull(deferredFileByteStore.byteArrayOutputStream);
@@ -103,18 +103,18 @@ public class DeferredFileByteStoreTest {
         File file = new File(tempFolder.getRoot(), "testWrite2.tmp");
 
         DeferredFileByteStore deferredFileByteStore = new DeferredFileByteStore(file, 3);
-        assertTrue(deferredFileByteStore.isInMemory);
+        assertEquals(deferredFileByteStore.storageMode, DeferredFileByteStore.StorageMode.MEMORY);
         assertFalse(file.exists());
         assertEquals(0, deferredFileByteStore.byteArrayOutputStream.size());
 
         deferredFileByteStore.write(new byte[]{0x00, 0x01, 0x02, 0x03, 0x00}, 1, 3);
 
-        assertTrue(deferredFileByteStore.isInMemory);
+        assertEquals(deferredFileByteStore.storageMode, DeferredFileByteStore.StorageMode.MEMORY);
         assertFalse(file.exists());
         assertEquals(3, deferredFileByteStore.byteArrayOutputStream.size());
 
         deferredFileByteStore.write(new byte[]{0x00, 0x04, 0x05, 0x06, 0x00}, 1, 3);
-        assertFalse(deferredFileByteStore.isInMemory);
+        assertEquals(deferredFileByteStore.storageMode, DeferredFileByteStore.StorageMode.DISK);
         assertTrue(file.exists());
         assertEquals(6, file.length());
         assertNull(deferredFileByteStore.byteArrayOutputStream);
@@ -127,14 +127,14 @@ public class DeferredFileByteStoreTest {
         File file = new File(tempFolder.getRoot(), "testGetInputStream_memory.tmp");
 
         DeferredFileByteStore deferredFileByteStore = new DeferredFileByteStore(file, 3);
-        assertTrue(deferredFileByteStore.isInMemory);
+        assertEquals(deferredFileByteStore.storageMode, DeferredFileByteStore.StorageMode.MEMORY);
         assertFalse(file.exists());
         assertEquals(0, deferredFileByteStore.byteArrayOutputStream.size());
 
         // Write just 3 bytes. Still in the threshold so data should leave in memory...
         deferredFileByteStore.write(new byte[]{0x01, 0x02, 0x03});
 
-        assertTrue(deferredFileByteStore.isInMemory);
+        assertEquals(deferredFileByteStore.storageMode, DeferredFileByteStore.StorageMode.MEMORY);
         assertFalse(file.exists());
         assertEquals(3, deferredFileByteStore.byteArrayOutputStream.size());
 
@@ -150,17 +150,17 @@ public class DeferredFileByteStoreTest {
     @Test
     public void testGetInputStream_file_purgeOnClose() throws IOException {
 
-        File file = new File(tempFolder.getRoot(), "testGetInputStream_file.tmp");
+        File file = new File(tempFolder.getRoot(), "testGetInputStream_file_purgeOnClose.tmp");
 
         DeferredFileByteStore deferredFileByteStore = new DeferredFileByteStore(file, 3);
-        assertTrue(deferredFileByteStore.isInMemory);
+        assertEquals(deferredFileByteStore.storageMode, DeferredFileByteStore.StorageMode.MEMORY);
         assertFalse(file.exists());
         assertEquals(0, deferredFileByteStore.byteArrayOutputStream.size());
 
         // Write 5 bytes (2 bytes more than the threshold). It should switch to use a file
         deferredFileByteStore.write(new byte[]{0x01, 0x02, 0x03, 0x4, 0x5});
 
-        assertFalse(deferredFileByteStore.isInMemory);
+        assertEquals(deferredFileByteStore.storageMode, DeferredFileByteStore.StorageMode.DISK);
         assertTrue(file.exists());
         assertEquals(5, file.length());
 
@@ -184,14 +184,14 @@ public class DeferredFileByteStoreTest {
         File file = new File(tempFolder.getRoot(), "testGetInputStream_file.tmp");
 
         DeferredFileByteStore deferredFileByteStore = new DeferredFileByteStore(file, 3, false);
-        assertTrue(deferredFileByteStore.isInMemory);
+        assertEquals(deferredFileByteStore.storageMode, DeferredFileByteStore.StorageMode.MEMORY);
         assertFalse(file.exists());
         assertEquals(0, deferredFileByteStore.byteArrayOutputStream.size());
 
         // Write 5 bytes (2 bytes more than the threshold). It should switch to use a file
         deferredFileByteStore.write(new byte[]{0x01, 0x02, 0x03, 0x4, 0x5});
 
-        assertFalse(deferredFileByteStore.isInMemory);
+        assertEquals(deferredFileByteStore.storageMode, DeferredFileByteStore.StorageMode.DISK);
         assertTrue(file.exists());
         assertEquals(5, file.length());
 
@@ -212,17 +212,17 @@ public class DeferredFileByteStoreTest {
     @Test
     public void testGetInputStream_OutputStreamNotClosed() throws IOException {
 
-        File file = new File(tempFolder.getRoot(), "testGetInputStream_file.tmp");
+        File file = new File(tempFolder.getRoot(), "testGetInputStream_OutputStreamNotClosed.tmp");
 
         DeferredFileByteStore deferredFileByteStore = new DeferredFileByteStore(file, 3);
-        assertTrue(deferredFileByteStore.isInMemory);
+        assertEquals(deferredFileByteStore.storageMode, DeferredFileByteStore.StorageMode.MEMORY);
         assertFalse(file.exists());
         assertEquals(0, deferredFileByteStore.byteArrayOutputStream.size());
 
         // Write 5 bytes (2 bytes more than the threshold). It should switch to use a file
         deferredFileByteStore.write(new byte[]{0x01, 0x02, 0x03, 0x4, 0x5});
 
-        assertFalse(deferredFileByteStore.isInMemory);
+        assertEquals(deferredFileByteStore.storageMode, DeferredFileByteStore.StorageMode.DISK);
         assertTrue(file.exists());
         assertEquals(5, file.length());
 
@@ -234,6 +234,59 @@ public class DeferredFileByteStoreTest {
         }
         assertNotNull(expected);
 
+
+    }
+
+    @Test
+    public void testDismiss_inMemory(){
+
+        File file = new File(tempFolder.getRoot(), "testCloseQuietlyAndPurgeFile_inMemory.tmp");
+        DeferredFileByteStore deferredFileByteStore = new DeferredFileByteStore(file, 3);
+        assertEquals(deferredFileByteStore.storageMode, DeferredFileByteStore.StorageMode.MEMORY);
+        assertFalse(file.exists());
+        assertTrue(deferredFileByteStore.dismiss());
+
+        Exception expected = null;
+        try {
+            deferredFileByteStore.write(new byte[]{0x01, 0x02, 0x03, 0x4, 0x5});
+        }catch (Exception e){
+            expected = e;
+        }
+        assertNotNull(expected);
+
+    }
+
+    @Test
+    public void testDismiss() throws IOException {
+
+        File file = new File(tempFolder.getRoot(), "testCloseQuietlyAndPurgeFile.tmp");
+        DeferredFileByteStore deferredFileByteStore = new DeferredFileByteStore(file, 3);
+        assertEquals(deferredFileByteStore.storageMode, DeferredFileByteStore.StorageMode.MEMORY);
+        assertFalse(file.exists());
+
+        deferredFileByteStore.write(new byte[]{0x01, 0x02, 0x03, 0x4, 0x5});
+        assertEquals(deferredFileByteStore.storageMode, DeferredFileByteStore.StorageMode.DISK);
+        assertTrue(file.exists());
+        assertTrue(deferredFileByteStore.dismiss());
+        assertEquals(deferredFileByteStore.readWriteStatus, DeferredFileByteStore.ReadWriteStatus.DISMISSED);
+
+        // Try to write
+        Exception expected = null;
+        try {
+            deferredFileByteStore.write(new byte[]{0x01, 0x02, 0x03, 0x4, 0x5});
+        }catch (Exception e){
+            expected = e;
+        }
+        assertNotNull(expected);
+
+        // try to read
+        expected = null;
+        try {
+            deferredFileByteStore.getInputStream();
+        }catch (Exception e){
+            expected = e;
+        }
+        assertNotNull(expected);
 
     }
 

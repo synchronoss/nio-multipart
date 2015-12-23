@@ -153,7 +153,7 @@ public class NioMultipartParser extends OutputStream {
             finished = false;
         }
 
-        void setFinishedIfNoMOreData() {
+        void setFinishedIfNoMoreData() {
             finished = currentIndex >= indexEnd;
         }
 
@@ -467,11 +467,11 @@ public class NioMultipartParser extends OutputStream {
         while ((byteOfData = wCtx.read()) != -1) {
             if (endOfLineBuffer.write((byte)byteOfData)) {
                 goToState(State.IDENTIFY_PREAMBLE_DELIMITER);
-                wCtx.setFinishedIfNoMOreData();
+                wCtx.setFinishedIfNoMoreData();
                 return;
             }
         }
-        wCtx.setFinishedIfNoMOreData();
+        wCtx.setFinishedIfNoMoreData();
     }
 
     void getReadyForHeaders(final WriteContext wCtx) {
@@ -479,7 +479,7 @@ public class NioMultipartParser extends OutputStream {
         endOfLineBuffer.recycle(HEADER_DELIMITER, headersByteArrayOutputStream);
         headers = new HashMap<String, List<String>>();
         goToState(State.READ_HEADERS);
-        wCtx.setFinishedIfNoMOreData();
+        wCtx.setFinishedIfNoMoreData();
     }
 
 
@@ -494,11 +494,11 @@ public class NioMultipartParser extends OutputStream {
                 } else {
                     goToState(State.GET_READY_FOR_BODY);
                 }
-                wCtx.setFinishedIfNoMOreData();
+                wCtx.setFinishedIfNoMoreData();
                 return;
             }
         }
-        wCtx.setFinishedIfNoMOreData();
+        wCtx.setFinishedIfNoMoreData();
     }
 
     void parseHeaders() {
@@ -516,7 +516,7 @@ public class NioMultipartParser extends OutputStream {
         endOfLineBuffer.recycle(delimiterPrefixes.peek(), partBodyByteStore);
         delimiterType.reset();
         goToState(State.READ_BODY);
-        wCtx.setFinishedIfNoMOreData();
+        wCtx.setFinishedIfNoMoreData();
     }
 
     void getReadyForNestedMultipart(final WriteContext wCtx) {
@@ -531,7 +531,7 @@ public class NioMultipartParser extends OutputStream {
             goToState(State.SKIP_PREAMBLE);
             nioMultipartParserListener.onNestedPartStarted(headers);
         }
-        wCtx.setFinishedIfNoMOreData();
+        wCtx.setFinishedIfNoMoreData();
     }
 
     void readBody(final WriteContext wCtx) {
@@ -539,11 +539,11 @@ public class NioMultipartParser extends OutputStream {
         while ((byteOfData = wCtx.read()) != -1) {
             if (endOfLineBuffer.write((byte)byteOfData)) {
                 goToState(State.IDENTIFY_BODY_DELIMITER);
-                wCtx.setFinishedIfNoMOreData();
+                wCtx.setFinishedIfNoMoreData();
                 return;
             }
         }
-        wCtx.setFinishedIfNoMOreData();
+        wCtx.setFinishedIfNoMoreData();
     }
 
     void identifyPreambleDelimiter(final WriteContext wCtx) {
@@ -568,7 +568,7 @@ public class NioMultipartParser extends OutputStream {
 
                 if (DelimiterType.Type.ENCAPSULATION == type) {
                     goToState(onDelimiter);
-                    wCtx.setFinishedIfNoMOreData();
+                    wCtx.setFinishedIfNoMoreData();
                     return;
                 } else if (DelimiterType.Type.CLOSE == type) {
                     goToState(onCloseDelimiter);
@@ -584,14 +584,14 @@ public class NioMultipartParser extends OutputStream {
                 }
             }
         }
-        wCtx.setFinishedIfNoMOreData();
+        wCtx.setFinishedIfNoMoreData();
 
     }
 
     void allPartsRead(final WriteContext wCtx) {
         goToState(State.SKIP_EPILOGUE);
         nioMultipartParserListener.onAllPartsFinished();
-        wCtx.setFinishedIfNoMOreData();
+        wCtx.setFinishedIfNoMoreData();
     }
 
     void partComplete(final WriteContext wCtx){
@@ -639,7 +639,7 @@ public class NioMultipartParser extends OutputStream {
         }
 
         partIndex++;
-        wCtx.setFinishedIfNoMOreData();
+        wCtx.setFinishedIfNoMoreData();
 
     }
 
@@ -649,7 +649,7 @@ public class NioMultipartParser extends OutputStream {
         endOfLineBuffer.recycle(getPreambleDelimiterPrefix(delimiterPrefixes.peek()), null);
         goToState(State.SKIP_PREAMBLE);
         nioMultipartParserListener.onNestedPartFinished();
-        wCtx.setFinishedIfNoMOreData();
+        wCtx.setFinishedIfNoMoreData();
     }
 
     void skipEpilogue(final WriteContext wCtx){

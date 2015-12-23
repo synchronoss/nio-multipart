@@ -25,6 +25,14 @@ import java.io.*;
  * <p> A {@code ByteStore} that uses a combination of memory and file to store the data.
  *    If the data is smaller than a configurable threshold the data is kept in memory, if the threshold is reached the
  *    bytes are flushed to disk.
+ * <p> The {@code DeferredFileByteStore} has two distinct states:
+ * <ul>
+ *     <li><i>write</i>: The {@code ByteStore} is ONLY writable and NOT readable.</li>
+ *     <li><i>read</i>: The {@code ByteStore} is ONLY readable and NOT writable.</li>
+ * </ul>
+ * <p> A new instance will always start in a <i>write</i> state, ready to accept bytes and any call to the {@link #getInputStream()} will fail.
+ * Once all the data has been written, the {@link #close()} method needs to be called to close the write channel and switch the
+ * {@code DeferredFileByteStore} to the <i>read</i> state. At that point the data can be read via {@link #getInputStream()}.
  *
  * @author Silvano Riz
  */
@@ -32,15 +40,22 @@ public class DeferredFileByteStore extends ByteStore {
 
     private static final Logger log = LoggerFactory.getLogger(DeferredFileByteStore.class);
 
+    enum ReadWriteStatus {
+        READ, WRITE, DISMISSED;
+    }
+
+    enum StorageMode {
+        MEMORY, DISK;
+    }
+
     static final int DEFAULT_THRESHOLD = 10240;//10kb
 
     final File file;
     final int threshold;
     final boolean purgeFileAfterReadComplete;
 
-    volatile boolean isInMemory = true;
-    volatile boolean isClosed = false;
-
+    volatile ReadWriteStatus readWriteStatus;
+    volatile StorageMode storageMode;
     volatile ByteArrayOutputStream byteArrayOutputStream;
     volatile FileOutputStream fileOutputStream;
 
@@ -52,18 +67,19 @@ public class DeferredFileByteStore extends ByteStore {
      * <p> Constructor.
      *
      * @param file The file that will be used to store the data if the threshold is reached.
-     * @param threshold The threshold in bytes. Data smaller than the threshold are kept in memory. If the threshold is reached, the data is flushed to disk.
-     * @param purgeFileAfterReadComplete boolean flag that if true it will purge the file after the data has been read. The purge happens when the close method is called on the input stream served by the instance.
+     * @param threshold The threshold in bytes. Data will be kept in memory until no more data is available or the threshold is reached. If the threshold is reached the data is flushed to disk, the memory is freed and the subsequent writes will go straight to disk. A threshold set to 0 or a negative value means that no memory will be used at all and writes go straight to disk.
+     * @param purgeFileAfterReadComplete boolean flag that if true it will purge the file after the data has been read. The purge happens when the close method is called on the input stream served by the instance via {@link #getInputStream()}.
      */
     public DeferredFileByteStore(final File file, final int threshold, final boolean purgeFileAfterReadComplete) {
         this.file = file;
         this.threshold = threshold;
         this.purgeFileAfterReadComplete = purgeFileAfterReadComplete;
+        readWriteStatus = ReadWriteStatus.WRITE;
         if(threshold <= 0){
-            isInMemory = false;
+            storageMode = StorageMode.DISK;
             fileOutputStream = newFileOutputStream();
         }else{
-            isInMemory = true;
+            storageMode = StorageMode.MEMORY;
             byteArrayOutputStream = new ByteArrayOutputStream();
         }
     }
@@ -102,7 +118,7 @@ public class DeferredFileByteStore extends ByteStore {
      */
     @Override
     public void write(int b) throws IOException {
-        assertIsOpen();
+        assertIsWritable();
         if (checkThreshold(1)){
             byteArrayOutputStream.write(b);
         }else{
@@ -115,7 +131,7 @@ public class DeferredFileByteStore extends ByteStore {
      */
     @Override
     public void write(byte[] b, int off, int len) throws IOException {
-        assertIsOpen();
+        assertIsWritable();
         if (checkThreshold(len)){
             byteArrayOutputStream.write(b, off, len);
         }else{
@@ -128,7 +144,7 @@ public class DeferredFileByteStore extends ByteStore {
      */
     @Override
     public void write(byte[] b) throws IOException {
-        assertIsOpen();
+        assertIsWritable();
         if (checkThreshold(b.length)){
             byteArrayOutputStream.write(b);
         }else{
@@ -141,7 +157,7 @@ public class DeferredFileByteStore extends ByteStore {
      */
     @Override
     public void flush() throws IOException {
-        assertIsOpen();
+        assertIsWritable();
         if (fileOutputStream != null) {
             fileOutputStream.flush();
         }
@@ -152,10 +168,7 @@ public class DeferredFileByteStore extends ByteStore {
      */
     @Override
     public void close() throws IOException {
-        isClosed = true;
-        if (fileOutputStream != null) {
-            fileOutputStream.close();
-        }
+        close(ReadWriteStatus.READ);
     }
 
     /**
@@ -163,11 +176,14 @@ public class DeferredFileByteStore extends ByteStore {
      */
     @Override
     public InputStream getInputStream() {
-        assertIsClosed();
-        if (isInMemory){
-            return new ByteArrayInputStream(byteArrayOutputStream.toByteArray());
-        }else {
-            return newFileInputStream();
+        if (readWriteStatus.equals(ReadWriteStatus.READ)) {
+            if (storageMode.equals(StorageMode.MEMORY)) {
+                return new ByteArrayInputStream(byteArrayOutputStream.toByteArray());
+            } else {
+                return newFileInputStream();
+            }
+        }else{
+            throw new IllegalStateException("The DeferredFileByteStore is still in write mode. Call the close() method when all the data has been written before asking for the InputStream.");
         }
     }
 
@@ -177,28 +193,44 @@ public class DeferredFileByteStore extends ByteStore {
      * @return true if the data is in memory, false otherwise
      */
     public boolean isInMemory() {
-        return isInMemory;
+        return storageMode.equals(StorageMode.MEMORY);
     }
 
-    boolean checkThreshold(int lengthToWrite) throws IOException {
+    /**
+     * <p> Dismisses the {@code DeferredFileByteStore} closing quietly the {@code OutputStream} and deleting the underlying file if it exists.
+     *     This method is useful just in case of errors to free the resources and once called the {@code DeferredFileByteStore} is not usable anymore.
+     *
+     * @return <code>true</code> if and only if the file was created and it has been deleted successfully; <code>false</code> otherwise.
+     */
+    public boolean dismiss() {
+        try {
+            close(ReadWriteStatus.DISMISSED);
+        } catch (Exception e) {
+            // Nothing to do
+        }
+        return !(file != null && file.exists()) || file.delete();
+    }
+
+    void close(final ReadWriteStatus newReadWriteStatus) throws IOException {
+        readWriteStatus = newReadWriteStatus;
+        if (fileOutputStream != null) {
+            fileOutputStream.close();
+        }
+    }
+
+    boolean checkThreshold(final int lengthToWrite) throws IOException {
         if (byteArrayOutputStream != null && byteArrayOutputStream.size() + lengthToWrite <= threshold){
             return true;
         }
-        if (isInMemory){
+        if (isInMemory()){
             switchToFile();
         }
         return false;
     }
 
-    void assertIsOpen(){
-        if (isClosed){
+    void assertIsWritable(){
+        if (!readWriteStatus.equals(ReadWriteStatus.WRITE)){
             throw new IllegalStateException("OutputStream is closed");
-        }
-    }
-
-    void assertIsClosed(){
-        if (!isClosed){
-            throw new IllegalStateException("OutputStream is open");
         }
     }
 
@@ -211,7 +243,7 @@ public class DeferredFileByteStore extends ByteStore {
         fileOutputStream.flush();
         byteArrayOutputStream.reset();
         byteArrayOutputStream = null;
-        isInMemory = false;
+        storageMode = StorageMode.DISK;
     }
 
     FileOutputStream newFileOutputStream(){
