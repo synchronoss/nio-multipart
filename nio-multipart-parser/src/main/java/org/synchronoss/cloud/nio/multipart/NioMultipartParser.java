@@ -17,6 +17,7 @@
 package org.synchronoss.cloud.nio.multipart;
 
 import org.synchronoss.cloud.nio.multipart.io.ByteStore;
+import org.synchronoss.cloud.nio.multipart.io.Dismissable;
 import org.synchronoss.cloud.nio.multipart.io.FixedSizeByteArrayOutputStream;
 import org.synchronoss.cloud.nio.multipart.io.buffer.EndOfLineBuffer;
 import org.synchronoss.cloud.nio.multipart.util.HeadersParser;
@@ -40,7 +41,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  *
  * @author Silvano Riz.
  */
-public class NioMultipartParser extends OutputStream {
+public class NioMultipartParser extends OutputStream implements Dismissable {
 
     private static final Logger log = LoggerFactory.getLogger(NioMultipartParser.class);
 
@@ -341,6 +342,19 @@ public class NioMultipartParser extends OutputStream {
                 partBodyByteStore.close();
             }
         }
+    }
+
+    @Override
+    public boolean dismiss() {
+        try {
+            close();
+        } catch(IOException e) {
+            // Do nothing
+        }
+        if (partBodyByteStore != null) {
+            return partBodyByteStore.dismiss();
+        }
+        return true;
     }
 
     @Override

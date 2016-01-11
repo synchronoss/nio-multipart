@@ -214,5 +214,29 @@ public class NioMultipartParserTest {
 
 
     }
+    @Test
+    public void testDismiss() throws IOException {
+
+        MultipartContext context = mock(MultipartContext.class);
+        when(context.getContentType()).thenReturn("multipart/form-data;boundary=AAA");
+
+        NioMultipartParserListener listener = mock(NioMultipartParserListener.class);
+        PartBodyByteStoreFactory partBodyByteStoreFactory = mock(PartBodyByteStoreFactory.class);
+        ByteStore byteStore = mock(ByteStore.class);
+        when(partBodyByteStoreFactory.newByteStoreForPartBody(anyMap(), anyInt())).thenReturn(byteStore);
+
+        NioMultipartParser parser = new NioMultipartParser(context, listener, partBodyByteStoreFactory);
+
+        byte[] part = "--AAA\r\nContent-Type: text/plain\r\n\r\nThis is a body".getBytes();
+
+        for (byte aPartByte : part) {
+            parser.write(aPartByte);
+        }
+
+        parser.dismiss();
+
+        verify(byteStore).close();
+        verify(byteStore).dismiss();
+    }
 
 }

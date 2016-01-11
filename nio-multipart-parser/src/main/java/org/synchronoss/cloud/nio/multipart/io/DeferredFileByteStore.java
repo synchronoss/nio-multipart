@@ -41,7 +41,7 @@ public class DeferredFileByteStore extends ByteStore {
     private static final Logger log = LoggerFactory.getLogger(DeferredFileByteStore.class);
 
     enum ReadWriteStatus {
-        READ, WRITE, DISMISSED;
+        READ, WRITE, DISMISSED
     }
 
     enum StorageMode {
@@ -202,6 +202,7 @@ public class DeferredFileByteStore extends ByteStore {
      *
      * @return <code>true</code> if and only if the file was created and it has been deleted successfully; <code>false</code> otherwise.
      */
+    @Override
     public boolean dismiss() {
         try {
             close(ReadWriteStatus.DISMISSED);
