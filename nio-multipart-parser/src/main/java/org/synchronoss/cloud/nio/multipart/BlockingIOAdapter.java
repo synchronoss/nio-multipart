@@ -49,7 +49,7 @@ public class BlockingIOAdapter {
      * </p>
      * @param inputStream The multipart stream
      * @param multipartContext The multipart context
-     * @return The parts.
+     * @return the parts in the form of a closeable iterator
      */
     public static CloseableIterator<PartItem> parse(final InputStream inputStream, final MultipartContext multipartContext){
         return parse(inputStream, multipartContext, null, DEFAULT_BUFFER_SIZE, DEFAULT_HEADERS_SECTION_SIZE, DEFAULT_MAX_LEVEL_OF_NESTED_MULTIPART);
@@ -63,6 +63,7 @@ public class BlockingIOAdapter {
      * @param inputStream The multipart stream
      * @param multipartContext The multipart context
      * @param partBodyByteStoreFactory The {@code PartBodyByteStoreFactory} to use
+     * @return the parts in the form of a closeable iterator
      */
     public static CloseableIterator<PartItem> parse(final InputStream inputStream, final MultipartContext multipartContext, final PartBodyByteStoreFactory partBodyByteStoreFactory) {
         return parse(inputStream, multipartContext, partBodyByteStoreFactory, DEFAULT_BUFFER_SIZE, DEFAULT_HEADERS_SECTION_SIZE, DEFAULT_MAX_LEVEL_OF_NESTED_MULTIPART);
@@ -76,6 +77,7 @@ public class BlockingIOAdapter {
      * @param inputStream The multipart stream
      * @param multipartContext The multipart context
      * @param bufferSize The buffer size in bytes
+     * @return the parts in the form of a closeable iterator
      */
     public static CloseableIterator<PartItem> parse(final InputStream inputStream, final MultipartContext multipartContext, final int bufferSize) {
         return parse(inputStream, multipartContext, null, bufferSize, DEFAULT_HEADERS_SECTION_SIZE, DEFAULT_MAX_LEVEL_OF_NESTED_MULTIPART);
@@ -92,6 +94,7 @@ public class BlockingIOAdapter {
      * @param bufferSize The buffer size in bytes
      * @param maxHeadersSectionSize The max size of the headers section in bytes
      * @param maxLevelOfNestedMultipart the max number of nested multipart
+     * @return the parts in the form of a closeable iterator
      */
     @SuppressWarnings("unchecked")
     public static CloseableIterator<PartItem> parse(final InputStream inputStream,
@@ -113,7 +116,7 @@ public class BlockingIOAdapter {
                 return null;
             }
         };
-        private Queue<PartItem> partItems = new ConcurrentLinkedQueue<PartItem>();
+        private Queue<PartItem> partItems = new ConcurrentLinkedQueue<>();
         private final NioMultipartParser parser;
         private final InputStream inputStream;
 
@@ -213,7 +216,7 @@ public class BlockingIOAdapter {
             FORM,
             ATTACHMENT,
             NESTED_START,
-            NESTED_END;
+            NESTED_END
         }
 
         /**
