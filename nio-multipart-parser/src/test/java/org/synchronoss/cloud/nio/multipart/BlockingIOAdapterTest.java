@@ -39,7 +39,7 @@ public class BlockingIOAdapterTest {
     @Test
     public void testCreation() throws Exception {
 
-        final PartBodyByteStoreFactory partBodyByteStoreFactory = mock(PartBodyByteStoreFactory.class);
+        final PartBodyStreamStorageFactory partBodyStreamStorageFactory = mock(PartBodyStreamStorageFactory.class);
         final  InputStream inputStream = mock(InputStream.class);
         final MultipartContext context = mock(MultipartContext.class);
         when(context.getContentType()).thenReturn("multipart/form-data;boundary=MUEYT2qJT0_ZzYUvVQLy_DlrLeADyxzmsA");
@@ -51,10 +51,10 @@ public class BlockingIOAdapterTest {
         assertNotNull(parts1);
 
 
-        CloseableIterator<PartItem> parts2 = BlockingIOAdapter.parse(inputStream, context, partBodyByteStoreFactory);
+        CloseableIterator<PartItem> parts2 = BlockingIOAdapter.parse(inputStream, context, partBodyStreamStorageFactory);
         assertNotNull(parts2);
 
-        CloseableIterator<PartItem> parts3 = BlockingIOAdapter.parse(inputStream, context, partBodyByteStoreFactory, 500, 200, 2);
+        CloseableIterator<PartItem> parts3 = BlockingIOAdapter.parse(inputStream, context, partBodyStreamStorageFactory, 500, 200, 2);
         assertNotNull(parts3);
 
     }

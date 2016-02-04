@@ -25,7 +25,7 @@ import org.synchronoss.cloud.nio.multipart.BlockingIOAdapter.Attachment;
 import org.synchronoss.cloud.nio.multipart.BlockingIOAdapter.FormParameter;
 import org.synchronoss.cloud.nio.multipart.BlockingIOAdapter.PartItem;
 import org.synchronoss.cloud.nio.multipart.example.config.RootApplicationConfig;
-import org.synchronoss.cloud.nio.multipart.example.io.ChecksumByteStore;
+import org.synchronoss.cloud.nio.multipart.example.io.ChecksumStreamStorage;
 import org.synchronoss.cloud.nio.multipart.example.io.ChecksumStreamUtils;
 import org.synchronoss.cloud.nio.multipart.example.io.ChecksumStreamUtils.ChecksumAndReadBytes;
 import org.synchronoss.cloud.nio.multipart.example.model.FileMetadata;
@@ -33,7 +33,6 @@ import org.synchronoss.cloud.nio.multipart.example.model.Metadata;
 import org.synchronoss.cloud.nio.multipart.example.model.VerificationItem;
 import org.synchronoss.cloud.nio.multipart.example.model.VerificationItems;
 import org.synchronoss.cloud.nio.multipart.example.spring.CloseableReadListenerDeferredResult;
-import org.synchronoss.cloud.nio.multipart.io.ByteStore;
 import org.synchronoss.cloud.nio.multipart.util.collect.CloseableIterator;
 import org.apache.commons.fileupload.FileItemIterator;
 import org.apache.commons.fileupload.FileItemStream;
@@ -47,6 +46,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
+import org.synchronoss.cloud.nio.stream.storage.StreamStorage;
 
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
@@ -85,7 +85,7 @@ import static org.synchronoss.cloud.nio.multipart.Multipart.multipart;
  *     </ul>
  *     The response will also contain if all the item matched.
  *
- * <p> When the NIO Multipart parser is used, the checksum and size are computed for both the streams returned by the {@link ByteStore}.
+ * <p> When the NIO Multipart parser is used, the checksum and size are computed for both the streams returned by the {@link org.synchronoss.cloud.nio.stream.storage.StreamStorage}.
  *     This is not the case when the commons fileupload is used and the
  *     {@link VerificationItem#getPartOutputStreamChecksum()} and {@link VerificationItem#getPartOutputStreamWrittenBytes()}
  *     will not be populated and checked.
@@ -104,7 +104,7 @@ public class MultipartController {
     public static final String METADATA_FIELD_NAME = "metadata";
 
     @Autowired
-    private PartBodyByteStoreFactory partBodyByteStoreFactory;
+    private PartBodyStreamStorageFactory partBodyStreamStorageFactory;
 
     private static Gson GSON = new Gson();
 
@@ -137,14 +137,14 @@ public class MultipartController {
             final NioMultipartParserListener listener = new NioMultipartParserListener() {
 
                 @Override
-                public void onPartFinished(ByteStore partBodyByteStore, Map<String, List<String>> headersFromPart) {
+                public void onPartFinished(StreamStorage partBodyStreamStorage, Map<String, List<String>> headersFromPart) {
                     if(log.isInfoEnabled()) log.info("PARSER LISTENER - onPartFinished");
-                    final ChecksumByteStore checksumByteStore = getChecksumByteStoreOrThrow(partBodyByteStore);
+                    final ChecksumStreamStorage checksumStreamStorage = getChecksumStreamStorageOrThrow(partBodyStreamStorage);
                     final String fieldName = MultipartUtils.getFieldName(headersFromPart);
                     if (METADATA_FIELD_NAME.equals(fieldName)){
-                        metadata = unmarshalMetadataOrThrow(checksumByteStore);
+                        metadata = unmarshalMetadataOrThrow(checksumStreamStorage);
                     }else{
-                        VerificationItem verificationItem = buildVerificationItem(checksumByteStore, fieldName);
+                        VerificationItem verificationItem = buildVerificationItem(checksumStreamStorage, fieldName);
                         verificationItems.getVerificationItems().add(verificationItem);
                     }
                 }
@@ -184,7 +184,7 @@ public class MultipartController {
 
             };
 
-            final NioMultipartParser parser = Multipart.multipart(ctx).usePartBodyByteStoreFactory(partBodyByteStoreFactory).forNIO(listener);
+            final NioMultipartParser parser = Multipart.multipart(ctx).usePartBodyStreamStorageFactory(partBodyStreamStorageFactory).forNIO(listener);
 
             @Override
             public void onDataAvailable() throws IOException {
@@ -236,7 +236,7 @@ public class MultipartController {
                 return unmarshalMetadata(json);
             }
 
-            synchronized Metadata unmarshalMetadataOrThrow(final ChecksumByteStore checksumPartStreams){
+            synchronized Metadata unmarshalMetadataOrThrow(final ChecksumStreamStorage checksumPartStreams){
                 if (metadata != null){
                     throw new IllegalStateException("Found two metadata fields");
                 }
@@ -269,10 +269,10 @@ public class MultipartController {
             Metadata metadata;
 
             @Override
-            public void onPartFinished(final ByteStore partBodyByteStore, final Map<String, List<String>> headersFromPart) {
+            public void onPartFinished(final StreamStorage partBodyStreamStorage, final Map<String, List<String>> headersFromPart) {
                 if(log.isInfoEnabled())log.info("PARSER LISTENER - onPartFinished") ;
                 final String fieldName = MultipartUtils.getFieldName(headersFromPart);
-                final ChecksumByteStore checksumPartStreams = getChecksumByteStoreOrThrow(partBodyByteStore);
+                final ChecksumStreamStorage checksumPartStreams = getChecksumStreamStorageOrThrow(partBodyStreamStorage);
                 if (METADATA_FIELD_NAME.equals(fieldName)){
                     metadata = unmarshalMetadataOrThrow(checksumPartStreams);
                 }else{
@@ -319,7 +319,7 @@ public class MultipartController {
                 return unmarshalMetadata(json);
             }
 
-            synchronized Metadata unmarshalMetadataOrThrow(final ChecksumByteStore checksumPartStreams){
+            synchronized Metadata unmarshalMetadataOrThrow(final ChecksumStreamStorage checksumPartStreams){
                 if (metadata != null){
                     throw new IllegalStateException("Found more than one metadata fields");
                 }
@@ -329,7 +329,7 @@ public class MultipartController {
         };
 
         final MultipartContext ctx = getMultipartContext(request);
-        final NioMultipartParser parser = multipart(ctx).usePartBodyByteStoreFactory(partBodyByteStoreFactory).forNIO(listener);
+        final NioMultipartParser parser = multipart(ctx).usePartBodyStreamStorageFactory(partBodyStreamStorageFactory).forNIO(listener);
 
         // Add a listener to ensure the parser is closed.
         asyncContext.addListener(new AsyncListener() {
@@ -513,11 +513,11 @@ public class MultipartController {
         }
     }
 
-    static ChecksumByteStore getChecksumByteStoreOrThrow(final ByteStore byteStore){
-        if (byteStore instanceof ChecksumByteStore){
-            return (ChecksumByteStore) byteStore;
+    static ChecksumStreamStorage getChecksumStreamStorageOrThrow(final StreamStorage streamStorage){
+        if (streamStorage instanceof ChecksumStreamStorage){
+            return (ChecksumStreamStorage) streamStorage;
         }else{
-            throw new IllegalStateException("Expected ChecksumPartStreams but got " + byteStore.getClass().getName());
+            throw new IllegalStateException("Expected ChecksumPartStreams but got " + streamStorage.getClass().getName());
         }
     }
 
@@ -533,12 +533,12 @@ public class MultipartController {
         return GSON.fromJson(json, Metadata.class);
     }
 
-    static VerificationItem buildVerificationItem(final ChecksumByteStore checksumByteStore, final String fieldName){
+    static VerificationItem buildVerificationItem(final ChecksumStreamStorage checksumStreamStorage, final String fieldName){
 
-        final String outputStreamChecksum = ChecksumStreamUtils.digestAsHexString(checksumByteStore.getChecksum());
-        final long outputStreamWrittenBytes = checksumByteStore.getWrittenBytes();
+        final String outputStreamChecksum = ChecksumStreamUtils.digestAsHexString(checksumStreamStorage.getChecksum());
+        final long outputStreamWrittenBytes = checksumStreamStorage.getWrittenBytes();
 
-        final ChecksumAndReadBytes checksumAndReadBytes =  ChecksumStreamUtils.computeChecksumAndReadBytes(checksumByteStore.getInputStream());
+        final ChecksumAndReadBytes checksumAndReadBytes =  ChecksumStreamUtils.computeChecksumAndReadBytes(checksumStreamStorage.getInputStream());
         final String inputStreamChecksum = checksumAndReadBytes.getChecksum();
         final long inputStreamReadBytes = checksumAndReadBytes.getReadBytes();
 

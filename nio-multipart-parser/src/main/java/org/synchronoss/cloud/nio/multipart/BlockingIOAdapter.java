@@ -15,11 +15,11 @@
  */
 package org.synchronoss.cloud.nio.multipart;
 
-import org.synchronoss.cloud.nio.multipart.io.ByteStore;
 import org.synchronoss.cloud.nio.multipart.util.collect.AbstractIterator;
 import org.synchronoss.cloud.nio.multipart.util.collect.CloseableIterator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.synchronoss.cloud.nio.stream.storage.StreamStorage;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -62,11 +62,11 @@ public class BlockingIOAdapter {
      *
      * @param inputStream The multipart stream
      * @param multipartContext The multipart context
-     * @param partBodyByteStoreFactory The {@code PartBodyByteStoreFactory} to use
+     * @param partBodyStreamStorageFactory The {@code PartBodyStreamStorageFactory} to use
      * @return the parts in the form of a closeable iterator
      */
-    public static CloseableIterator<PartItem> parse(final InputStream inputStream, final MultipartContext multipartContext, final PartBodyByteStoreFactory partBodyByteStoreFactory) {
-        return parse(inputStream, multipartContext, partBodyByteStoreFactory, DEFAULT_BUFFER_SIZE, DEFAULT_HEADERS_SECTION_SIZE, DEFAULT_MAX_LEVEL_OF_NESTED_MULTIPART);
+    public static CloseableIterator<PartItem> parse(final InputStream inputStream, final MultipartContext multipartContext, final PartBodyStreamStorageFactory partBodyStreamStorageFactory) {
+        return parse(inputStream, multipartContext, partBodyStreamStorageFactory, DEFAULT_BUFFER_SIZE, DEFAULT_HEADERS_SECTION_SIZE, DEFAULT_MAX_LEVEL_OF_NESTED_MULTIPART);
     }
 
     /**
@@ -90,7 +90,7 @@ public class BlockingIOAdapter {
      *
      * @param inputStream The multipart stream
      * @param multipartContext The multipart context
-     * @param partBodyByteStoreFactory The {@code PartBodyByteStoreFactory} to use
+     * @param partBodyStreamStorageFactory The {@code PartBodyStreamStorageFactory} to use
      * @param bufferSize The buffer size in bytes
      * @param maxHeadersSectionSize The max size of the headers section in bytes
      * @param maxLevelOfNestedMultipart the max number of nested multipart
@@ -99,13 +99,13 @@ public class BlockingIOAdapter {
     @SuppressWarnings("unchecked")
     public static CloseableIterator<PartItem> parse(final InputStream inputStream,
                                            final MultipartContext multipartContext,
-                                           final PartBodyByteStoreFactory partBodyByteStoreFactory,
+                                           final PartBodyStreamStorageFactory partBodyStreamStorageFactory,
                                            final int bufferSize,
                                            final int maxHeadersSectionSize,
                                            final int maxLevelOfNestedMultipart) {
 
 
-        return new PartItemsIterator(inputStream, multipartContext, partBodyByteStoreFactory, bufferSize, maxHeadersSectionSize, maxLevelOfNestedMultipart);
+        return new PartItemsIterator(inputStream, multipartContext, partBodyStreamStorageFactory, bufferSize, maxHeadersSectionSize, maxLevelOfNestedMultipart);
     }
 
     static class PartItemsIterator extends AbstractIterator<PartItem> implements CloseableIterator<PartItem> {
@@ -122,7 +122,7 @@ public class BlockingIOAdapter {
 
         public PartItemsIterator(final InputStream inputStream,
                                  final MultipartContext multipartContext,
-                                 final PartBodyByteStoreFactory partBodyByteStoreFactory,
+                                 final PartBodyStreamStorageFactory partBodyStreamStorageFactory,
                                  final int bufferSize,
                                  final int maxHeadersSectionSize,
                                  final int maxLevelOfNestedMultipart) {
@@ -131,8 +131,8 @@ public class BlockingIOAdapter {
 
             final NioMultipartParserListener listener = new NioMultipartParserListener() {
                 @Override
-                public void onPartFinished(ByteStore partBodyByteStore, Map<String, List<String>> headersFromPart) {
-                    partItems.add(new Attachment(headersFromPart, partBodyByteStore));
+                public void onPartFinished(StreamStorage partBodyStreamStorage, Map<String, List<String>> headersFromPart) {
+                    partItems.add(new Attachment(headersFromPart, partBodyStreamStorage));
                 }
 
                 @Override
@@ -161,7 +161,7 @@ public class BlockingIOAdapter {
                 }
             };
 
-            this.parser = new NioMultipartParser(multipartContext, listener, partBodyByteStoreFactory, bufferSize, maxHeadersSectionSize, maxLevelOfNestedMultipart);
+            this.parser = new NioMultipartParser(multipartContext, listener, partBodyStreamStorageFactory, bufferSize, maxHeadersSectionSize, maxLevelOfNestedMultipart);
         }
 
         @Override
@@ -333,11 +333,11 @@ public class BlockingIOAdapter {
     public static class Attachment implements PartItem {
 
         final Map<String, List<String>> headers;
-        final ByteStore partBodyByteStore;
+        final StreamStorage partBodyStreamStorage;
 
-        private Attachment(final Map<String, List<String>> headers, final ByteStore partBodyByteStore) {
+        private Attachment(final Map<String, List<String>> headers, final StreamStorage partBodyStreamStorage) {
             this.headers = headers;
-            this.partBodyByteStore = partBodyByteStore;
+            this.partBodyStreamStorage = partBodyStreamStorage;
         }
 
         /**
@@ -363,7 +363,7 @@ public class BlockingIOAdapter {
          * @return the {@code InputStream} from where the part body can be read.
          */
         public InputStream getPartBody(){
-            return partBodyByteStore.getInputStream();
+            return partBodyStreamStorage.getInputStream();
         }
     }
 }

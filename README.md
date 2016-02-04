@@ -41,10 +41,10 @@ What is important is that the client reacts to the events to implement the desir
 NioMultipartParserListener listener = new NioMultipartParserListener() {
 
     @Override
-    public void onPartFinished(final ByteStore partBodyByteStore, final Map<String, List<String>> headersFromPart) {
+    public void onPartFinished(final StreamStorage partBodyStreamStorage, final Map<String, List<String>> headersFromPart) {
         // The parser completed parsing the part. 
         // The parsed headers are available in the headersFromPart map
-        // The part body can be read from the partBodyByteStore which provides an InputStream
+        // The part body can be read from the partBodyStreamStorage which provides an InputStream
     }
 
     @Override
@@ -63,7 +63,7 @@ NioMultipartParserListener listener = new NioMultipartParserListener() {
     @Override
     public void onFormFieldPartFinished(String fieldName, String fieldValue, Map<String, List<String>> headersFromPart) {
         // Called when the part represents a form field.
-        // Instead of a ByteStore object, the field name and filedValue are already extracted by the parser and returned to the client.
+        // Instead of a StreamStorage object, the field name and filedValue are already extracted by the parser and returned to the client.
     }
 
     @Override
@@ -168,20 +168,20 @@ The headers section max sizes imposes a limit for the size of the headers sectio
 The suggestion is to keep the default value or set it to the value used in the application servers/load balancers used in the production environment.
 
 ##### Threshold after which data collected while parsing a part body is flushed to a temporary file
-This configuration is only valid if the *DefaultPartBodyByteStoreFactory* is used (which is the default choice if the user does not specify an alternative).
-The *PartBodyByteStoreFactory* is providing to the parser the *ByteStore* where to store the part body. 
-The *DefaultPartBodyByteStoreFactory* is using the *DeferredFileByteStore*, where data is kept in memory until a certain threshold is reached.
+This configuration is only valid if the *DefaultPartBodyStreamStorageFactory* is used (which is the default choice if the user does not specify an alternative).
+The *PartBodyStreamStorageFactory* is providing to the parser the *StreamStorage* where to store the part body.
+The *DefaultPartBodyStreamStorageFactory* is using the *DeferredFileStreamStorage*, where data is kept in memory until a certain threshold is reached.
 If the threshold is reached, the memory is cleared and the data is stored into a temporary file.
 This approach allows to limit the creation of temporary files (hence disk IO traffic) if the part body is small (for example if it is a form field)
 The default value is 10kb and it can be adjusted based on the amount of memory available and/or the traffic model.
 If the value is set to 0 (or negative number) it means that no memory will be used and a temporary file will always be created.
 
 ##### Location of the temporary files
-Like the configuration above, this setting is is only valid if the *DefaultPartBodyByteStoreFactory* is used.
+Like the configuration above, this setting is is only valid if the *DefaultPartBodyStreamStorageFactory* is used.
 By default the temporary files are stored to *${java.io.tmpdir}/nio-file-upload* with a unique name like *nio-body-${uuid}-${part-index}.tmp*.
 The path can be changed point to a different location. The folder must be writable otherwise the parser will throw an error.
-The *DefaultPartBodyByteStoreFactory* is trying to keep the disk usage as low as possible and that's why when a file is read, it is deleted.
-In other words, the *onPartFinished* event is providing a *ByteStore* that can be used to retrieve the InputStream for the part body.
+The *DefaultPartBodyStreamStorageFactory* is trying to keep the disk usage as low as possible and that's why when a file is read, it is deleted.
+In other words, the *onPartFinished* event is providing a *StreamStorage* that can be used to retrieve the InputStream for the part body.
 When the InputStream is closed the underlying file (if any) is deleted.
 
 ##### Nested multipart limit
@@ -207,20 +207,20 @@ It is important to keep in mind that a new parser **MUST** be instantiated per e
 
 A powerful extension point
 --------------------------
-As mentioned earlier, the parser uses a *PartBodyByteStoreFactory* component that is responsible of providing a *ByteStore* object where the part body can be stored and read back.
-By default the parser is using the *DefaultPartBodyByteStoreFactory* and the *DeferredFileByteStore*, but clients with specific needs can provide their own implementations.
+As mentioned earlier, the parser uses a *PartBodyStreamStorageFactory* component that is responsible of providing a *StreamStorage* object where the part body can be stored and read back.
+By default the parser is using the *DefaultPartBodyStreamStorageFactory* and the *DeferredFileStreamStorage*, but clients with specific needs can provide their own implementations.
 Suppose that a client wants to store the file directly to a database based on the presence of a specific header.
-Well, this is possible defining a custom *PartBodyByteStoreFactory*:
+Well, this is possible defining a custom *PartBodyStreamStorageFactory*:
 
 ```java
-public class DBPartBodyByteStoreFactory extends DefaultPartBodyByteStoreFactory{
+public class DBPartBodyStreamStorageFactory extends DefaultPartBodyStreamStorageFactory{
 
     @Override
-    public PartStreams newByteStoreForPartBody(Map<String, List<String>> headers, int partIndex) {
+    public PartStreams newStreamStorageForPartBody(Map<String, List<String>> headers, int partIndex) {
         if (MultipartUtils.getHeader("x-store-to-database", headers) != null){
         
-            // x-store-to-database header is present, return a ByteStore capable of storing data into a DB...
-            return new ByteStore() {
+            // x-store-to-database header is present, return a StreamStorage capable of storing data into a DB...
+            return new StreamStorage() {
             
                 @Override
                 public void write(int b) throws IOException {
@@ -235,28 +235,28 @@ public class DBPartBodyByteStoreFactory extends DefaultPartBodyByteStoreFactory{
             };
         }else {
             // If the header is not present just use the default...
-            return super.newByteStoreForPartBody(headers, partIndex);
+            return super.newStreamStorageForPartBody(headers, partIndex);
         }
     };
 }
 ```
 
-The code snipped above is an example of how a custom *PartBodyByteStoreFactory*. 
-When the parser encounters a part body, it will ask the *PartBodyByteStoreFactory* for the *ByteStore* where the data will be written.
-In the example if the part header *x-store-to-database* is set, the *ByteStore* will write to a database (and not to a temporary file).
-Once the parser finishes processing the part, it will notify passing back the *ByteStore* via the callback *onPartFinished*.
+The code snipped above is an example of how a custom *PartBodyStreamStorageFactory*.
+When the parser encounters a part body, it will ask the *PartBodyStreamStorageFactory* for the *StreamStorage* where the data will be written.
+In the example if the part header *x-store-to-database* is set, the *StreamStorage* will write to a database (and not to a temporary file).
+Once the parser finishes processing the part, it will notify passing back the *StreamStorage* via the callback *onPartFinished*.
 The client does not need to read back the data because it's already in the database, so the *getInputStream()* method is returning null.
-In the default case, where the *ByteStore* is a temporary file, reading back the stored body is usually needed.
+In the default case, where the *StreamStorage* is a temporary file, reading back the stored body is usually needed.
 
-The custom *PartBodyByteStoreFactory* can be passed to the parser via the appropriate constructor or using the fluent API (see example)
+The custom *PartBodyStreamStorageFactory* can be passed to the parser via the appropriate constructor or using the fluent API (see example)
 
 ```java
 NioMultipartParser parser = Multipart.multipart(context)
-                .usePartBodyByteStoreFactory(dbPartStreamFactory)
+                .usePartBodyStreamStorageFactory(dbPartStreamFactory)
                 .forNio(listener);
 ```
 
-This kind of customization can be used to achieve numerous goals. For example it might be possible to compute the file checksum on fly while data are written to the *ByteStore*.
+This kind of customization can be used to achieve numerous goals. For example it might be possible to compute the file checksum on fly while data are written to the *StreamStorage*.
 Other scenarios can be the on-fly indexing of the content or file metadata extraction.
 
 Still using Blocking IO? No Problem

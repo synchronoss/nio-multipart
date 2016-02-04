@@ -45,7 +45,7 @@ public class MultipartTest {
         MultipartContext context = mock(MultipartContext.class);
         when(context.getContentType()).thenReturn("multipart/form-data;boundary=MUEYT2qJT0_ZzYUvVQLy_DlrLeADyxzmsA");
         NioMultipartParserListener listener = mock(NioMultipartParserListener.class);
-        PartBodyByteStoreFactory partBodyByteStoreFactory = mock(PartBodyByteStoreFactory.class);
+        PartBodyStreamStorageFactory partBodyStreamStorageFactory = mock(PartBodyStreamStorageFactory.class);
 
         NioMultipartParser parser = multipart(context).forNIO(listener);
         assertNotNull(parser);
@@ -73,7 +73,7 @@ public class MultipartTest {
                 .withBufferSize(500)
                 .withHeadersSizeLimit(16000)
                 .withMaxMemoryUsagePerBodyPart(100)
-                .usePartBodyByteStoreFactory(partBodyByteStoreFactory)
+                .usePartBodyStreamStorageFactory(partBodyStreamStorageFactory)
                 .forNIO(listener);
 
         assertNotNull(parser3);
@@ -85,7 +85,7 @@ public class MultipartTest {
 
         MultipartContext context = mock(MultipartContext.class);
         when(context.getContentType()).thenReturn("multipart/form-data;boundary=MUEYT2qJT0_ZzYUvVQLy_DlrLeADyxzmsA");
-        PartBodyByteStoreFactory partBodyByteStoreFactory = mock(PartBodyByteStoreFactory.class);
+        PartBodyStreamStorageFactory partBodyStreamStorageFactory = mock(PartBodyStreamStorageFactory.class);
         InputStream inputStream = mock(InputStream.class);
 
         CloseableIterator<PartItem> parts = multipart(context).forBlockingIO(inputStream);
@@ -113,7 +113,7 @@ public class MultipartTest {
                 .withBufferSize(500)
                 .withHeadersSizeLimit(16000)
                 .withMaxMemoryUsagePerBodyPart(100)
-                .usePartBodyByteStoreFactory(partBodyByteStoreFactory)
+                .usePartBodyStreamStorageFactory(partBodyStreamStorageFactory)
                 .forBlockingIO(inputStream);
 
         assertNotNull(parts3);
