@@ -17,7 +17,7 @@
 package org.synchronoss.cloud.nio.multipart;
 
 
-import org.synchronoss.cloud.nio.multipart.io.ByteStore;
+import org.synchronoss.cloud.nio.stream.storage.StreamStorage;
 
 import java.util.List;
 import java.util.Map;
@@ -32,10 +32,10 @@ public interface NioMultipartParserListener {
     /**
      * <p> Called when a part has been parsed.
      *
-     * @param partBodyByteStore The {@code ByteStore} from where the part body can be read.
+     * @param partBodyStreamStorage The {@code StreamStorage} from where the part body can be read.
      * @param headersFromPart The part headers.
      */
-    void onPartFinished(final ByteStore partBodyByteStore, final Map<String, List<String>> headersFromPart);
+    void onPartFinished(final StreamStorage partBodyStreamStorage, final Map<String, List<String>> headersFromPart);
 
     /**
      * <p> Called when a part that is a form field has been parsed

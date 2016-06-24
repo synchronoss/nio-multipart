@@ -16,13 +16,13 @@
 
 package org.synchronoss.cloud.nio.multipart.example.config;
 
-import org.synchronoss.cloud.nio.multipart.ChecksumPartBodyByteStoreFactory;
-import org.synchronoss.cloud.nio.multipart.PartBodyByteStoreFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
+import org.synchronoss.cloud.nio.multipart.ChecksumPartBodyStreamStorageFactory;
+import org.synchronoss.cloud.nio.multipart.PartBodyStreamStorageFactory;
 
 /**
  * <p> Root application context
@@ -40,7 +40,7 @@ public class RootApplicationConfig {
     }
 
     @Bean
-    public static PartBodyByteStoreFactory partStreamsFactory(){
-        return new ChecksumPartBodyByteStoreFactory("SHA-256");
+    public static PartBodyStreamStorageFactory partStreamsFactory(){
+        return new ChecksumPartBodyStreamStorageFactory("SHA-256");
     }
 }

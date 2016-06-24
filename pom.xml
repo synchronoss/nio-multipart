@@ -31,6 +31,12 @@
                 <version>1.7.12</version>
             </dependency>
 
+            <dependency>
+                <groupId>org.synchronoss.cloud</groupId>
+                <artifactId>nio-stream-storage</artifactId>
+                <version>1.0.0</version>
+            </dependency>
+
             <!-- Testing -->
             <dependency>
                 <groupId>org.mockito</groupId>

@@ -16,7 +16,8 @@
 
 package org.synchronoss.cloud.nio.multipart;
 
-import org.synchronoss.cloud.nio.multipart.io.ByteStore;
+
+import org.synchronoss.cloud.nio.stream.storage.StreamStorage;
 
 import java.util.List;
 import java.util.Map;
@@ -29,7 +30,7 @@ import java.util.Map;
 public class AbstractNioMultipartListener implements NioMultipartParserListener{
 
     @Override
-    public void onPartFinished(ByteStore partBodyByteStore, Map<String, List<String>> headersFromPart) {
+    public void onPartFinished(StreamStorage partBodyStreamStorage, Map<String, List<String>> headersFromPart) {
         // Empty implementation
     }
 

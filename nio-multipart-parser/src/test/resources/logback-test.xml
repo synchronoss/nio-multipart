@@ -6,7 +6,7 @@
     </appender>
     <logger name="org.synchronoss.cloud.nio.multipart.NioMultipartParserFunctionalTest" level="INFO"/>
     <logger name="org.synchronoss.cloud.nio.multipart.NioMultipartParser" level="INFO"/>
-    <logger name="org.synchronoss.cloud.nio.multipart.DefaultPartBodyByteStoreFactory" level="INFO"/>
+    <logger name="org.synchronoss.cloud.nio.multipart.DefaultPartBodyStreamStorageFactory" level="INFO"/>
     <root level="INFO">
         <appender-ref ref="STDOUT" />
     </root>

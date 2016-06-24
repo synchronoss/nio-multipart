@@ -16,28 +16,27 @@
 
 package org.synchronoss.cloud.nio.multipart;
 
-import org.synchronoss.cloud.nio.multipart.io.ByteStore;
+import org.synchronoss.cloud.nio.stream.storage.StreamStorage;
 
 import java.util.List;
 import java.util.Map;
 
 /**
- * <p> Factory for a {@code ByteStore}. This is a powerful extension point and custom implementations can be provided to
+ * <p> Factory for a {@code StreamStorage}. This is a powerful extension point and custom implementations can be provided to
  *     implement specific application logic like streaming the part directly to database or to a rest service.
  *
- * <p> The default implementation is {@link DefaultPartBodyByteStoreFactory}
+ * <p> The default implementation is {@link DefaultPartBodyStreamStorageFactory}
  *
  * @author Silvano Riz.
  */
-public interface PartBodyByteStoreFactory {
+public interface PartBodyStreamStorageFactory {
 
     /**
-     * <p> Creates the {@code ByteStore} for a specific part.
+     * <p> Creates the {@code StreamStorage} for a specific part.
      *
      * @param partHeaders The headers of the part
-     * @param partIndex The index of the part
-     * @return the {@code ByteStore} for a specific part.
+     * @return the {@code StreamStorage} for a specific part.
      */
-    ByteStore newByteStoreForPartBody(final Map<String, List<String>> partHeaders, final int partIndex);
+    StreamStorage newStreamStorageForPartBody(final Map<String, List<String>> partHeaders, final int partIndex);
 
 }

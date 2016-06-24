@@ -18,7 +18,6 @@ package org.synchronoss.cloud.nio.multipart;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import org.synchronoss.cloud.nio.multipart.BlockingIOAdapter.PartItem;
-import org.synchronoss.cloud.nio.multipart.io.ByteStore;
 import org.synchronoss.cloud.nio.multipart.testutil.ChunksFileReader;
 import org.synchronoss.cloud.nio.multipart.testutil.MultipartTestCases;
 import org.synchronoss.cloud.nio.multipart.testutil.MultipartTestCases.MultipartTestCase;
@@ -34,6 +33,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.synchronoss.cloud.nio.stream.storage.StreamStorage;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -211,12 +211,12 @@ public class FunctionalTest {
             AtomicInteger partIndex = new AtomicInteger(0);
 
             @Override
-            public void onPartFinished(ByteStore partBodyByteStore, Map<String, List<String>> headersFromPart) {
+            public void onPartFinished(StreamStorage partBodyStreamStorage, Map<String, List<String>> headersFromPart) {
                 log.info("<<<<< On part complete [" + (partIndex.addAndGet(1)) + "] >>>>>>");
                 assertFileItemIteratorHasNext(true);
                 final FileItemStream fileItemStream = fileItemIteratorNext();
                 assertHeadersAreEqual(fileItemStream.getHeaders(), headersFromPart);
-                assertInputStreamsAreEqual(fileItemStreamInputStream(fileItemStream), partBodyByteStore.getInputStream());
+                assertInputStreamsAreEqual(fileItemStreamInputStream(fileItemStream), partBodyStreamStorage.getInputStream());
             }
 
             @Override
@@ -318,13 +318,13 @@ public class FunctionalTest {
             AtomicInteger partIndex = new AtomicInteger(0);
 
             @Override
-            public void onPartFinished(ByteStore partBodyByteStore, Map<String, List<String>> headersFromPart) {
+            public void onPartFinished(StreamStorage partBodyStreamStorage, Map<String, List<String>> headersFromPart) {
                 log.info("-- NIO MULTIPART PARSER : On part complete " + (partIndex.addAndGet(1)));
                 log.info("-- Part " + partIndex.get());
                 for (Map.Entry<String, List<String>> headersEntry : headersFromPart.entrySet()){
                     log.info("Header: " + headersEntry.getKey() + ": " + Joiner.on(',').join(headersEntry.getValue()));
                 }
-                InputStream partInputStream = partBodyByteStore.getInputStream();
+                InputStream partInputStream = partBodyStreamStorage.getInputStream();
                 try {
                     log.info("Body:\n" + IOUtils.toString(partInputStream));
                 }catch (Exception e){
