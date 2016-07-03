@@ -16,11 +16,11 @@
 
 package org.synchronoss.cloud.nio.multipart;
 
-import org.synchronoss.cloud.nio.multipart.io.ByteStore;
 import org.junit.Assert;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.synchronoss.cloud.nio.stream.storage.StreamStorage;
 
 import java.io.IOException;
 
@@ -47,7 +47,7 @@ public class NioMultipartParserTest {
         when(context.getContentType()).thenReturn("multipart/form-data;boundary=MUEYT2qJT0_ZzYUvVQLy_DlrLeADyxzmsA");
 
         NioMultipartParserListener listener = mock(NioMultipartParserListener.class);
-        PartBodyByteStoreFactory partBodyByteStoreFactory = mock(PartBodyByteStoreFactory.class);
+        PartBodyStreamStorageFactory partBodyStreamStorageFactory = mock(PartBodyStreamStorageFactory.class);
 
         NioMultipartParser parser = new NioMultipartParser(context, listener);
         assertNotNull(parser);
@@ -55,10 +55,10 @@ public class NioMultipartParserTest {
         NioMultipartParser parser1 = new NioMultipartParser(context, listener, 5000);
         assertNotNull(parser1);
 
-        NioMultipartParser parser2 = new NioMultipartParser(context, listener, partBodyByteStoreFactory);
+        NioMultipartParser parser2 = new NioMultipartParser(context, listener, partBodyStreamStorageFactory);
         assertNotNull(parser2);
 
-        NioMultipartParser parser3 = new NioMultipartParser(context, listener, partBodyByteStoreFactory, 5000, 5000, 1);
+        NioMultipartParser parser3 = new NioMultipartParser(context, listener, partBodyStreamStorageFactory, 5000, 5000, 1);
         assertNotNull(parser3);
 
     }
@@ -196,11 +196,11 @@ public class NioMultipartParserTest {
         when(context.getContentType()).thenReturn("multipart/form-data;boundary=AAA");
 
         NioMultipartParserListener listener = mock(NioMultipartParserListener.class);
-        PartBodyByteStoreFactory partBodyByteStoreFactory = mock(PartBodyByteStoreFactory.class);
-        ByteStore byteStore = mock(ByteStore.class);
-        when(partBodyByteStoreFactory.newByteStoreForPartBody(anyMap(), anyInt())).thenReturn(byteStore);
+        PartBodyStreamStorageFactory partBodyStreamStorageFactory = mock(PartBodyStreamStorageFactory.class);
+        StreamStorage streamStorage = mock(StreamStorage.class);
+        when(partBodyStreamStorageFactory.newStreamStorageForPartBody(anyMap(), anyInt())).thenReturn(streamStorage);
 
-        NioMultipartParser parser = new NioMultipartParser(context, listener, partBodyByteStoreFactory);
+        NioMultipartParser parser = new NioMultipartParser(context, listener, partBodyStreamStorageFactory);
 
         byte[] part = "--AAA\r\nContent-Type: text/plain\r\n\r\nThis is a body".getBytes();
 
@@ -210,7 +210,7 @@ public class NioMultipartParserTest {
 
         parser.close();
 
-        verify(byteStore).close();
+        verify(streamStorage).close();
 
 
     }
@@ -221,11 +221,11 @@ public class NioMultipartParserTest {
         when(context.getContentType()).thenReturn("multipart/form-data;boundary=AAA");
 
         NioMultipartParserListener listener = mock(NioMultipartParserListener.class);
-        PartBodyByteStoreFactory partBodyByteStoreFactory = mock(PartBodyByteStoreFactory.class);
-        ByteStore byteStore = mock(ByteStore.class);
-        when(partBodyByteStoreFactory.newByteStoreForPartBody(anyMap(), anyInt())).thenReturn(byteStore);
+        PartBodyStreamStorageFactory partBodyStreamStorageFactory = mock(PartBodyStreamStorageFactory.class);
+        StreamStorage streamStorage = mock(StreamStorage.class);
+        when(partBodyStreamStorageFactory.newStreamStorageForPartBody(anyMap(), anyInt())).thenReturn(streamStorage);
 
-        NioMultipartParser parser = new NioMultipartParser(context, listener, partBodyByteStoreFactory);
+        NioMultipartParser parser = new NioMultipartParser(context, listener, partBodyStreamStorageFactory);
 
         byte[] part = "--AAA\r\nContent-Type: text/plain\r\n\r\nThis is a body".getBytes();
 
@@ -233,10 +233,10 @@ public class NioMultipartParserTest {
             parser.write(aPartByte);
         }
 
-        parser.dismiss();
+        parser.dispose();
 
-        verify(byteStore).close();
-        verify(byteStore).dismiss();
+        verify(streamStorage).close();
+        verify(streamStorage).dispose();
     }
 
 }

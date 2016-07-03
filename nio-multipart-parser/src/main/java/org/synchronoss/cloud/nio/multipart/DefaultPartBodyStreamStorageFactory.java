@@ -16,10 +16,10 @@
 
 package org.synchronoss.cloud.nio.multipart;
 
-import org.synchronoss.cloud.nio.multipart.io.ByteStore;
-import org.synchronoss.cloud.nio.multipart.io.DeferredFileByteStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.synchronoss.cloud.nio.stream.storage.DeferredFileStreamStorage;
+import org.synchronoss.cloud.nio.stream.storage.StreamStorage;
 
 import java.io.File;
 import java.util.List;
@@ -27,13 +27,13 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * <p> Default implementation of the {@code PartBodyByteStoreFactory}.
+ * <p> Default implementation of the {@code PartBodyStreamStorageFactory}.
  *
  * @author Silvano Riz.
  */
-public class DefaultPartBodyByteStoreFactory implements PartBodyByteStoreFactory {
+public class DefaultPartBodyStreamStorageFactory implements PartBodyStreamStorageFactory {
 
-    private static final Logger log = LoggerFactory.getLogger(DefaultPartBodyByteStoreFactory.class);
+    private static final Logger log = LoggerFactory.getLogger(DefaultPartBodyStreamStorageFactory.class);
 
     /**
      * Default max threshold. 10Kb
@@ -47,18 +47,18 @@ public class DefaultPartBodyByteStoreFactory implements PartBodyByteStoreFactory
     /**
      * <p> Constructor.
      *
-     * @param tempFolderPath The path where to store the temporary files
+     * @param tempFolderPath   The path where to store the temporary files
      * @param maxSizeThreshold The maximum amount of bytes that will be kept in memory for each part. If zero or negative no memory will be used.
      */
-    public DefaultPartBodyByteStoreFactory(final String tempFolderPath, final int maxSizeThreshold) {
+    public DefaultPartBodyStreamStorageFactory(final String tempFolderPath, final int maxSizeThreshold) {
         this.maxSizeThreshold = maxSizeThreshold > 0 ? maxSizeThreshold : 0;
         this.tempFolder = new File(tempFolderPath);
-        if (!tempFolder.exists()){
-            if (!tempFolder.mkdirs()){
+        if (!tempFolder.exists()) {
+            if (!tempFolder.mkdirs()) {
                 throw new IllegalStateException("Unable to create the temporary folder: " + tempFolderPath);
             }
         }
-        if(log.isDebugEnabled())log.debug("Temporary folder: " + tempFolder.getAbsolutePath());
+        if (log.isDebugEnabled()) log.debug("Temporary folder: " + tempFolder.getAbsolutePath());
     }
 
     /**
@@ -66,7 +66,7 @@ public class DefaultPartBodyByteStoreFactory implements PartBodyByteStoreFactory
      *
      * @param tempFolderPath The path where to store the temporary files
      */
-    public DefaultPartBodyByteStoreFactory(final String tempFolderPath) {
+    public DefaultPartBodyStreamStorageFactory(final String tempFolderPath) {
         this(tempFolderPath, DEFAULT_MAX_THRESHOLD);
     }
 
@@ -75,14 +75,14 @@ public class DefaultPartBodyByteStoreFactory implements PartBodyByteStoreFactory
      *
      * @param maxSizeThreshold The maximum amount of bytes that will be kept in memory for each part.
      */
-    public DefaultPartBodyByteStoreFactory(int maxSizeThreshold) {
+    public DefaultPartBodyStreamStorageFactory(int maxSizeThreshold) {
         this(DEFAULT_TEMP_FOLDER, maxSizeThreshold);
     }
 
     /**
      * <p> Constructor that uses a default threshold of 10kb and a default folder ${java.io.tmpdir}/nio-file-upload
      */
-    public DefaultPartBodyByteStoreFactory() {
+    public DefaultPartBodyStreamStorageFactory() {
         this(DEFAULT_TEMP_FOLDER, DEFAULT_MAX_THRESHOLD);
     }
 
@@ -90,16 +90,16 @@ public class DefaultPartBodyByteStoreFactory implements PartBodyByteStoreFactory
      * {@inheritDoc}
      */
     @Override
-    public ByteStore newByteStoreForPartBody(final Map<String, List<String>> partHeaders, final int partIndex) {
-        return new DeferredFileByteStore(getTempFile(partIndex), getThreshold(partHeaders));
+    public StreamStorage newStreamStorageForPartBody(Map<String, List<String>> partHeaders, int partIndex) {
+        return new DeferredFileStreamStorage(getTempFile(partIndex), getThreshold(partHeaders));
     }
 
-    protected int getThreshold(final Map<String, List<String>> partHeaders){
+    protected int getThreshold(final Map<String, List<String>> partHeaders) {
         final long contentLength = MultipartUtils.getContentLength(partHeaders);
         return (contentLength > maxSizeThreshold) ? 0 : maxSizeThreshold;
     }
 
-    protected File getTempFile(final int partIndex){
+    protected File getTempFile(final int partIndex) {
         final String tempFileName = String.format("nio-body-%d-%s.tmp", partIndex, UUID.randomUUID().toString());
         return new File(tempFolder, tempFileName);
     }

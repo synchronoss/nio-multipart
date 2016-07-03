@@ -18,6 +18,7 @@ package org.synchronoss.cloud.nio.multipart;
 
 import org.synchronoss.cloud.nio.multipart.BlockingIOAdapter.PartItem;
 import org.synchronoss.cloud.nio.multipart.util.collect.CloseableIterator;
+import org.synchronoss.cloud.nio.stream.storage.DeferredFileStreamStorageFactory;
 
 import java.io.InputStream;
 
@@ -38,9 +39,9 @@ public class Multipart {
         private int bufferSize = NioMultipartParser.DEFAULT_BUFFER_SIZE;
         private int headersSizeLimit = NioMultipartParser.DEFAULT_HEADERS_SECTION_SIZE;
         private int nestedMultipartsAllowed = NioMultipartParser.DEFAULT_MAX_LEVEL_OF_NESTED_MULTIPART;
-        private String tempFolder = DefaultPartBodyByteStoreFactory.DEFAULT_TEMP_FOLDER;
-        private int bodySizeThreshold = DefaultPartBodyByteStoreFactory.DEFAULT_MAX_THRESHOLD;
-        private PartBodyByteStoreFactory partBodyByteStoreFactory;
+        private String tempFolder = DeferredFileStreamStorageFactory.DEFAULT_TEMP_FOLDER;
+        private int bodySizeThreshold = DeferredFileStreamStorageFactory.DEFAULT_MAX_THRESHOLD;
+        private PartBodyStreamStorageFactory partBodyStreamStorageFactory;
         private MultipartContext context;
 
         private Builder(final MultipartContext context) {
@@ -80,8 +81,8 @@ public class Multipart {
 
         /**
          * <p> Configures the folder where temporary files are stored during the processing.
-         *     This configuration is only valid if the default {@code PartBodyByteStoreFactory} is used.
-         *     If a different {@code PartBodyByteStoreFactory} is selected using {@link #usePartBodyByteStoreFactory(PartBodyByteStoreFactory)}
+         *     This configuration is only valid if the default {@code PartBodyStreamStorageFactory} is used.
+         *     If a different {@code PartBodyStreamStorageFactory} is selected using {@link #usePartBodyStreamStorageFactory(PartBodyStreamStorageFactory)}
          *     the configuration has no effect.
          *
          * @param tempFolder The location where to store the temporary files.
@@ -94,8 +95,8 @@ public class Multipart {
 
         /**
          * <p> Configures the threshold defining how many bytes of a part's body will be kept in memory before flushing them to disk.
-         *     This configuration is only valid if the default {@code PartBodyByteStoreFactory} is used.
-         *     If a different {@code PartBodyByteStoreFactory} is selected using {@link #usePartBodyByteStoreFactory(PartBodyByteStoreFactory)}
+         *     This configuration is only valid if the default {@code PartBodyStreamStorageFactory} is used.
+         *     If a different {@code PartBodyStreamStorageFactory} is selected using {@link #usePartBodyStreamStorageFactory(PartBodyStreamStorageFactory)}
          *     the configuration has no effect.
          *
          * @param bodySizeThreshold how many bytes of a part's body will be kept in memory before flushing them to disk.
@@ -107,13 +108,13 @@ public class Multipart {
         }
 
         /**
-         * <p> Configures a specific {@code PartBodyByteStoreFactory} to use.
+         * <p> Configures a specific {@code PartBodyStreamStorageFactory} to use.
          *
-         * @param partBodyByteStoreFactory The {@code PartBodyByteStoreFactory} to use
+         * @param partBodyStreamStorageFactory The {@code PartBodyStreamStorageFactory} to use
          * @return the {@code Builder} itself.
          */
-        public Builder usePartBodyByteStoreFactory(final PartBodyByteStoreFactory partBodyByteStoreFactory){
-            this.partBodyByteStoreFactory = partBodyByteStoreFactory;
+        public Builder usePartBodyStreamStorageFactory(final PartBodyStreamStorageFactory partBodyStreamStorageFactory){
+            this.partBodyStreamStorageFactory = partBodyStreamStorageFactory;
             return this;
         }
 
@@ -131,11 +132,11 @@ public class Multipart {
             return this;
         }
 
-        private PartBodyByteStoreFactory partStreamsFactory(){
-            if (partBodyByteStoreFactory == null){
-                return new DefaultPartBodyByteStoreFactory(tempFolder, bodySizeThreshold);
+        private PartBodyStreamStorageFactory partStreamsFactory(){
+            if (partBodyStreamStorageFactory == null){
+                return new DefaultPartBodyStreamStorageFactory(tempFolder, bodySizeThreshold);
             }else{
-                return partBodyByteStoreFactory;
+                return partBodyStreamStorageFactory;
             }
         }
 

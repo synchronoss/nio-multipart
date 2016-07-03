@@ -76,6 +76,11 @@
             <version>${spring.version}</version>
         </dependency>
 
+        <dependency>
+            <groupId>org.synchronoss.cloud</groupId>
+            <artifactId>nio-stream-storage</artifactId>
+        </dependency>
+
         <!-- Testing -->
         <dependency>
             <groupId>org.mockito</groupId>

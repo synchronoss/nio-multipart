@@ -15,46 +15,46 @@
  */
 package org.synchronoss.cloud.nio.multipart;
 
-import org.synchronoss.cloud.nio.multipart.example.io.ChecksumByteStore;
-import org.synchronoss.cloud.nio.multipart.io.ByteStore;
+import org.synchronoss.cloud.nio.multipart.example.io.ChecksumStreamStorage;
+import org.synchronoss.cloud.nio.stream.storage.StreamStorage;
 
 import java.util.List;
 import java.util.Map;
 
 /**
- * <p> Extension of {@code DefaultPartBodyByteStoreFactory} that provides {@code ByteStore} capable of computing a data hash and counting bytes read and written.
- *     This class is an example of how the NIO Multipart parser can be extended via a custom {@code PartBodyByteStoreFactory}.
+ * <p> Extension of {@code DefaultPartBodyStreamStorageFactory} that provides {@code StreamStorage} capable of computing a data hash and counting bytes read and written.
+ *     This class is an example of how the NIO Multipart parser can be extended via a custom {@code PartBodyStreamStorageFactory}.
  *     In the specific case it is used for testing purposes inside the example-webapp to verify the integrity of the data processed.
  *
  * @author Silvano Riz.
  */
-public class ChecksumPartBodyByteStoreFactory extends DefaultPartBodyByteStoreFactory {
+public class ChecksumPartBodyStreamStorageFactory extends DefaultPartBodyStreamStorageFactory {
 
     final String checksumAlgorithm;
 
-    public ChecksumPartBodyByteStoreFactory(String tempFolderPath, int maxSizeThreshold, final String checksumAlgorithm) {
+    public ChecksumPartBodyStreamStorageFactory(String tempFolderPath, int maxSizeThreshold, final String checksumAlgorithm) {
         super(tempFolderPath, maxSizeThreshold);
         this.checksumAlgorithm = checksumAlgorithm;
     }
 
-    public ChecksumPartBodyByteStoreFactory(String tempFolderPath, final String checksumAlgorithm) {
+    public ChecksumPartBodyStreamStorageFactory(String tempFolderPath, final String checksumAlgorithm) {
         super(tempFolderPath);
         this.checksumAlgorithm = checksumAlgorithm;
     }
 
-    public ChecksumPartBodyByteStoreFactory(int maxSizeThreshold, final String checksumAlgorithm) {
+    public ChecksumPartBodyStreamStorageFactory(int maxSizeThreshold, final String checksumAlgorithm) {
         super(maxSizeThreshold);
         this.checksumAlgorithm = checksumAlgorithm;
     }
 
-    public ChecksumPartBodyByteStoreFactory(final String checksumAlgorithm) {
+    public ChecksumPartBodyStreamStorageFactory(final String checksumAlgorithm) {
         super();
         this.checksumAlgorithm = checksumAlgorithm;
     }
 
     @Override
-    public ByteStore newByteStoreForPartBody(Map<String, List<String>> partHeaders, int partIndex) {
-        return new ChecksumByteStore(getTempFile(partIndex), getThreshold(partHeaders), true, checksumAlgorithm);
+    public StreamStorage newStreamStorageForPartBody(Map<String, List<String>> partHeaders, int partIndex) {
+        return new ChecksumStreamStorage(getTempFile(partIndex), getThreshold(partHeaders), true, checksumAlgorithm);
     }
 
 }

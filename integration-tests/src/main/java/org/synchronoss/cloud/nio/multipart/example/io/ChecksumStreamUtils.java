@@ -54,7 +54,7 @@ public class ChecksumStreamUtils {
         }
     }
 
-    public static ChecksumAndReadBytes computeChecksumAndReadBytes(final ChecksumByteStore.ChecksumInputStream checksumInputStream) {
+    public static ChecksumAndReadBytes computeChecksumAndReadBytes(final ChecksumStreamStorage.ChecksumInputStream checksumInputStream) {
         try {
             byte[] buffer = new byte[5000];
             while (-1 != checksumInputStream.read(buffer)) {
@@ -69,15 +69,15 @@ public class ChecksumStreamUtils {
     }
 
     public static ChecksumAndReadBytes computeChecksumAndReadBytes(final InputStream inputStream) {
-        if (inputStream instanceof ChecksumByteStore.ChecksumInputStream) {
-            return computeChecksumAndReadBytes((ChecksumByteStore.ChecksumInputStream)inputStream);
+        if (inputStream instanceof ChecksumStreamStorage.ChecksumInputStream) {
+            return computeChecksumAndReadBytes((ChecksumStreamStorage.ChecksumInputStream)inputStream);
         }else{
             throw new IllegalStateException("Input stream is not a ChecksumInputStream");
         }
     }
 
     public static ChecksumAndReadBytes computeChecksumAndReadBytes(final InputStream inputStream, final String algorithm) {
-        ChecksumByteStore.ChecksumInputStream checksumInputStream = new ChecksumByteStore.ChecksumInputStream(inputStream, algorithm);
+        ChecksumStreamStorage.ChecksumInputStream checksumInputStream = new ChecksumStreamStorage.ChecksumInputStream(inputStream, algorithm);
         return computeChecksumAndReadBytes(checksumInputStream);
     }
 
