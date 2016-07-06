@@ -9,7 +9,7 @@
 
     <groupId>org.synchronoss.cloud</groupId>
     <artifactId>nio-multipart</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>1.0.0</version>
     <packaging>pom</packaging>
     <name>nio-multipart</name>
     <url>https://github.com/synchronoss/nio-multipart</url>
@@ -150,16 +150,6 @@
                         </execution>
                     </executions>
                 </plugin>
-
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-gpg-plugin</artifactId>
-                    <version>1.6</version>
-                    <configuration>
-                        <keyname>${synchronoss.opensource.key}</keyname>
-                        <passphraseServerId>${synchronoss.opensource.key}</passphraseServerId>
-                    </configuration>
-                </plugin>
             </plugins>
         </pluginManagement>
 
@@ -172,6 +162,39 @@
                 <configuration>
                     <source>1.7</source>
                     <target>1.7</target>
+                </configuration>
+            </plugin>
+            <!--  Release to Sonatype OSS Nexus  -->
+            <plugin>
+                <groupId>org.sonatype.plugins</groupId>
+                <artifactId>nexus-staging-maven-plugin</artifactId>
+                <version>1.6.5</version>
+                <extensions>true</extensions>
+                <inherited>false</inherited>
+                <configuration>
+                    <serverId>sonatype-nexus-staging</serverId>
+                    <nexusUrl>https://oss.sonatype.org/</nexusUrl>
+                    <stagingProfileId>b2828f5f73ba8</stagingProfileId>
+                    <autoReleaseAfterClose>true</autoReleaseAfterClose>
+                </configuration>
+            </plugin>
+            <!--  Artifact signing  -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-gpg-plugin</artifactId>
+                <version>1.6</version>
+                <executions>
+                    <execution>
+                        <id>sign-artifacts</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>sign</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <keyname>${synchronoss.opensource.key}</keyname>
+                    <passphraseServerId>${synchronoss.opensource.key}</passphraseServerId>
                 </configuration>
             </plugin>
 
@@ -207,6 +230,17 @@
             <organizationUrl>http://www.synchronoss.com/</organizationUrl>
             <roles>
                 <role>owner</role>
+                <role>developer</role>
+            </roles>
+            <timezone>+0</timezone>
+        </developer>
+        <developer>
+            <id>cjbooms</id>
+            <name>Conor Gallagher</name>
+            <email>cjbooms@gmail.com</email>
+            <organization>Synchronoss</organization>
+            <organizationUrl>http://www.synchronoss.com/</organizationUrl>
+            <roles>
                 <role>developer</role>
             </roles>
             <timezone>+0</timezone>

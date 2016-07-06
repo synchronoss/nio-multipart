@@ -6,7 +6,7 @@
     <parent>
         <groupId>org.synchronoss.cloud</groupId>
         <artifactId>nio-multipart</artifactId>
-        <version>1.0.0-SNAPSHOT</version>
+        <version>1.0.0</version>
     </parent>
 
     <artifactId>nio-multipart-parser</artifactId>
@@ -85,10 +85,6 @@
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-gpg-plugin</artifactId>
             </plugin>
         </plugins>
     </build>
