@@ -1,4 +1,4 @@
-Non-Blocking Multipart parser
+Non-Blocking HTTP Multipart parser
 =============================
 
 [![Master build Status](https://travis-ci.org/synchronoss/nio-multipart.svg?branch=master)](https://travis-ci.org/synchronoss/nio-multipart)
@@ -15,9 +15,13 @@ Requires JDK 1.7 or higher.
 
 Latest release
 --------------
-
-COMING SOON!
-
+```xml
+<dependency>
+    <groupId>org.synchronoss.cloud</groupId>
+    <artifactId>nio-multipart-parser</artifactId>
+    <version>1.0.0</version>
+</dependency>
+```
 Get started
 -----------
 The simplest way to get started is using the simple fluent API provided with the library. Instantiating a parser is straightforward:
