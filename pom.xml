@@ -9,7 +9,7 @@
 
     <groupId>org.synchronoss.cloud</groupId>
     <artifactId>nio-multipart</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.1-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>nio-multipart</name>
     <url>https://github.com/synchronoss/nio-multipart</url>
@@ -142,7 +142,7 @@
                                             </limit>
                                         </limits>
                                         <!--<excludes>-->
-                                            <!--<exclude></exclude>-->
+                                        <!--<exclude></exclude>-->
                                         <!--</excludes>-->
                                     </rule>
                                 </rules>
@@ -150,7 +150,29 @@
                         </execution>
                     </executions>
                 </plugin>
-                <!--  Release to Sonatype OSS Nexus  -->
+
+                <!-- Check licence header -->
+                <plugin>
+                    <groupId>com.mycila.maven-license-plugin</groupId>
+                    <artifactId>maven-license-plugin</artifactId>
+                    <version>1.10.b1</version>
+                    <configuration>
+                        <header>header.txt</header>
+                        <strictCheck>true</strictCheck>
+                        <mapping>
+                            <g4>JAVADOC_STYLE</g4>
+                        </mapping>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <phase>deploy</phase>
+                            <goals>
+                                <goal>check</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+
                 <plugin>
                     <groupId>org.sonatype.plugins</groupId>
                     <artifactId>nexus-staging-maven-plugin</artifactId>
@@ -183,6 +205,34 @@
                         <passphraseServerId>${synchronoss.opensource.key}</passphraseServerId>
                     </configuration>
                 </plugin>
+
+                <!-- Release -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-release-plugin</artifactId>
+                    <version>2.5.3</version>
+                    <configuration>
+                        <autoVersionSubmodules>true</autoVersionSubmodules>
+                        <!--<stagingRepository>https://oss.sonatype.org/</stagingRepository>-->
+                        <checkModificationExcludes>
+                            <checkModificationExclude>pom.xml</checkModificationExclude>
+                            <checkModificationExclude>integration-tests/pom.xml</checkModificationExclude>
+                            <checkModificationExclude>nio-multipart-parser/pom.xml</checkModificationExclude>
+                        </checkModificationExcludes>
+
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <id>default</id>
+                            <goals>
+                                <goal>perform</goal>
+                            </goals>
+                            <configuration>
+                            </configuration>
+                        </execution>
+                    </executions>
+                </plugin>
+
             </plugins>
         </pluginManagement>
 
@@ -196,16 +246,6 @@
                     <source>1.7</source>
                     <target>1.7</target>
                 </configuration>
-            </plugin>
-
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-gpg-plugin</artifactId>
-            </plugin>
-
-            <plugin>
-                <groupId>org.sonatype.plugins</groupId>
-                <artifactId>nexus-staging-maven-plugin</artifactId>
             </plugin>
 
         </plugins>
@@ -224,7 +264,8 @@
         <connection>scm:git:https://github.com/synchronoss/nio-multipart.git</connection>
         <developerConnection>scm:git:git@github.com:synchronoss/nio-multipart.git</developerConnection>
         <url>https://github.com/synchronoss/nio-multipart</url>
-    </scm>
+      <tag>nio-multipart-1.0.1</tag>
+  </scm>
 
     <ciManagement>
         <system>Travis CI</system>
@@ -257,8 +298,13 @@
         </developer>
     </developers>
 
-    <!-- mvn clean verify -pl integration-tests -Pintegration-tests -Dapplication.server.port=8181 -Pjmeter -->
+
     <profiles>
+
+        <!--
+        Integration Tests
+        mvn clean verify -pl integration-tests -Pintegration-tests -Dapplication.server.port=8181 -Pjmeter
+        -->
         <profile>
             <id>integration-tests</id>
             <activation>
@@ -268,6 +314,39 @@
                 <module>integration-tests</module>
             </modules>
         </profile>
+
+        <!--
+        Release
+        mvn -B release:prepare release:perform -Prelease-sign-artifacts
+        -->
+        <profile>
+
+            <id>release-sign-artifacts</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+                <property>
+                    <name>release</name>
+                </property>
+            </activation>
+
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>com.mycila.maven-license-plugin</groupId>
+                        <artifactId>maven-license-plugin</artifactId>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-gpg-plugin</artifactId>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-release-plugin</artifactId>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
     </profiles>
 
 </project>
