@@ -152,6 +152,7 @@
                 </plugin>
 
                 <!-- Check licence header -->
+                <!-- mvn -Prelease-sign-artifacts license:check -->
                 <plugin>
                     <groupId>com.mycila.maven-license-plugin</groupId>
                     <artifactId>maven-license-plugin</artifactId>
@@ -160,8 +161,38 @@
                         <header>header.txt</header>
                         <strictCheck>true</strictCheck>
                         <mapping>
-                            <g4>JAVADOC_STYLE</g4>
+                            <java>SLASHSTAR_STYLE</java>
                         </mapping>
+                        <excludes>
+                            <exclude>util/**</exclude>
+                            <exclude>LICENSE</exclude>
+                            <exclude>README.md</exclude>
+                            <exclude>**/.*/**</exclude>
+                            <exclude>docs/**</exclude>
+                            <exclude>**/src/test/resources/**</exclude>
+                            <exclude>**/*.properties</exclude>
+                            <exclude>**/logback.xml</exclude>
+                            <exclude>integration-tests/src/test/jmeter/**</exclude>
+                            <exclude>integration-tests/jmeter.sh</exclude>
+                            <exclude>src/test/java/org/synchronoss/cloud/nio/multipart/util/MimeUtilityTest.java</exclude>
+                            <exclude>src/test/java/org/synchronoss/cloud/nio/multipart/util/ParameterParserTest.java</exclude>
+                            <exclude>src/test/java/org/synchronoss/cloud/nio/multipart/util/QuotedPrintableDecoderTest.java</exclude>
+                            <exclude>src/main/java/org/synchronoss/cloud/nio/multipart/util/Base64Decoder.java</exclude>
+                            <exclude>src/main/java/org/synchronoss/cloud/nio/multipart/util/collect/AbstractIterator.java</exclude>
+                            <exclude>src/main/java/org/synchronoss/cloud/nio/multipart/util/collect/UnmodifiableIterator.java</exclude>
+                            <exclude>src/main/java/org/synchronoss/cloud/nio/multipart/util/MimeUtility.java</exclude>
+                            <exclude>src/main/java/org/synchronoss/cloud/nio/multipart/util/ParameterParser.java</exclude>
+                            <exclude>src/main/java/org/synchronoss/cloud/nio/multipart/util/ParseException.java</exclude>
+                            <exclude>src/test/java/org/synchronoss/cloud/nio/multipart/MultipartTest.java</exclude>
+                            <exclude>src/main/java/org/synchronoss/cloud/nio/multipart/util/QuotedPrintableDecoder.java</exclude>
+                            <exclude>src/test/java/org/synchronoss/cloud/nio/multipart/util/Base64DecoderTest.java</exclude>
+                            <exclude>src/test/java/org/synchronoss/cloud/nio/multipart/util/collect/AbstractIteratorTest.java</exclude>
+                            <exclude>src/test/java/org/synchronoss/cloud/nio/multipart/util/collect/UnmodifiableIteratorTest.java</exclude>
+                            <exclude>src/test/java/org/synchronoss/cloud/nio/multipart/util/IOUtilsTest.java</exclude>
+                            <exclude>src/test/java/org/synchronoss/cloud/nio/multipart/util/MimeUtilityTest.java</exclude>
+                            <exclude>src/test/java/org/synchronoss/cloud/nio/multipart/util/QuotedPrintableDecoderTest.java</exclude>
+                            <exclude>src/test/java/org/synchronoss/cloud/nio/multipart/util/ParameterParserTest.java</exclude>
+                        </excludes>
                     </configuration>
                     <executions>
                         <execution>
