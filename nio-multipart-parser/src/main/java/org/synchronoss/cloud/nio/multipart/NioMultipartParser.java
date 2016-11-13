@@ -16,19 +16,20 @@
 
 package org.synchronoss.cloud.nio.multipart;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.synchronoss.cloud.nio.multipart.io.FixedSizeByteArrayOutputStream;
 import org.synchronoss.cloud.nio.multipart.io.buffer.EndOfLineBuffer;
 import org.synchronoss.cloud.nio.multipart.util.HeadersParser;
 import org.synchronoss.cloud.nio.multipart.util.IOUtils;
-import org.synchronoss.cloud.nio.multipart.util.ParameterParser;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.synchronoss.cloud.nio.stream.storage.Disposable;
 import org.synchronoss.cloud.nio.stream.storage.StreamStorage;
 
 import java.io.*;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import static org.synchronoss.cloud.nio.multipart.MultipartUtils.*;
 
 /**
  * <p> The main class for parsing a multipart stream in an NIO mode. A new instance can be created and the
@@ -50,21 +51,6 @@ public class NioMultipartParser extends OutputStream implements Disposable {
     private static final Logger log = LoggerFactory.getLogger(NioMultipartParser.class);
 
     /**
-     * The dash (-) character in bytes
-     */
-    public static final byte DASH = 0x2D;
-
-    /**
-     * The (\r) character in bytes
-     */
-    public static final byte CR = 0x0D;
-
-    /**
-     * The (\n) character in bytes
-     */
-    public static final byte LF = 0x0A;
-
-    /**
      * The default buffer size: 16Kb
      * The buffer size needs to be bigger than the separator. (usually no more than 70 Characters)
      */
@@ -74,11 +60,6 @@ public class NioMultipartParser extends OutputStream implements Disposable {
      * The default limit in bytes of the headers section.
      */
     public static final int DEFAULT_HEADERS_SECTION_SIZE = 16384;
-
-    /**
-     * Sequence of bytes that represents the end of a headers section
-     */
-    public static final byte[] HEADER_DELIMITER = {CR, LF, CR, LF};
 
     /**
      * Default number of nested multiparts body.
@@ -296,7 +277,8 @@ public class NioMultipartParser extends OutputStream implements Disposable {
      *
      * @param multipartContext The multipart context
      * @param nioMultipartParserListener The listener that will be notified
-     * @param bufferSize The buffer size
+     * @param bufferSize The buffer size, a strictly positive integer.
+     *                   The actual buffer size used will be {@link MultipartUtils#getBoundary(String)} + 5 + bufferSize.
      */
     public NioMultipartParser(final MultipartContext multipartContext, final NioMultipartParserListener nioMultipartParserListener, final int bufferSize) {
         this(multipartContext, nioMultipartParserListener, null, bufferSize, DEFAULT_HEADERS_SECTION_SIZE, DEFAULT_MAX_LEVEL_OF_NESTED_MULTIPART);
@@ -308,7 +290,8 @@ public class NioMultipartParser extends OutputStream implements Disposable {
      * @param multipartContext The multipart context
      * @param nioMultipartParserListener The listener that will be notified
      * @param partBodyStreamStorageFactory The custom {@code PartBodyStreamStorageFactory} to use.
-     * @param bufferSize The buffer size
+     * @param bufferSize The buffer size, a strictly positive integer.
+     *                   The actual buffer size used will be {@link MultipartUtils#getBoundary(String)} + 5 + bufferSize.
      * @param maxHeadersSectionSize The max size of the headers section
      * @param maxLevelOfNestedMultipart the max number of nested multipart
      */
@@ -318,9 +301,16 @@ public class NioMultipartParser extends OutputStream implements Disposable {
                               final int bufferSize,
                               final int maxHeadersSectionSize,
                               final int maxLevelOfNestedMultipart) {
+
+        if (bufferSize <= 0){
+            throw new IllegalArgumentException("The buffer size must be grater than 0. Size specified: " + bufferSize);
+        }
+
         this.multipartContext = multipartContext;
         this.nioMultipartParserListener = nioMultipartParserListener;
-        this.delimiterPrefixes.push(getDelimiterPrefix(multipartContext.getContentType()));
+        final byte[] delimiterPrefix = getDelimiterPrefix(multipartContext.getContentType());
+        final int actualBufferSize = delimiterPrefix.length + bufferSize;
+        this.delimiterPrefixes.push(delimiterPrefix);
         this.maxLevelOfNestedMultipart = maxLevelOfNestedMultipart;
 
         if (maxHeadersSectionSize == -1) {
@@ -336,7 +326,7 @@ public class NioMultipartParser extends OutputStream implements Disposable {
         }
 
         // At the beginning set up the endOfLineBuffer to skip the preamble.
-        this.endOfLineBuffer = new EndOfLineBuffer(bufferSize, getPreambleDelimiterPrefix(delimiterPrefixes.peek()), null);
+        this.endOfLineBuffer = new EndOfLineBuffer(actualBufferSize, getPreambleDelimiterPrefix(delimiterPrefixes.peek()), null);
     }
 
     @Override
@@ -672,25 +662,6 @@ public class NioMultipartParser extends OutputStream implements Disposable {
 
     void skipEpilogue(final WriteContext wCtx){
         wCtx.setFinished();
-    }
-
-    static byte[] getBoundary(final String contentType) {
-        ParameterParser parser = new ParameterParser();
-        parser.setLowerCaseNames(true);
-        // Parameter parser can handle null input
-        Map<String, String> params = parser.parse(contentType, new char[] {';', ','});
-        String boundaryStr = params.get("boundary");
-
-        if (boundaryStr == null) {
-            return null;
-        }
-        byte[] boundary;
-        try {
-            boundary = boundaryStr.getBytes("ISO-8859-1");
-        } catch (UnsupportedEncodingException e) {
-            boundary = boundaryStr.getBytes(); // Intentionally falls back to default charset
-        }
-        return boundary;
     }
 
     static byte[] getPreambleDelimiterPrefix(final byte[] delimiterPrefix){

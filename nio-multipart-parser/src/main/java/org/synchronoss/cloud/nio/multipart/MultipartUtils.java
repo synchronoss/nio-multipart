@@ -18,6 +18,7 @@ package org.synchronoss.cloud.nio.multipart;
 
 import org.synchronoss.cloud.nio.multipart.util.ParameterParser;
 
+import java.io.UnsupportedEncodingException;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -28,6 +29,26 @@ import java.util.Map;
  * @author Silvano Riz.
  */
 public class MultipartUtils {
+
+    /**
+     * The dash (-) character in bytes
+     */
+    public static final byte DASH = 0x2D;
+
+    /**
+     * The (\r) character in bytes
+     */
+    public static final byte CR = 0x0D;
+
+    /**
+     * The (\n) character in bytes
+     */
+    public static final byte LF = 0x0A;
+
+    /**
+     * Sequence of bytes that represents the end of a headers section
+     */
+    public static final byte[] HEADER_DELIMITER = {CR, LF, CR, LF};
 
     /**
      * Multipart content type prefix
@@ -236,6 +257,45 @@ public class MultipartUtils {
     public static boolean isContentTransferEncodingBase64Encoded(final Map<String, List<String>> partHeaders) {
         String contentEncoding = MultipartUtils.getHeader(CONTENT_TRANSFER_ENCODING, partHeaders);
         return contentEncoding != null && "base64".equalsIgnoreCase(contentEncoding);
+    }
+
+    /**
+     * <p> Extracts the boundary parameter value defined in the Content-Type header of a multipart request.
+     * <p> For example if the Content-Type header is
+     * <pre>
+     *     {@code
+     *     Content-Type: multipart/form-data; boundary=---------------------------735323031399963166993862150
+     *     }
+     * </pre>
+     * This method will extract
+     * <pre>
+     *     {@code
+     *     ---------------------------735323031399963166993862150
+     *     }
+     * </pre>
+     * and return the correspondent bytes.
+     * <p> The charset used to encode the string into bytes is ISO-8859-1 and if it is not supported it will fall back to the default charset.
+     *
+     * @param contentType The value of the Content-Type header.
+     * @return The boundary parameter value or {@code null} if not defined.
+     */
+    public static byte[] getBoundary(final String contentType) {
+        ParameterParser parser = new ParameterParser();
+        parser.setLowerCaseNames(true);
+        // Parameter parser can handle null input
+        Map<String, String> params = parser.parse(contentType, new char[] {';', ','});
+        String boundaryStr = params.get("boundary");
+
+        if (boundaryStr == null) {
+            return null;
+        }
+        byte[] boundary;
+        try {
+            boundary = boundaryStr.getBytes("ISO-8859-1");
+        } catch (UnsupportedEncodingException e) {
+            boundary = boundaryStr.getBytes(); // Intentionally falls back to default charset
+        }
+        return boundary;
     }
 
 }
