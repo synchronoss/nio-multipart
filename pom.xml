@@ -179,10 +179,9 @@
     </licenses>
 
     <scm>
-        <connection>scm:git:https://github.com/synchronoss/nio-multipart.git</connection>
+        <connection>scm:git:git@github.com:synchronoss/nio-multipart.git</connection>
         <developerConnection>scm:git:git@github.com:synchronoss/nio-multipart.git</developerConnection>
         <url>https://github.com/synchronoss/nio-multipart</url>
-      <tag>nio-multipart-1.0.1</tag>
   </scm>
 
     <ciManagement>
