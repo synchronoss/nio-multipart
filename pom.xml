@@ -9,7 +9,7 @@
 
     <groupId>org.synchronoss.cloud</groupId>
     <artifactId>nio-multipart</artifactId>
-    <version>1.0.1-SNAPSHOT</version>
+    <version>1.0.1</version>
     <packaging>pom</packaging>
     <name>nio-multipart</name>
     <url>https://github.com/synchronoss/nio-multipart</url>
@@ -182,6 +182,7 @@
         <connection>scm:git:git@github.com:synchronoss/nio-multipart.git</connection>
         <developerConnection>scm:git:git@github.com:synchronoss/nio-multipart.git</developerConnection>
         <url>https://github.com/synchronoss/nio-multipart</url>
+    <tag>nio-multipart-1.0.1</tag>
   </scm>
 
     <ciManagement>
