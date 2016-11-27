@@ -20,6 +20,18 @@ import com.google.common.base.Function;
 import com.google.common.collect.Maps;
 import com.google.common.io.Files;
 import com.google.gson.Gson;
+import org.apache.commons.fileupload.FileItemIterator;
+import org.apache.commons.fileupload.FileItemStream;
+import org.apache.commons.fileupload.servlet.ServletFileUpload;
+import org.apache.commons.io.IOUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Import;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.RestController;
 import org.synchronoss.cloud.nio.multipart.*;
 import org.synchronoss.cloud.nio.multipart.BlockingIOAdapter.Attachment;
 import org.synchronoss.cloud.nio.multipart.BlockingIOAdapter.FormParameter;
@@ -34,19 +46,11 @@ import org.synchronoss.cloud.nio.multipart.example.model.VerificationItem;
 import org.synchronoss.cloud.nio.multipart.example.model.VerificationItems;
 import org.synchronoss.cloud.nio.multipart.example.spring.CloseableReadListenerDeferredResult;
 import org.synchronoss.cloud.nio.multipart.util.collect.CloseableIterator;
-import org.apache.commons.fileupload.FileItemIterator;
-import org.apache.commons.fileupload.FileItemStream;
-import org.apache.commons.fileupload.servlet.ServletFileUpload;
-import org.apache.commons.io.IOUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Import;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.bind.annotation.RestController;
 import org.synchronoss.cloud.nio.stream.storage.StreamStorage;
+import org.synchronoss.cloud.reactive.multipart.MultipartParser;
+import org.synchronoss.cloud.reactive.multipart.Part;
+import org.synchronoss.cloud.nio.multipart.example.adapter.RequestBodyPublisher;
+import reactor.core.publisher.Flux;
 
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
@@ -382,6 +386,30 @@ public class MultipartController {
         });
 
 
+    }
+
+
+    /**
+     * <p> Reactive stream based parsing
+     *
+     * @param request The {@code HttpServletRequest}
+     * @throws IOException if an IO exception happens
+     */
+    @RequestMapping(value = "/nio/reactive/multipart", method = RequestMethod.POST)
+    public @ResponseBody void nioReactiveMultipart(final HttpServletRequest request) throws IOException {
+
+        final MultipartContext ctx = getMultipartContext(request);
+        final AsyncContext asyncContext = switchRequestToAsyncIfNeeded(request);
+        final ServletInputStream inputStream = request.getInputStream();
+        final RequestBodyPublisher requestBodyPublisher = new RequestBodyPublisher(inputStream, 10);
+        requestBodyPublisher.registerListener();
+
+        final MultipartParser multipartParser = new MultipartParser(ctx, 1024, 1);
+        final Flux<Part> parts = multipartParser.parse(requestBodyPublisher);
+
+        // Blocking!
+        // TODO - Use spring 5 to achieve and end-to-end reactive streams pipeline.
+        final Iterable<Part> partsIterable = parts.toIterable();
     }
 
     void sendResponseOrSkip(final AtomicInteger synchronizer, final AsyncContext asyncContext, final VerificationItems verificationItems){

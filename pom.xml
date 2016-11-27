@@ -16,6 +16,8 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
     </properties>
 
     <modules>
@@ -156,7 +158,6 @@
         </pluginManagement>
 
         <plugins>
-
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -166,7 +167,6 @@
                     <target>1.8</target>
                 </configuration>
             </plugin>
-
         </plugins>
 
     </build>
@@ -183,8 +183,8 @@
         <connection>scm:git:git@github.com:synchronoss/nio-multipart.git</connection>
         <developerConnection>scm:git:git@github.com:synchronoss/nio-multipart.git</developerConnection>
         <url>https://github.com/synchronoss/nio-multipart</url>
-    <tag>HEAD</tag>
-  </scm>
+        <tag>HEAD</tag>
+    </scm>
 
     <ciManagement>
         <system>Travis CI</system>
