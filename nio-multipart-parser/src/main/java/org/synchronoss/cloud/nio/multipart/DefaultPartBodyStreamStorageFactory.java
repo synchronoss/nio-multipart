@@ -18,7 +18,7 @@ package org.synchronoss.cloud.nio.multipart;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.synchronoss.cloud.nio.stream.storage.DeferredFileStreamStorage;
+import org.synchronoss.cloud.nio.stream.storage.FileStreamStorage;
 import org.synchronoss.cloud.nio.stream.storage.StreamStorage;
 
 import java.io.File;
@@ -91,7 +91,7 @@ public class DefaultPartBodyStreamStorageFactory implements PartBodyStreamStorag
      */
     @Override
     public StreamStorage newStreamStorageForPartBody(Map<String, List<String>> partHeaders, int partIndex) {
-        return new DeferredFileStreamStorage(getTempFile(partIndex), getThreshold(partHeaders));
+        return FileStreamStorage.deferred(getTempFile(partIndex), getThreshold(partHeaders));
     }
 
     protected int getThreshold(final Map<String, List<String>> partHeaders) {

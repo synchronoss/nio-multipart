@@ -20,7 +20,7 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.synchronoss.cloud.nio.stream.storage.DeferredFileStreamStorage;
+import org.synchronoss.cloud.nio.stream.storage.FileStreamStorage;
 import org.synchronoss.cloud.nio.stream.storage.StreamStorage;
 
 import java.io.File;
@@ -82,9 +82,9 @@ public class DefaultPartBodyStreamStorageFactoryTest {
 
         StreamStorage streamStorage = defaultPartIOStreamsFactory.newStreamStorageForPartBody(new HashMap<String, List<String>>(), 1);
         assertNotNull(streamStorage);
-        assertTrue(streamStorage instanceof DeferredFileStreamStorage);
-        DeferredFileStreamStorage deferredFileStreamStorage = (DeferredFileStreamStorage) streamStorage;
-        assertTrue(deferredFileStreamStorage.isInMemory());
+        assertTrue(streamStorage instanceof FileStreamStorage);
+        FileStreamStorage FileStreamStorage = (FileStreamStorage) streamStorage;
+        assertTrue(FileStreamStorage.isInMemory());
 
 
         // Content length smaller than the threshold. Should decide to go in memory first
@@ -95,9 +95,9 @@ public class DefaultPartBodyStreamStorageFactoryTest {
 
         streamStorage = defaultPartIOStreamsFactory.newStreamStorageForPartBody(headers, 1);
         assertNotNull(streamStorage);
-        assertTrue(streamStorage instanceof DeferredFileStreamStorage);
-        deferredFileStreamStorage = (DeferredFileStreamStorage) streamStorage;
-        assertTrue(deferredFileStreamStorage.isInMemory());
+        assertTrue(streamStorage instanceof FileStreamStorage);
+        FileStreamStorage = (FileStreamStorage) streamStorage;
+        assertTrue(FileStreamStorage.isInMemory());
 
         // Content length greater than the threshold. Should decide to go directly to file...
         defaultPartIOStreamsFactory = new DefaultPartBodyStreamStorageFactory(tempFolder.newFolder("testGetOutputStream2").getAbsolutePath(), 100);
@@ -108,9 +108,9 @@ public class DefaultPartBodyStreamStorageFactoryTest {
         streamStorage = defaultPartIOStreamsFactory.newStreamStorageForPartBody(headers, 1);
         streamStorage = defaultPartIOStreamsFactory.newStreamStorageForPartBody(headers, 1);
         assertNotNull(streamStorage);
-        assertTrue(streamStorage instanceof DeferredFileStreamStorage);
-        deferredFileStreamStorage = (DeferredFileStreamStorage) streamStorage;
-        assertFalse(deferredFileStreamStorage.isInMemory());
+        assertTrue(streamStorage instanceof FileStreamStorage);
+        FileStreamStorage = (FileStreamStorage) streamStorage;
+        assertFalse(FileStreamStorage.isInMemory());
 
     }
 

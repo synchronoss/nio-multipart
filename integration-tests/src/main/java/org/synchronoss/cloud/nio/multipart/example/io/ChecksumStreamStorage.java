@@ -16,7 +16,7 @@
 
 package org.synchronoss.cloud.nio.multipart.example.io;
 
-import org.synchronoss.cloud.nio.stream.storage.DeferredFileStreamStorage;
+import org.synchronoss.cloud.nio.stream.storage.FileStreamStorage;
 
 import java.io.File;
 import java.io.IOException;
@@ -24,17 +24,17 @@ import java.io.InputStream;
 import java.security.MessageDigest;
 
 /**
- * <p> Extension of {@code DeferredFileStreamStorage} that is capable of computing the checksum and size of the data going through the streams.
+ * <p> Extension of {@code FileStreamStorage} that is capable of computing the checksum and size of the data going through the streams.
  *
  * @author Silvano Riz
  */
-public class ChecksumStreamStorage extends DeferredFileStreamStorage {
+public class ChecksumStreamStorage extends FileStreamStorage {
 
     final MessageDigest digest;
     long writtenBytes = 0;
 
-    public ChecksumStreamStorage(final File file, int threshold, final boolean purgeFileAfterReadComplete, final String checksumAlgorithm) {
-        super(file, threshold, purgeFileAfterReadComplete);
+    public ChecksumStreamStorage(final File file, int threshold, final boolean deleteFileAfterClose, final String checksumAlgorithm) {
+        super(file, threshold, deleteFileAfterClose);
         try {
             this.digest = MessageDigest.getInstance(checksumAlgorithm);
         }catch (Exception e){

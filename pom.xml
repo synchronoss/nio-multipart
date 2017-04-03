@@ -9,7 +9,7 @@
 
     <groupId>org.synchronoss.cloud</groupId>
     <artifactId>nio-multipart</artifactId>
-    <version>1.0.2-SNAPSHOT</version>
+    <version>1.0.2</version>
     <packaging>pom</packaging>
     <name>nio-multipart</name>
     <url>https://github.com/synchronoss/nio-multipart</url>
@@ -34,7 +34,7 @@
             <dependency>
                 <groupId>org.synchronoss.cloud</groupId>
                 <artifactId>nio-stream-storage</artifactId>
-                <version>1.0.0</version>
+                <version>1.1.1</version>
             </dependency>
 
             <!-- Testing -->
@@ -150,7 +150,39 @@
                         </execution>
                     </executions>
                 </plugin>
-
+                <!--  Release to Sonatype OSS Nexus  -->
+                <plugin>
+                    <groupId>org.sonatype.plugins</groupId>
+                    <artifactId>nexus-staging-maven-plugin</artifactId>
+                    <version>1.6.5</version>
+                    <extensions>true</extensions>
+                    <inherited>false</inherited>
+                    <configuration>
+                        <serverId>sonatype-nexus-staging</serverId>
+                        <nexusUrl>https://oss.sonatype.org/</nexusUrl>
+                        <stagingProfileId>b2828f5f73ba8</stagingProfileId>
+                        <autoReleaseAfterClose>true</autoReleaseAfterClose>
+                    </configuration>
+                </plugin>
+                <!--  Artifact signing  -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-gpg-plugin</artifactId>
+                    <version>1.6</version>
+                    <executions>
+                        <execution>
+                            <id>sign-artifacts</id>
+                            <phase>verify</phase>
+                            <goals>
+                                <goal>sign</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                    <configuration>
+                        <keyname>${synchronoss.opensource.key}</keyname>
+                        <passphraseServerId>${synchronoss.opensource.key}</passphraseServerId>
+                    </configuration>
+                </plugin>
             </plugins>
         </pluginManagement>
 
@@ -179,11 +211,10 @@
     </licenses>
 
     <scm>
-        <connection>scm:git:git@github.com:synchronoss/nio-multipart.git</connection>
+        <connection>scm:git:https://github.com/synchronoss/nio-multipart.git</connection>
         <developerConnection>scm:git:git@github.com:synchronoss/nio-multipart.git</developerConnection>
         <url>https://github.com/synchronoss/nio-multipart</url>
-    <tag>HEAD</tag>
-  </scm>
+    </scm>
 
     <ciManagement>
         <system>Travis CI</system>
@@ -220,6 +251,37 @@
     <profiles>
 
         <!--
+        Release to maven central.
+        Given that I cannot get the ssh connection from our CI and Github, I cannot set up the automatic release plugin.
+        Therefore, some manual steps are needed before running the maven command
+         * Update the version in all the poms
+         * Commit and push
+         * Run the command
+            mvn clean deploy -Prelease
+         * Tag the commit with nio-multipart-X.Y.Z
+         * Update the version for the next dev cycle (SNAPSHOT)
+        -->
+        <profile>
+            <id>release</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-gpg-plugin</artifactId>
+                    </plugin>
+
+                    <plugin>
+                        <groupId>org.sonatype.plugins</groupId>
+                        <artifactId>nexus-staging-maven-plugin</artifactId>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <!--
         Integration Tests
         mvn clean verify -pl integration-tests -Pintegration-tests -Dapplication.server.port=8181 -Pjmeter
         -->
@@ -232,139 +294,6 @@
                 <module>integration-tests</module>
             </modules>
         </profile>
-
-        <!--
-        Release
-        mvn -B release:prepare release:perform -Prelease-sign-artifacts
-        -->
-        <profile>
-
-            <id>release-sign-artifacts</id>
-            <activation>
-                <activeByDefault>false</activeByDefault>
-                <property>
-                    <name>release</name>
-                </property>
-            </activation>
-
-            <build>
-                <plugins>
-                    <!-- Check licence header -->
-                    <!-- mvn -Prelease-sign-artifacts license:check -->
-                    <plugin>
-                        <groupId>com.mycila.maven-license-plugin</groupId>
-                        <artifactId>maven-license-plugin</artifactId>
-                        <version>1.10.b1</version>
-                        <configuration>
-                            <header>header.txt</header>
-                            <strictCheck>true</strictCheck>
-                            <mapping>
-                                <java>SLASHSTAR_STYLE</java>
-                            </mapping>
-                            <excludes>
-                                <exclude>util/**</exclude>
-                                <exclude>LICENSE</exclude>
-                                <exclude>README.md</exclude>
-                                <exclude>**/.*/**</exclude>
-                                <exclude>docs/**</exclude>
-                                <exclude>**/src/test/resources/**</exclude>
-                                <exclude>**/*.properties</exclude>
-                                <exclude>**/logback.xml</exclude>
-                                <exclude>integration-tests/src/test/jmeter/**</exclude>
-                                <exclude>integration-tests/jmeter.sh</exclude>
-                                <exclude>src/test/java/org/synchronoss/cloud/nio/multipart/util/MimeUtilityTest.java</exclude>
-                                <exclude>src/test/java/org/synchronoss/cloud/nio/multipart/util/ParameterParserTest.java</exclude>
-                                <exclude>src/test/java/org/synchronoss/cloud/nio/multipart/util/QuotedPrintableDecoderTest.java</exclude>
-                                <exclude>src/main/java/org/synchronoss/cloud/nio/multipart/util/Base64Decoder.java</exclude>
-                                <exclude>src/main/java/org/synchronoss/cloud/nio/multipart/util/collect/AbstractIterator.java</exclude>
-                                <exclude>src/main/java/org/synchronoss/cloud/nio/multipart/util/collect/UnmodifiableIterator.java</exclude>
-                                <exclude>src/main/java/org/synchronoss/cloud/nio/multipart/util/MimeUtility.java</exclude>
-                                <exclude>src/main/java/org/synchronoss/cloud/nio/multipart/util/ParameterParser.java</exclude>
-                                <exclude>src/main/java/org/synchronoss/cloud/nio/multipart/util/ParseException.java</exclude>
-                                <exclude>src/test/java/org/synchronoss/cloud/nio/multipart/MultipartTest.java</exclude>
-                                <exclude>src/main/java/org/synchronoss/cloud/nio/multipart/util/QuotedPrintableDecoder.java</exclude>
-                                <exclude>src/test/java/org/synchronoss/cloud/nio/multipart/util/Base64DecoderTest.java</exclude>
-                                <exclude>src/test/java/org/synchronoss/cloud/nio/multipart/util/collect/AbstractIteratorTest.java</exclude>
-                                <exclude>src/test/java/org/synchronoss/cloud/nio/multipart/util/collect/UnmodifiableIteratorTest.java</exclude>
-                                <exclude>src/test/java/org/synchronoss/cloud/nio/multipart/util/IOUtilsTest.java</exclude>
-                                <exclude>src/test/java/org/synchronoss/cloud/nio/multipart/util/MimeUtilityTest.java</exclude>
-                                <exclude>src/test/java/org/synchronoss/cloud/nio/multipart/util/QuotedPrintableDecoderTest.java</exclude>
-                                <exclude>src/test/java/org/synchronoss/cloud/nio/multipart/util/ParameterParserTest.java</exclude>
-                            </excludes>
-                        </configuration>
-                        <executions>
-                            <execution>
-                                <phase>deploy</phase>
-                                <goals>
-                                    <goal>check</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
-
-                    <plugin>
-                        <groupId>org.sonatype.plugins</groupId>
-                        <artifactId>nexus-staging-maven-plugin</artifactId>
-                        <version>1.6.5</version>
-                        <extensions>true</extensions>
-                        <inherited>false</inherited>
-                        <configuration>
-                            <serverId>sonatype-nexus-staging</serverId>
-                            <nexusUrl>https://oss.sonatype.org/</nexusUrl>
-                            <stagingProfileId>b2828f5f73ba8</stagingProfileId>
-                            <autoReleaseAfterClose>true</autoReleaseAfterClose>
-                        </configuration>
-                    </plugin>
-                    <!--  Artifact signing  -->
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-gpg-plugin</artifactId>
-                        <version>1.6</version>
-                        <executions>
-                            <execution>
-                                <id>sign-artifacts</id>
-                                <phase>verify</phase>
-                                <goals>
-                                    <goal>sign</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                        <configuration>
-                            <keyname>${synchronoss.opensource.key}</keyname>
-                            <passphraseServerId>${synchronoss.opensource.key}</passphraseServerId>
-                        </configuration>
-                    </plugin>
-
-                    <!-- Release -->
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-release-plugin</artifactId>
-                        <version>2.5.3</version>
-                        <configuration>
-                            <autoVersionSubmodules>true</autoVersionSubmodules>
-                            <!--<stagingRepository>https://oss.sonatype.org/</stagingRepository>-->
-                            <checkModificationExcludes>
-                                <checkModificationExclude>pom.xml</checkModificationExclude>
-                                <checkModificationExclude>integration-tests/pom.xml</checkModificationExclude>
-                                <checkModificationExclude>nio-multipart-parser/pom.xml</checkModificationExclude>
-                            </checkModificationExcludes>
-
-                        </configuration>
-                        <executions>
-                            <execution>
-                                <id>default</id>
-                                <goals>
-                                    <goal>perform</goal>
-                                </goals>
-                                <configuration>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-
     </profiles>
 
 </project>
