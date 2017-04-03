@@ -679,7 +679,7 @@ public class NioMultipartParser extends OutputStream implements Disposable {
 
         byte[] boundary = getBoundary(contentType);
         if (boundary == null || boundary.length == 0){
-            throw new IllegalStateException("Invalid boundary in the content type" + contentType);
+            throw new IllegalStateException("Invalid boundary in the content type " + contentType);
         }
         byte[] delimiterPrefix = new byte[boundary.length + 4];
         delimiterPrefix[0] = CR;
