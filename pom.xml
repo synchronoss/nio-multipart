@@ -4,7 +4,7 @@
     <parent>
         <groupId>org.sonatype.oss</groupId>
         <artifactId>oss-parent</artifactId>
-        <version>7</version>
+        <version>9</version>
     </parent>
 
     <groupId>org.synchronoss.cloud</groupId>
@@ -150,6 +150,7 @@
                         </execution>
                     </executions>
                 </plugin>
+
                 <!--  Release to Sonatype OSS Nexus  -->
                 <plugin>
                     <groupId>org.sonatype.plugins</groupId>
@@ -164,6 +165,7 @@
                         <autoReleaseAfterClose>true</autoReleaseAfterClose>
                     </configuration>
                 </plugin>
+
                 <!--  Artifact signing  -->
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
