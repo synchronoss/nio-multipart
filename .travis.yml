@@ -6,9 +6,9 @@ jdk:
   - oraclejdk8
   - oraclejdk7
 
-install: mvn install -U
+install: mvn install -U -Dgpg.skip=true
 
-script: mvn verify -Pintegration-tests -pl integration-tests -Dapplication.server.port=8181 -Dmaven.javadoc.skip=true
+script: mvn verify -Pintegration-tests -pl integration-tests -Dapplication.server.port=8181 -Dmaven.javadoc.skip=true -Dgpg.skip=true
 
 cache:
   directories:

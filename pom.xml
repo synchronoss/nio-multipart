@@ -200,6 +200,16 @@
                 </configuration>
             </plugin>
 
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-gpg-plugin</artifactId>
+            </plugin>
+
+            <plugin>
+                <groupId>org.sonatype.plugins</groupId>
+                <artifactId>nexus-staging-maven-plugin</artifactId>
+            </plugin>
+
         </plugins>
 
     </build>
@@ -251,38 +261,6 @@
 
 
     <profiles>
-
-        <!--
-        Release to maven central.
-        Given that I cannot get the ssh connection from our CI and Github, I cannot set up the automatic release plugin.
-        Therefore, some manual steps are needed before running the maven command
-         * Update the version in all the poms
-         * Commit and push
-         * Run the command
-            mvn clean deploy -Prelease
-         * Tag the commit with nio-multipart-X.Y.Z
-         * Update the version for the next dev cycle (SNAPSHOT)
-        -->
-        <profile>
-            <id>release</id>
-            <activation>
-                <activeByDefault>false</activeByDefault>
-            </activation>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-gpg-plugin</artifactId>
-                    </plugin>
-
-                    <plugin>
-                        <groupId>org.sonatype.plugins</groupId>
-                        <artifactId>nexus-staging-maven-plugin</artifactId>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-
         <!--
         Integration Tests
         mvn clean verify -pl integration-tests -Pintegration-tests -Dapplication.server.port=8181 -Pjmeter
