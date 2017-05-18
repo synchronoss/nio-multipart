@@ -20,20 +20,6 @@ import com.google.common.base.Function;
 import com.google.common.collect.Maps;
 import com.google.common.io.Files;
 import com.google.gson.Gson;
-import org.synchronoss.cloud.nio.multipart.*;
-import org.synchronoss.cloud.nio.multipart.BlockingIOAdapter.Attachment;
-import org.synchronoss.cloud.nio.multipart.BlockingIOAdapter.FormParameter;
-import org.synchronoss.cloud.nio.multipart.BlockingIOAdapter.PartItem;
-import org.synchronoss.cloud.nio.multipart.example.config.RootApplicationConfig;
-import org.synchronoss.cloud.nio.multipart.example.io.ChecksumStreamStorage;
-import org.synchronoss.cloud.nio.multipart.example.io.ChecksumStreamUtils;
-import org.synchronoss.cloud.nio.multipart.example.io.ChecksumStreamUtils.ChecksumAndReadBytes;
-import org.synchronoss.cloud.nio.multipart.example.model.FileMetadata;
-import org.synchronoss.cloud.nio.multipart.example.model.Metadata;
-import org.synchronoss.cloud.nio.multipart.example.model.VerificationItem;
-import org.synchronoss.cloud.nio.multipart.example.model.VerificationItems;
-import org.synchronoss.cloud.nio.multipart.example.spring.CloseableReadListenerDeferredResult;
-import org.synchronoss.cloud.nio.multipart.util.collect.CloseableIterator;
 import org.apache.commons.fileupload.FileItemIterator;
 import org.apache.commons.fileupload.FileItemStream;
 import org.apache.commons.fileupload.servlet.ServletFileUpload;
@@ -46,6 +32,18 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
+import org.synchronoss.cloud.nio.multipart.*;
+import org.synchronoss.cloud.nio.multipart.BlockingIOAdapter.PartItem;
+import org.synchronoss.cloud.nio.multipart.example.config.RootApplicationConfig;
+import org.synchronoss.cloud.nio.multipart.example.io.ChecksumStreamStorage;
+import org.synchronoss.cloud.nio.multipart.example.io.ChecksumStreamUtils;
+import org.synchronoss.cloud.nio.multipart.example.io.ChecksumStreamUtils.ChecksumAndReadBytes;
+import org.synchronoss.cloud.nio.multipart.example.model.FileMetadata;
+import org.synchronoss.cloud.nio.multipart.example.model.Metadata;
+import org.synchronoss.cloud.nio.multipart.example.model.VerificationItem;
+import org.synchronoss.cloud.nio.multipart.example.model.VerificationItems;
+import org.synchronoss.cloud.nio.multipart.example.spring.CloseableReadListenerDeferredResult;
+import org.synchronoss.cloud.nio.multipart.util.collect.CloseableIterator;
 import org.synchronoss.cloud.nio.stream.storage.StreamStorage;
 
 import javax.servlet.*;
@@ -56,8 +54,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.synchronoss.cloud.nio.multipart.BlockingIOAdapter.PartItem.Type.ATTACHMENT;
-import static org.synchronoss.cloud.nio.multipart.BlockingIOAdapter.PartItem.Type.FORM;
+import static org.synchronoss.cloud.nio.multipart.BlockingIOAdapter.PartItem.Type.PART;
 import static org.synchronoss.cloud.nio.multipart.Multipart.multipart;
 
 /**
@@ -146,15 +143,6 @@ public class MultipartController {
                     }else{
                         VerificationItem verificationItem = buildVerificationItem(checksumStreamStorage, fieldName);
                         verificationItems.getVerificationItems().add(verificationItem);
-                    }
-                }
-
-                @Override
-                public void onFormFieldPartFinished(String fieldName, String fieldValue, Map<String, List<String>> headersFromPart) {
-                    if(log.isInfoEnabled()) log.info("PARSER LISTENER - onFormFieldPartFinished");
-                    // Metadata might be sent as a form field...
-                    if(METADATA_FIELD_NAME.equals(fieldName)){
-                        metadata = unmarshalMetadataOrThrow(fieldValue);
                     }
                 }
 
@@ -292,14 +280,6 @@ public class MultipartController {
             }
 
             @Override
-            public void onFormFieldPartFinished(String fieldName, String fieldValue, Map<String, List<String>> headersFromPart) {
-                if(log.isInfoEnabled()) log.info("PARSER LISTENER - onFormFieldPartFinished");
-                if (METADATA_FIELD_NAME.equals(fieldName)) {
-                    metadata = unmarshalMetadataOrThrow(fieldValue);
-                }
-            }
-
-            @Override
             public void onAllPartsFinished() {
                 if(log.isInfoEnabled())log.info("PARSER LISTENER - onAllPartsFinished");
                 processVerificationItems(verificationItems, metadata, true);
@@ -430,22 +410,14 @@ public class MultipartController {
         try (final CloseableIterator<PartItem> parts = Multipart.multipart(getMultipartContext(request)).forBlockingIO(request.getInputStream())){
             while (parts.hasNext()) {
                 PartItem partItem = parts.next();
-                if (FORM.equals(partItem.getType())) {
-                    FormParameter formParameter = (FormParameter) partItem;
-                    if (METADATA_FIELD_NAME.equals(formParameter.getFieldName())) {
-                        if (metadata != null) {
-                            throw new IllegalStateException("Found more than one metadata field");
-                        }
-                        metadata = unmarshalMetadata(formParameter.getFieldValue());
-                    }
-                } else if (ATTACHMENT.equals(partItem.getType())) {
-                    Attachment attachment = (Attachment) partItem;
-                    final String fieldName = MultipartUtils.getFieldName(attachment.getHeaders());
+                if (PART.equals(partItem.getType())) {
+                    BlockingIOAdapter.Part part = (BlockingIOAdapter.Part) partItem;
+                    final String fieldName = MultipartUtils.getFieldName(part.getHeaders());
                     if (METADATA_FIELD_NAME.equals(fieldName)) {
-                        metadata = unmarshalMetadata(attachment.getPartBody());
+                        metadata = unmarshalMetadata(part.getPartBody());
                     } else {
 
-                        VerificationItem verificationItem = buildVerificationItem(attachment.getPartBody(), fieldName);
+                        VerificationItem verificationItem = buildVerificationItem(part.getPartBody(), fieldName);
                         verificationItems.getVerificationItems().add(verificationItem);
                     }
                 } else {

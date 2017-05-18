@@ -38,15 +38,6 @@ public interface NioMultipartParserListener {
     void onPartFinished(final StreamStorage partBodyStreamStorage, final Map<String, List<String>> headersFromPart);
 
     /**
-     * <p> Called when a part that is a form field has been parsed
-     *
-     * @param fieldName The field name
-     * @param fieldValue The field value
-     * @param headersFromPart The part headers.
-     */
-    void onFormFieldPartFinished(final String fieldName, final String fieldValue, final Map<String, List<String>> headersFromPart);
-
-    /**
      * <p> Called when all the parts have been read.
      */
     void onAllPartsFinished();

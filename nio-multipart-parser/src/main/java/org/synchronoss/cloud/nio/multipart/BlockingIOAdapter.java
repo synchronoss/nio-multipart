@@ -132,12 +132,7 @@ public class BlockingIOAdapter {
             final NioMultipartParserListener listener = new NioMultipartParserListener() {
                 @Override
                 public void onPartFinished(StreamStorage partBodyStreamStorage, Map<String, List<String>> headersFromPart) {
-                    partItems.add(new Attachment(headersFromPart, partBodyStreamStorage));
-                }
-
-                @Override
-                public void onFormFieldPartFinished(String fieldName, String fieldValue, Map<String, List<String>> headersFromPart) {
-                    partItems.add(new FormParameter(headersFromPart, fieldName, fieldValue));
+                    partItems.add(new Part(headersFromPart, partBodyStreamStorage));
                 }
 
                 @Override
@@ -213,8 +208,7 @@ public class BlockingIOAdapter {
          * Type of a part: form, attachment, nested (start) and nested (end)
          */
         enum Type{
-            FORM,
-            ATTACHMENT,
+            PART,
             NESTED_START,
             NESTED_END
         }
@@ -275,67 +269,15 @@ public class BlockingIOAdapter {
     }
 
     /**
-     * <p> A {@code PartItem} representing a multipart form parameter.
-     * It gives access to the part headers, form field name and form field value.
-     */
-    public static class FormParameter implements PartItem {
-
-        final Map<String, List<String>> headers;
-        final String fieldName;
-        final String fieldValue;
-
-        private FormParameter(final Map<String, List<String>> headers, final String fieldName, final String fieldValue) {
-            this.headers = headers;
-            this.fieldName = fieldName;
-            this.fieldValue = fieldValue;
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public Type getType() {
-            return Type.FORM;
-        }
-
-        /**
-         * <p> Returns the part headers.
-         *
-         * @return The part headers.
-         */
-        public Map<String, List<String>> getHeaders() {
-            return headers;
-        }
-
-        /**
-         * <p>Returns the form field name
-         *
-         * @return the form field name
-         */
-        public String getFieldName() {
-            return fieldName;
-        }
-
-        /**
-         * <p> Returns the form field value
-         *
-         * @return the form field value
-         */
-        public String getFieldValue() {
-            return fieldValue;
-        }
-    }
-
-    /**
      * <p> A {@code PartItem} representing an attachment part.
      * It gives access to the part headers and the body {@code InputStream}
      */
-    public static class Attachment implements PartItem {
+    public static class Part implements PartItem {
 
         final Map<String, List<String>> headers;
         final StreamStorage partBodyStreamStorage;
 
-        private Attachment(final Map<String, List<String>> headers, final StreamStorage partBodyStreamStorage) {
+        private Part(final Map<String, List<String>> headers, final StreamStorage partBodyStreamStorage) {
             this.headers = headers;
             this.partBodyStreamStorage = partBodyStreamStorage;
         }
@@ -345,7 +287,7 @@ public class BlockingIOAdapter {
          */
         @Override
         public Type getType() {
-            return Type.ATTACHMENT;
+            return Type.PART;
         }
 
         /**

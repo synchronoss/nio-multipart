@@ -151,14 +151,10 @@ public class FunctionalTest {
 
     static void assertEquals(final BlockingIOAdapter.PartItem partItem, final FileItemStream fileItemStream) throws IOException {
 
-        if (partItem instanceof BlockingIOAdapter.FormParameter){
-            BlockingIOAdapter.FormParameter formParameter = (BlockingIOAdapter.FormParameter) partItem;
-            assertHeadersAreEqual(fileItemStream.getHeaders(), formParameter.getHeaders());
-            Assert.assertEquals(formParameter.getFieldValue(), IOUtils.toString(fileItemStream.openStream()));
-        }else if (partItem instanceof BlockingIOAdapter.Attachment){
-            BlockingIOAdapter.Attachment attachment = (BlockingIOAdapter.Attachment) partItem;
-            assertHeadersAreEqual(fileItemStream.getHeaders(), attachment.getHeaders());
-            assertInputStreamsAreEqual(attachment.getPartBody(), fileItemStream.openStream());
+        if (partItem instanceof BlockingIOAdapter.Part){
+            BlockingIOAdapter.Part part = (BlockingIOAdapter.Part) partItem;
+            assertHeadersAreEqual(fileItemStream.getHeaders(), part.getHeaders());
+            assertInputStreamsAreEqual(part.getPartBody(), fileItemStream.openStream());
         }else{
             fail("Invalid part item type " + partItem.getClass());
         }
@@ -217,20 +213,6 @@ public class FunctionalTest {
                 final FileItemStream fileItemStream = fileItemIteratorNext();
                 assertHeadersAreEqual(fileItemStream.getHeaders(), headersFromPart);
                 assertInputStreamsAreEqual(fileItemStreamInputStream(fileItemStream), partBodyStreamStorage.getInputStream());
-            }
-
-            @Override
-            public void onFormFieldPartFinished(String fieldName, String fieldValue, Map<String, List<String>> headersFromPart) {
-                log.info("<<<<< On form field complete [" + (partIndex.addAndGet(1)) + "] >>>>>>");
-                assertFileItemIteratorHasNext(true);
-                final FileItemStream fileItemStream = fileItemIteratorNext();
-                assertTrue(fileItemStream.isFormField());
-                Assert.assertEquals(fieldName, fileItemStream.getFieldName());
-                try {
-                    Assert.assertEquals(fieldValue, IOUtils.toString(fileItemStream.openStream()));
-                }catch (Exception e){
-                    throw new IllegalStateException("Unable to assert field value", e);
-                }
             }
 
             @Override
@@ -342,16 +324,6 @@ public class FunctionalTest {
                 for (Map.Entry<String, List<String>> headersEntry : headersFromParentPart.entrySet()){
                     log.info("Header: " + headersEntry.getKey() + ": " + Joiner.on(',').join(headersEntry.getValue()));
                 }
-            }
-
-            @Override
-            public void onFormFieldPartFinished(String fieldName, String fieldValue, Map<String, List<String>> headersFromPart) {
-                log.info("-- NIO MULTIPART PARSER : On form field complete " + partIndex.addAndGet(1));
-                log.info("-- Part " + (partIndex.get()));
-                for (Map.Entry<String, List<String>> headersEntry : headersFromPart.entrySet()){
-                    log.info("Header: " + headersEntry.getKey() + ": " + Joiner.on(',').join(headersEntry.getValue()));
-                }
-                log.info("Field " + fieldName + ": " + fieldValue);
             }
 
             @Override

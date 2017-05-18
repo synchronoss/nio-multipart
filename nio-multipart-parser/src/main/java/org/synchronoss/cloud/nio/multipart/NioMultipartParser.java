@@ -21,11 +21,13 @@ import org.slf4j.LoggerFactory;
 import org.synchronoss.cloud.nio.multipart.io.FixedSizeByteArrayOutputStream;
 import org.synchronoss.cloud.nio.multipart.io.buffer.EndOfLineBuffer;
 import org.synchronoss.cloud.nio.multipart.util.HeadersParser;
-import org.synchronoss.cloud.nio.multipart.util.IOUtils;
 import org.synchronoss.cloud.nio.stream.storage.Disposable;
 import org.synchronoss.cloud.nio.stream.storage.StreamStorage;
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -625,26 +627,7 @@ public class NioMultipartParser extends OutputStream implements Disposable {
             goToState(State.GET_READY_FOR_HEADERS);
         }
 
-        // Notify
-        if (MultipartUtils.isFormField(headers)){
-            // It's a form field, need to read the input stream into String and notify via onFormFieldPartFinished(...)
-            final InputStream partBodyInputStream =  partBodyStreamStorage.getInputStream();
-            try {
-                final String fieldName = MultipartUtils.getFieldName(headers);
-                final String value = IOUtils.inputStreamAsString(partBodyInputStream, MultipartUtils.getCharEncoding(headers));
-                nioMultipartParserListener.onFormFieldPartFinished(fieldName, value, headers);
-            }catch (Exception e){
-                goToState(State.ERROR);
-                nioMultipartParserListener.onError("Unable to read the form parameters", e);
-                return;
-            }finally {
-                IOUtils.closeQuietly(partBodyInputStream);
-            }
-
-        }else{
-            // Not a form field. Provide the raw input stream to the client.
-            nioMultipartParserListener.onPartFinished(partBodyStreamStorage, headers);
-        }
+        nioMultipartParserListener.onPartFinished(partBodyStreamStorage, headers);
 
         partIndex++;
         wCtx.setFinishedIfNoMoreData();

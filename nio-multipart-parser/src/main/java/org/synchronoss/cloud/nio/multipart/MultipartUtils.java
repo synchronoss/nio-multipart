@@ -16,7 +16,9 @@
 
 package org.synchronoss.cloud.nio.multipart;
 
+import org.synchronoss.cloud.nio.multipart.util.IOUtils;
 import org.synchronoss.cloud.nio.multipart.util.ParameterParser;
+import org.synchronoss.cloud.nio.stream.storage.StreamStorage;
 
 import java.io.UnsupportedEncodingException;
 import java.util.List;
@@ -114,7 +116,17 @@ public class MultipartUtils {
      * @return true if the request is a multipart request, false otherwise.
      */
     public static boolean hasMultipartContentType(final Map<String, List<String>> headers){
-        return isMultipart(getHeader(CONTENT_TYPE, headers));
+        return isMultipart(getContentType(headers));
+    }
+
+    /**
+     * <p> Returns the value of the content type header if present.
+     *
+     * @param headers The headers map
+     * @return the value of the content type header if present.
+     */
+    public static String getContentType(final Map<String, List<String>> headers){
+        return getHeader(CONTENT_TYPE, headers);
     }
 
     /**
@@ -188,8 +200,23 @@ public class MultipartUtils {
     public static boolean isFormField(final Map<String, List<String>> headers){
         final String fileName = getFileName(headers);
         final String fieldName = getFieldName(headers);
+        final String contentType = getContentType(headers);
+        return fieldName != null && fileName == null && contentType != null && contentType.startsWith(MULTIPART_FORM_DATA);
+    }
 
-        return fieldName != null && fileName == null;
+    /**
+     * <p> Reads the form fields into a string. The method takes care of handling the char encoding.
+     *
+     * @param streamStorage The stream storage.
+     * @param headers The part headers.
+     * @return The form parameter value as string.
+     */
+    public String readFormParameterValue(final StreamStorage streamStorage, final Map<String, List<String>> headers){
+        try {
+            return IOUtils.inputStreamAsString(streamStorage.getInputStream(), MultipartUtils.getCharEncoding(headers));
+        }catch (Exception e){
+            throw new IllegalStateException("Unable to read the form parameter value", e);
+        }
     }
 
     /**

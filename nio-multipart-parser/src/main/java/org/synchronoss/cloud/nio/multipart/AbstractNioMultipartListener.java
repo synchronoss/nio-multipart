@@ -35,11 +35,6 @@ public class AbstractNioMultipartListener implements NioMultipartParserListener{
     }
 
     @Override
-    public void onFormFieldPartFinished(String fieldName, String fieldValue, Map<String, List<String>> headersFromPart) {
-        // Empty implementation
-    }
-
-    @Override
     public void onAllPartsFinished() {
         // Empty implementation
     }

@@ -123,19 +123,29 @@ public class MultipartUtilsTest {
     @Test
     public void testIsFormField(){
 
+
         Map<String, List<String>> contentDispositionWithFilenameAndName = new HashMap<String, List<String>>();
+        contentDispositionWithFilenameAndName.put(MultipartUtils.CONTENT_TYPE.toLowerCase(), Collections.singletonList("multipart/form-data; boundary=--------1234"));
         contentDispositionWithFilenameAndName.put(MultipartUtils.CONTENT_DISPOSITION.toLowerCase(), Collections.singletonList("form-data; name=\"file\"; filename=\"file.txt\""));
         assertFalse(MultipartUtils.isFormField(contentDispositionWithFilenameAndName));
 
         Map<String, List<String>> contentDispositionWithFilename = new HashMap<String, List<String>>();
+        contentDispositionWithFilename.put(MultipartUtils.CONTENT_TYPE.toLowerCase(), Collections.singletonList("multipart/form-data; boundary=--------1234"));
         contentDispositionWithFilename.put(MultipartUtils.CONTENT_DISPOSITION.toLowerCase(), Collections.singletonList("form-data; filename=\"file.txt\""));
         assertFalse(MultipartUtils.isFormField(contentDispositionWithFilename));
 
         Map<String, List<String>> contentDispositionWithName = new HashMap<String, List<String>>();
+        contentDispositionWithName.put(MultipartUtils.CONTENT_TYPE.toLowerCase(), Collections.singletonList("multipart/form-data; boundary=--------1234"));
         contentDispositionWithName.put(MultipartUtils.CONTENT_DISPOSITION.toLowerCase(), Collections.singletonList("form-data; name=\"file\""));
         assertTrue(MultipartUtils.isFormField(contentDispositionWithName));
 
+        Map<String, List<String>> contentDispositionWithNameNotFormData = new HashMap<String, List<String>>();
+        contentDispositionWithName.put(MultipartUtils.CONTENT_TYPE.toLowerCase(), Collections.singletonList("multipart/mixed; boundary=--------1234"));
+        contentDispositionWithName.put(MultipartUtils.CONTENT_DISPOSITION.toLowerCase(), Collections.singletonList("form-data; name=\"file\""));
+        assertFalse(MultipartUtils.isFormField(contentDispositionWithName));
+
         Map<String, List<String>> contentDispositionNoNameNoFileName = new HashMap<String, List<String>>();
+        contentDispositionNoNameNoFileName.put(MultipartUtils.CONTENT_TYPE.toLowerCase(), Collections.singletonList("multipart/form-data; boundary=--------1234"));
         contentDispositionNoNameNoFileName.put(MultipartUtils.CONTENT_DISPOSITION.toLowerCase(), Collections.singletonList("form-data"));
         assertFalse(MultipartUtils.isFormField(contentDispositionNoNameNoFileName));
 
