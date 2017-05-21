@@ -17,7 +17,12 @@
 package org.synchronoss.cloud.nio.multipart;
 
 import org.junit.Test;
+import org.mockito.Mockito;
+import org.synchronoss.cloud.nio.stream.storage.StreamStorage;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.*;
 
 import static org.junit.Assert.*;
@@ -123,31 +128,48 @@ public class MultipartUtilsTest {
     @Test
     public void testIsFormField(){
 
+        MultipartContext multipartContext = new MultipartContext("multipart/form-data; boundary=--------1234", 1045, "UTF-8");
 
-        Map<String, List<String>> contentDispositionWithFilenameAndName = new HashMap<String, List<String>>();
-        contentDispositionWithFilenameAndName.put(MultipartUtils.CONTENT_TYPE.toLowerCase(), Collections.singletonList("multipart/form-data; boundary=--------1234"));
-        contentDispositionWithFilenameAndName.put(MultipartUtils.CONTENT_DISPOSITION.toLowerCase(), Collections.singletonList("form-data; name=\"file\"; filename=\"file.txt\""));
-        assertFalse(MultipartUtils.isFormField(contentDispositionWithFilenameAndName));
+        assertFalse(MultipartUtils.isFormField(
+                new HashMap<String, List<String>>(){{
+                    put(MultipartUtils.CONTENT_TYPE.toLowerCase(), Collections.singletonList("text/plain"));
+                    put(MultipartUtils.CONTENT_DISPOSITION.toLowerCase(), Collections.singletonList("form-data; name=\"file\"; filename=\"file.txt\""));
+                }},
+                multipartContext));
 
-        Map<String, List<String>> contentDispositionWithFilename = new HashMap<String, List<String>>();
-        contentDispositionWithFilename.put(MultipartUtils.CONTENT_TYPE.toLowerCase(), Collections.singletonList("multipart/form-data; boundary=--------1234"));
-        contentDispositionWithFilename.put(MultipartUtils.CONTENT_DISPOSITION.toLowerCase(), Collections.singletonList("form-data; filename=\"file.txt\""));
-        assertFalse(MultipartUtils.isFormField(contentDispositionWithFilename));
+        assertFalse(MultipartUtils.isFormField(
+                new HashMap<String, List<String>>(){{
+                    put(MultipartUtils.CONTENT_TYPE.toLowerCase(), Collections.singletonList("text/plain"));
+                    put(MultipartUtils.CONTENT_DISPOSITION.toLowerCase(), Collections.singletonList("form-data; filename=\"file.txt\""));
+                }},
+                multipartContext));
 
-        Map<String, List<String>> contentDispositionWithName = new HashMap<String, List<String>>();
-        contentDispositionWithName.put(MultipartUtils.CONTENT_TYPE.toLowerCase(), Collections.singletonList("multipart/form-data; boundary=--------1234"));
-        contentDispositionWithName.put(MultipartUtils.CONTENT_DISPOSITION.toLowerCase(), Collections.singletonList("form-data; name=\"file\""));
-        assertTrue(MultipartUtils.isFormField(contentDispositionWithName));
+        assertTrue(MultipartUtils.isFormField(
+                new HashMap<String, List<String>>(){{
+                    put(MultipartUtils.CONTENT_TYPE.toLowerCase(), Collections.singletonList("text/plain"));
+                    put(MultipartUtils.CONTENT_DISPOSITION.toLowerCase(), Collections.singletonList("form-data; name=\"file\""));
+                }}
+                , multipartContext));
 
-        Map<String, List<String>> contentDispositionWithNameNotFormData = new HashMap<String, List<String>>();
-        contentDispositionWithName.put(MultipartUtils.CONTENT_TYPE.toLowerCase(), Collections.singletonList("multipart/mixed; boundary=--------1234"));
-        contentDispositionWithName.put(MultipartUtils.CONTENT_DISPOSITION.toLowerCase(), Collections.singletonList("form-data; name=\"file\""));
-        assertFalse(MultipartUtils.isFormField(contentDispositionWithName));
+        assertFalse(MultipartUtils.isFormField(
+                new HashMap<String, List<String>>(){{
+                    put(MultipartUtils.CONTENT_TYPE.toLowerCase(), Collections.singletonList("application/json"));
+                    put(MultipartUtils.CONTENT_DISPOSITION.toLowerCase(), Collections.singletonList("form-data; name=\"file\""));
+                }}, multipartContext));
 
-        Map<String, List<String>> contentDispositionNoNameNoFileName = new HashMap<String, List<String>>();
-        contentDispositionNoNameNoFileName.put(MultipartUtils.CONTENT_TYPE.toLowerCase(), Collections.singletonList("multipart/form-data; boundary=--------1234"));
-        contentDispositionNoNameNoFileName.put(MultipartUtils.CONTENT_DISPOSITION.toLowerCase(), Collections.singletonList("form-data"));
-        assertFalse(MultipartUtils.isFormField(contentDispositionNoNameNoFileName));
+        assertFalse(MultipartUtils.isFormField(
+                new HashMap<String, List<String>>(){{
+                    put(MultipartUtils.CONTENT_TYPE.toLowerCase(), Collections.singletonList("text/plain"));
+                    put(MultipartUtils.CONTENT_DISPOSITION.toLowerCase(), Collections.singletonList("form-data"));
+                }},
+                multipartContext));
+
+        assertFalse(MultipartUtils.isFormField(
+                new HashMap<String, List<String>>(){{
+                    put(MultipartUtils.CONTENT_TYPE.toLowerCase(), Collections.singletonList("text/plain"));
+                    put(MultipartUtils.CONTENT_DISPOSITION.toLowerCase(), Collections.singletonList("form-data; name=\"file\""));
+                }},
+                new MultipartContext("multipart/mixed; boundary=--------1234", 1045, "UTF-8")));
 
     }
 
@@ -213,5 +235,48 @@ public class MultipartUtilsTest {
 
     }
 
+    @Test
+    public void testReadFormParameterValue() throws Exception {
 
+        StreamStorage streamStorage = Mockito.mock(StreamStorage.class);
+        Mockito.when(streamStorage.getInputStream()).thenReturn(new ByteArrayInputStream("Body data".getBytes()));
+
+        String value = MultipartUtils.readFormParameterValue(
+                streamStorage,
+                new HashMap<String, List<String>>(){{
+                    put(MultipartUtils.CONTENT_TYPE.toLowerCase(), Collections.singletonList("text/plain; charset=utf-8"));
+                }}
+        );
+        assertEquals("Body data", value);
+
+        StreamStorage streamStorage1 = Mockito.mock(StreamStorage.class);
+        Mockito.when(streamStorage1.getInputStream()).thenReturn(new ByteArrayInputStream("Body data".getBytes()));
+        String value1 = MultipartUtils.readFormParameterValue(
+                streamStorage1,
+                new HashMap<String, List<String>>(){{
+                    put(MultipartUtils.CONTENT_TYPE.toLowerCase(), Collections.singletonList("text/plain"));
+                }}
+        );
+        assertEquals("Body data", value1);
+
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testReadFormParameterValue_error() throws Exception {
+
+        StreamStorage streamStorage = Mockito.mock(StreamStorage.class);
+        InputStream inputStream = Mockito.mock(InputStream.class);
+        Mockito.when(inputStream.read()).thenThrow(new IOException());
+        Mockito.when(inputStream.read(Mockito.any(byte[].class))).thenThrow(new IOException());
+        Mockito.when(inputStream.read(Mockito.any(byte[].class), Mockito.anyInt(), Mockito.anyInt())).thenThrow(new IOException());
+        Mockito.when(streamStorage.getInputStream()).thenReturn(inputStream);
+
+        String value = MultipartUtils.readFormParameterValue(
+                streamStorage,
+                new HashMap<String, List<String>>(){{
+                    put(MultipartUtils.CONTENT_TYPE.toLowerCase(), Collections.singletonList("text/plain; charset=utf-8"));
+                }}
+        );
+
+    }
 }

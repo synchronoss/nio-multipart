@@ -97,6 +97,11 @@ public class MultipartUtils {
      */
     public static final String MULTIPART_MIXED = "multipart/mixed";
 
+    /**
+     * text/plain mime-type
+     */
+    public static final String TEXT_PLAIN = "text/plain";
+
     private MultipartUtils(){}// empty private constructor
 
     /**
@@ -192,26 +197,49 @@ public class MultipartUtils {
     }
 
     /**
-     * <p> Checks if the part is a form field.
+     * <p> Checks if the part is a form field. The rules are:
+     * <ul>
+     *     <li>There must not be a file name specified in the 'Content-disposition' header</li>
+     *     <li>There must be a field name specified in the 'Content-disposition' header</li>
+     *     <li>The main request 'Content-Type' must be 'multipart/form-data'</li>
+     *     <li>The part 'Content-Type' must be 'text/plain' (or not defined which defaults to 'text/plain')</li>
+     * </ul>
      *
      * @param headers The part headers
+     * @param context The multipart context
      * @return true if the part is a form field, false otherwise.
      */
-    public static boolean isFormField(final Map<String, List<String>> headers){
-        final String fileName = getFileName(headers);
-        final String fieldName = getFieldName(headers);
+    public static boolean isFormField(final Map<String, List<String>> headers, final MultipartContext context){
+        final boolean hasFileName = getFileName(headers) != null;
+        if (hasFileName){
+            return false;
+        }
+        final boolean hasFieldName = getFieldName(headers) != null;
+        if (!hasFieldName){
+            return false;
+        }
         final String contentType = getContentType(headers);
-        return fieldName != null && fileName == null && contentType != null && contentType.startsWith(MULTIPART_FORM_DATA);
+        final boolean isMultipartFormData = context.getContentType().startsWith(MULTIPART_FORM_DATA);
+        if (!isMultipartFormData){
+            return false;
+        }
+        // By default if the Content-Type header is not specified, the content type is text/plain
+        final boolean isTextPlain = contentType == null || contentType.equals(TEXT_PLAIN);
+        if (!isTextPlain){
+            return false;
+        }
+        return true;
     }
 
     /**
      * <p> Reads the form fields into a string. The method takes care of handling the char encoding.
+     * <p> If an error occurs while reading the {@link StreamStorage}, an {@link IllegalStateException} will be thrown.
      *
      * @param streamStorage The stream storage.
      * @param headers The part headers.
      * @return The form parameter value as string.
      */
-    public String readFormParameterValue(final StreamStorage streamStorage, final Map<String, List<String>> headers){
+    public static String readFormParameterValue(final StreamStorage streamStorage, final Map<String, List<String>> headers){
         try {
             return IOUtils.inputStreamAsString(streamStorage.getInputStream(), MultipartUtils.getCharEncoding(headers));
         }catch (Exception e){

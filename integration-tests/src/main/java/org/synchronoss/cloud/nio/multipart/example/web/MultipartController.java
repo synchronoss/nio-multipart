@@ -136,13 +136,31 @@ public class MultipartController {
                 @Override
                 public void onPartFinished(StreamStorage partBodyStreamStorage, Map<String, List<String>> headersFromPart) {
                     if(log.isInfoEnabled()) log.info("PARSER LISTENER - onPartFinished");
-                    final ChecksumStreamStorage checksumStreamStorage = getChecksumStreamStorageOrThrow(partBodyStreamStorage);
-                    final String fieldName = MultipartUtils.getFieldName(headersFromPart);
-                    if (METADATA_FIELD_NAME.equals(fieldName)){
-                        metadata = unmarshalMetadataOrThrow(checksumStreamStorage);
-                    }else{
-                        VerificationItem verificationItem = buildVerificationItem(checksumStreamStorage, fieldName);
-                        verificationItems.getVerificationItems().add(verificationItem);
+
+
+                    if (MultipartUtils.isFormField(headersFromPart, ctx)){
+
+                        if(log.isInfoEnabled()) log.info("PARSER LISTENER - form param");
+
+                        // Metadata might be sent as a form field...
+                        final String fieldName = MultipartUtils.getFieldName(headersFromPart);
+                        final String fieldValue = MultipartUtils.readFormParameterValue(partBodyStreamStorage, headersFromPart);
+                        if(METADATA_FIELD_NAME.equals(fieldName)){
+                            metadata = unmarshalMetadataOrThrow(fieldValue);
+                        }
+
+                    }else {
+
+                        if(log.isInfoEnabled()) log.info("PARSER LISTENER - attachment");
+
+                        final ChecksumStreamStorage checksumStreamStorage = getChecksumStreamStorageOrThrow(partBodyStreamStorage);
+                        final String fieldName = MultipartUtils.getFieldName(headersFromPart);
+                        if (METADATA_FIELD_NAME.equals(fieldName)) {
+                            metadata = unmarshalMetadataOrThrow(checksumStreamStorage);
+                        } else {
+                            VerificationItem verificationItem = buildVerificationItem(checksumStreamStorage, fieldName);
+                            verificationItems.getVerificationItems().add(verificationItem);
+                        }
                     }
                 }
 
@@ -252,6 +270,8 @@ public class MultipartController {
         final ServletInputStream inputStream = request.getInputStream();
         final AtomicInteger synchronizer = new AtomicInteger(0);
 
+        final MultipartContext ctx = getMultipartContext(request);
+
         final NioMultipartParserListener listener = new NioMultipartParserListener() {
 
             Metadata metadata;
@@ -259,13 +279,29 @@ public class MultipartController {
             @Override
             public void onPartFinished(final StreamStorage partBodyStreamStorage, final Map<String, List<String>> headersFromPart) {
                 if(log.isInfoEnabled())log.info("PARSER LISTENER - onPartFinished") ;
-                final String fieldName = MultipartUtils.getFieldName(headersFromPart);
-                final ChecksumStreamStorage checksumPartStreams = getChecksumStreamStorageOrThrow(partBodyStreamStorage);
-                if (METADATA_FIELD_NAME.equals(fieldName)){
-                    metadata = unmarshalMetadataOrThrow(checksumPartStreams);
-                }else{
-                    VerificationItem verificationItem = buildVerificationItem(checksumPartStreams, fieldName);
-                    verificationItems.getVerificationItems().add(verificationItem);
+
+                if (MultipartUtils.isFormField(headersFromPart, ctx)) {
+
+                    if (log.isInfoEnabled()) log.info("PARSER LISTENER - form param");
+
+                    // Metadata might be sent as a form field...
+                    final String fieldName = MultipartUtils.getFieldName(headersFromPart);
+                    final String fieldValue = MultipartUtils.readFormParameterValue(partBodyStreamStorage, headersFromPart);
+                    if (METADATA_FIELD_NAME.equals(fieldName)) {
+                        metadata = unmarshalMetadataOrThrow(fieldValue);
+                    }
+                }else {
+
+                    if (log.isInfoEnabled()) log.info("PARSER LISTENER - attachment");
+
+                    final String fieldName = MultipartUtils.getFieldName(headersFromPart);
+                    final ChecksumStreamStorage checksumPartStreams = getChecksumStreamStorageOrThrow(partBodyStreamStorage);
+                    if (METADATA_FIELD_NAME.equals(fieldName)) {
+                        metadata = unmarshalMetadataOrThrow(checksumPartStreams);
+                    } else {
+                        VerificationItem verificationItem = buildVerificationItem(checksumPartStreams, fieldName);
+                        verificationItems.getVerificationItems().add(verificationItem);
+                    }
                 }
             }
 
@@ -308,7 +344,6 @@ public class MultipartController {
 
         };
 
-        final MultipartContext ctx = getMultipartContext(request);
         final NioMultipartParser parser = multipart(ctx).usePartBodyStreamStorageFactory(partBodyStreamStorageFactory).forNIO(listener);
 
         // Add a listener to ensure the parser is closed.
