@@ -65,12 +65,6 @@ NioMultipartParserListener listener = new NioMultipartParserListener() {
     }
 
     @Override
-    public void onFormFieldPartFinished(String fieldName, String fieldValue, Map<String, List<String>> headersFromPart) {
-        // Called when the part represents a form field.
-        // Instead of a StreamStorage object, the field name and filedValue are already extracted by the parser and returned to the client.
-    }
-
-    @Override
     public void onAllPartsFinished() {
         // Called when the multipart processing finished (encountered the close boundary). No more parts are available!
     }
@@ -208,6 +202,45 @@ NioMultipartParser parser = Multipart.multipart(context)
 
 Alternatively the constructors can be used (useful if used along with a dependency injection framework).
 It is important to keep in mind that a new parser **MUST** be instantiated per each request/response, so it cannot be mapped as a singleton scoped bean.
+
+##### Form parameters
+Originally the _NioMultipartParserListener_ had a specific callback for form parameters and it was returning the parameter name and the parameter value as String in the callback.
+There was no control over the size of the parameter value and this could have cause memory problems.
+The new versions of the library is not exposing the callback anymore, but a form parameter is notified via the _onPartFinished(...)_ method.
+Users can rely on utility methods provided by this library or write custom logic to process the form parameters.
+
+Following there is an example of how a user can use the utility methods provided by the library to handle form parameters:
+```java
+// Create the MultipartContext from the HttpServletRequest
+String contentType = request.getContentType();
+int contentLength = request.getContentLength();
+String charEncoding = request.getCharacterEncoding();
+MultipartContext ctx = MultipartContext(contentType, contentLength, charEncoding);
+
+// Create the NioMultipartParserListener with specific logic to handle form parameters.
+NioMultipartParserListener listener = new NioMultipartParserListener() {
+
+    @Override
+    public void onPartFinished(final StreamStorage partBodyStreamStorage, final Map<String, List<String>> headersFromPart) {
+        if (MultipartUtils.isFormField(headersFromPart, ctx)) {
+            
+            // The part is a form field, read the parameter name and parameter value.
+            
+            final String fieldName = MultipartUtils.getFieldName(headersFromPart);
+            
+            // Note that this will consume the partBodyStreamStorage InputStream and load it in memory.
+            // Care should be taken by the user to avoid OutOfMemory issues.
+            final String fieldValue = MultipartUtils.readFormParameterValue(partBodyStreamStorage, headersFromPart);
+            
+        }else{
+            
+            // The part is not a form field.
+            
+        }
+    }
+    // ... 
+}
+```    
 
 A powerful extension point
 --------------------------
