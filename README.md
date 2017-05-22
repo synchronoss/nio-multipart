@@ -305,26 +305,20 @@ To parse a multipart stream in a blocking fashion, the easier way is to use the 
 
 ```java
 final InputStream inputStream = request.getInputStream();
-CloseableIterator<PartItem> parts = Multipart.multipart(context).forBlockingIO(inputStream);
+CloseableIterator<PartToken> partTokens = Multipart.multipart(context).forBlockingIO(inputStream);
 
-while(parts.hasNext()){
-    PartItem partItem = parts.next();
-    PartItem.Type partItemType = partItem.getType();
-    switch(partItemType){
-        case FORM:
-            final FormParameter formParameter = (FormParameter)partItem;
-            final Map<String, List<String>> headers = formParameter.getHeaders();
-            final String fieldName = formParameter.getFieldName();
-            final String fieldValue = formParameter.getFieldValue();
-            break;
-        case ATTACHMENT:
-            Attachment attachment = (Attachment)partItem;
-            final Map<String, List<String>> headers = attachment.getHeaders();
-            final InputStream body = attachment.getPartBody();
+while(partTokens.hasNext()){
+    PartToken partToken = parts.next();
+    PartItem.Type partTokenType = partToken.getType();
+    switch(partTokenType){
+        case PART:
+            Part part = (Part)partToken;
+            final Map<String, List<String>> headers = part.getHeaders();
+            final InputStream body = part.getPartBody();
             break;
         case NESTED_START:
             // A marker to keep track of nested multipart and it gives access to the headers...
-            NestedStart nestedStart = (NestedStart)partItem;
+            NestedStart nestedStart = (NestedStart)partToken;
             final Map<String, List<String>> headers = nestedStart.getHeaders();
             break;
         case NESTED_END:
@@ -335,7 +329,7 @@ while(parts.hasNext()){
     }
 }
 
-parts.close();
+partTokens.close();
 
 ```
 

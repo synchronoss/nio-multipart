@@ -51,7 +51,7 @@ public class BlockingIOAdapter {
      * @param multipartContext The multipart context
      * @return the parts in the form of a closeable iterator
      */
-    public static CloseableIterator<PartItem> parse(final InputStream inputStream, final MultipartContext multipartContext){
+    public static CloseableIterator<ParserToken> parse(final InputStream inputStream, final MultipartContext multipartContext){
         return parse(inputStream, multipartContext, null, DEFAULT_BUFFER_SIZE, DEFAULT_HEADERS_SECTION_SIZE, DEFAULT_MAX_LEVEL_OF_NESTED_MULTIPART);
     }
 
@@ -65,7 +65,7 @@ public class BlockingIOAdapter {
      * @param partBodyStreamStorageFactory The {@code PartBodyStreamStorageFactory} to use
      * @return the parts in the form of a closeable iterator
      */
-    public static CloseableIterator<PartItem> parse(final InputStream inputStream, final MultipartContext multipartContext, final PartBodyStreamStorageFactory partBodyStreamStorageFactory) {
+    public static CloseableIterator<ParserToken> parse(final InputStream inputStream, final MultipartContext multipartContext, final PartBodyStreamStorageFactory partBodyStreamStorageFactory) {
         return parse(inputStream, multipartContext, partBodyStreamStorageFactory, DEFAULT_BUFFER_SIZE, DEFAULT_HEADERS_SECTION_SIZE, DEFAULT_MAX_LEVEL_OF_NESTED_MULTIPART);
     }
 
@@ -79,7 +79,7 @@ public class BlockingIOAdapter {
      * @param bufferSize The buffer size in bytes
      * @return the parts in the form of a closeable iterator
      */
-    public static CloseableIterator<PartItem> parse(final InputStream inputStream, final MultipartContext multipartContext, final int bufferSize) {
+    public static CloseableIterator<ParserToken> parse(final InputStream inputStream, final MultipartContext multipartContext, final int bufferSize) {
         return parse(inputStream, multipartContext, null, bufferSize, DEFAULT_HEADERS_SECTION_SIZE, DEFAULT_MAX_LEVEL_OF_NESTED_MULTIPART);
     }
 
@@ -97,26 +97,26 @@ public class BlockingIOAdapter {
      * @return the parts in the form of a closeable iterator
      */
     @SuppressWarnings("unchecked")
-    public static CloseableIterator<PartItem> parse(final InputStream inputStream,
-                                           final MultipartContext multipartContext,
-                                           final PartBodyStreamStorageFactory partBodyStreamStorageFactory,
-                                           final int bufferSize,
-                                           final int maxHeadersSectionSize,
-                                           final int maxLevelOfNestedMultipart) {
+    public static CloseableIterator<ParserToken> parse(final InputStream inputStream,
+                                                       final MultipartContext multipartContext,
+                                                       final PartBodyStreamStorageFactory partBodyStreamStorageFactory,
+                                                       final int bufferSize,
+                                                       final int maxHeadersSectionSize,
+                                                       final int maxLevelOfNestedMultipart) {
 
 
         return new PartItemsIterator(inputStream, multipartContext, partBodyStreamStorageFactory, bufferSize, maxHeadersSectionSize, maxLevelOfNestedMultipart);
     }
 
-    static class PartItemsIterator extends AbstractIterator<PartItem> implements CloseableIterator<PartItem> {
+    static class PartItemsIterator extends AbstractIterator<ParserToken> implements CloseableIterator<ParserToken> {
 
-        private static final PartItem END_OF_DATA = new PartItem() {
+        private static final ParserToken END_OF_DATA = new ParserToken() {
             @Override
             public Type getType() {
                 return null;
             }
         };
-        private Queue<PartItem> partItems = new ConcurrentLinkedQueue<>();
+        private Queue<ParserToken> parserTokens = new ConcurrentLinkedQueue<>();
         private final NioMultipartParser parser;
         private final InputStream inputStream;
 
@@ -132,22 +132,22 @@ public class BlockingIOAdapter {
             final NioMultipartParserListener listener = new NioMultipartParserListener() {
                 @Override
                 public void onPartFinished(StreamStorage partBodyStreamStorage, Map<String, List<String>> headersFromPart) {
-                    partItems.add(new Part(headersFromPart, partBodyStreamStorage));
+                    parserTokens.add(new Part(headersFromPart, partBodyStreamStorage));
                 }
 
                 @Override
                 public void onAllPartsFinished() {
-                    partItems.add(END_OF_DATA);
+                    parserTokens.add(END_OF_DATA);
                 }
 
                 @Override
                 public void onNestedPartStarted(Map<String, List<String>> headersFromParentPart) {
-                    partItems.add(new NestedStart(headersFromParentPart));
+                    parserTokens.add(new NestedStart(headersFromParentPart));
                 }
 
                 @Override
                 public void onNestedPartFinished() {
-                    partItems.add(new NestedEnd());
+                    parserTokens.add(new NestedEnd());
                 }
 
                 @Override
@@ -160,13 +160,13 @@ public class BlockingIOAdapter {
         }
 
         @Override
-        protected PartItem computeNext() {
+        protected ParserToken computeNext() {
             byte[] buffer = new byte[1024];
             int read;
             try {
 
-                PartItem next;
-                next = partItems.poll();
+                ParserToken next;
+                next = parserTokens.poll();
                 if (next != null && next.getType() == null){
                     return endOfData();
                 }
@@ -174,7 +174,7 @@ public class BlockingIOAdapter {
                     return next;
                 }
 
-                while (null == (next = partItems.poll()) && -1 != (read = inputStream.read(buffer))) {
+                while (null == (next = parserTokens.poll()) && -1 != (read = inputStream.read(buffer))) {
                     parser.write(buffer, 0, read);
                 }
 
@@ -199,13 +199,19 @@ public class BlockingIOAdapter {
     }
 
     /**
-     * <p>Interface representing a part.
-     * The {@code BlockingIOAdapter} is returning a {@code CloseableIterator} over the {@code PartItem}.
+     * <p>Interface representing a parser token.
+     * <p>The parser tokens can be:
+     * <ul>
+     *     <li>Part: it contains the parsed part including headers and body</li>
+     *     <li>Nested Start: it is a marker token that indicates the start of a nested part. It give access to the headers of the parent part.</li>
+     *     <li>Nested End: it is a marker token that indicates the end of a nested part.</li>
+     * </ul>
+     * <p>The {@code BlockingIOAdapter} is returning a {@code CloseableIterator} of {@code ParserToken}s.
      */
-    public interface PartItem {
+    public interface ParserToken {
 
         /**
-         * Type of a part: form, attachment, nested (start) and nested (end)
+         * Type of a token: part, nested (start) and nested (end)
          */
         enum Type{
             PART,
@@ -225,7 +231,7 @@ public class BlockingIOAdapter {
      * <p> Marker {@code PartItem} signalling the end of a nested multipart. The client can keep track of nested multipart
      * if used in combination with {@code NestedStart}. Otherwise the item can just be skipped during the processing.
      */
-    public static class NestedEnd implements PartItem {
+    public static class NestedEnd implements ParserToken {
 
         private NestedEnd(){}
 
@@ -242,7 +248,7 @@ public class BlockingIOAdapter {
      * <p> Marker {@code PartItem} signalling the start of a nested multipart. In addition to signal the start of a multipart
      * it provides access to the headers of the parent part.
      */
-    public static class NestedStart implements PartItem {
+    public static class NestedStart implements ParserToken {
 
         final Map<String, List<String>> headers;
 
@@ -272,7 +278,7 @@ public class BlockingIOAdapter {
      * <p> A {@code PartItem} representing an attachment part.
      * It gives access to the part headers and the body {@code InputStream}
      */
-    public static class Part implements PartItem {
+    public static class Part implements ParserToken {
 
         final Map<String, List<String>> headers;
         final StreamStorage partBodyStreamStorage;

@@ -16,7 +16,7 @@
 
 package org.synchronoss.cloud.nio.multipart;
 
-import org.synchronoss.cloud.nio.multipart.BlockingIOAdapter.PartItem;
+import org.synchronoss.cloud.nio.multipart.BlockingIOAdapter.ParserToken;
 import org.synchronoss.cloud.nio.multipart.util.collect.CloseableIterator;
 import org.junit.Rule;
 import org.junit.Test;
@@ -88,10 +88,10 @@ public class MultipartTest {
         PartBodyStreamStorageFactory partBodyStreamStorageFactory = mock(PartBodyStreamStorageFactory.class);
         InputStream inputStream = mock(InputStream.class);
 
-        CloseableIterator<PartItem> parts = multipart(context).forBlockingIO(inputStream);
+        CloseableIterator<ParserToken> parts = multipart(context).forBlockingIO(inputStream);
         assertNotNull(parts);
 
-        CloseableIterator<PartItem> parts1 = multipart(context)
+        CloseableIterator<ParserToken> parts1 = multipart(context)
                 .withBufferSize(500)
                 .withHeadersSizeLimit(16000)
                 .withMaxMemoryUsagePerBodyPart(100)
@@ -99,7 +99,7 @@ public class MultipartTest {
 
         assertNotNull(parts1);
 
-        CloseableIterator<PartItem> parts2 = multipart(context)
+        CloseableIterator<ParserToken> parts2 = multipart(context)
                 .withBufferSize(500)
                 .withHeadersSizeLimit(16000)
                 .withMaxMemoryUsagePerBodyPart(100)
@@ -109,7 +109,7 @@ public class MultipartTest {
 
         assertNotNull(parts2);
 
-        CloseableIterator<PartItem> parts3 = multipart(context)
+        CloseableIterator<ParserToken> parts3 = multipart(context)
                 .withBufferSize(500)
                 .withHeadersSizeLimit(16000)
                 .withMaxMemoryUsagePerBodyPart(100)

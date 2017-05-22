@@ -17,7 +17,7 @@ package org.synchronoss.cloud.nio.multipart;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
-import org.synchronoss.cloud.nio.multipart.BlockingIOAdapter.PartItem;
+import org.synchronoss.cloud.nio.multipart.BlockingIOAdapter.ParserToken;
 import org.synchronoss.cloud.nio.multipart.testutil.ChunksFileReader;
 import org.synchronoss.cloud.nio.multipart.testutil.MultipartTestCases;
 import org.synchronoss.cloud.nio.multipart.testutil.MultipartTestCases.MultipartTestCase;
@@ -131,32 +131,32 @@ public class FunctionalTest {
         final FileUpload fileUpload = new FileUpload();
         final FileItemIterator fileItemIterator = fileUpload.getItemIterator(testCase.getRequestContext());
 
-        try(final CloseableIterator<PartItem> parts = Multipart.multipart(testCase.getMultipartContext()).forBlockingIO(testCase.getBodyInputStream())) {
+        try(final CloseableIterator<ParserToken> parts = Multipart.multipart(testCase.getMultipartContext()).forBlockingIO(testCase.getBodyInputStream())) {
 
             while (parts.hasNext()) {
 
-                BlockingIOAdapter.PartItem partItem = parts.next();
-                BlockingIOAdapter.PartItem.Type partItemType = partItem.getType();
-                if (BlockingIOAdapter.PartItem.Type.NESTED_END.equals(partItemType) || BlockingIOAdapter.PartItem.Type.NESTED_START.equals(partItemType)) {
+                ParserToken parserToken = parts.next();
+                ParserToken.Type partItemType = parserToken.getType();
+                if (ParserToken.Type.NESTED_END.equals(partItemType) || ParserToken.Type.NESTED_START.equals(partItemType)) {
                     // Commons file upload is not returning an item representing the start/end of a nested multipart.
                     continue;
                 }
                 assertTrue(fileItemIterator.hasNext());
                 FileItemStream fileItemStream = fileItemIterator.next();
-                assertEquals(partItem, fileItemStream);
+                assertEquals(parserToken, fileItemStream);
             }
         }
 
     }
 
-    static void assertEquals(final BlockingIOAdapter.PartItem partItem, final FileItemStream fileItemStream) throws IOException {
+    static void assertEquals(final ParserToken parserToken, final FileItemStream fileItemStream) throws IOException {
 
-        if (partItem instanceof BlockingIOAdapter.Part){
-            BlockingIOAdapter.Part part = (BlockingIOAdapter.Part) partItem;
+        if (parserToken instanceof BlockingIOAdapter.Part){
+            BlockingIOAdapter.Part part = (BlockingIOAdapter.Part) parserToken;
             assertHeadersAreEqual(fileItemStream.getHeaders(), part.getHeaders());
             assertInputStreamsAreEqual(part.getPartBody(), fileItemStream.openStream());
         }else{
-            fail("Invalid part item type " + partItem.getClass());
+            fail("Invalid part item type " + parserToken.getClass());
         }
 
     }

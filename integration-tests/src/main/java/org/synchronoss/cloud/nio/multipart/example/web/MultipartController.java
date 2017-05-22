@@ -33,7 +33,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.synchronoss.cloud.nio.multipart.*;
-import org.synchronoss.cloud.nio.multipart.BlockingIOAdapter.PartItem;
+import org.synchronoss.cloud.nio.multipart.BlockingIOAdapter.ParserToken;
 import org.synchronoss.cloud.nio.multipart.example.config.RootApplicationConfig;
 import org.synchronoss.cloud.nio.multipart.example.io.ChecksumStreamStorage;
 import org.synchronoss.cloud.nio.multipart.example.io.ChecksumStreamUtils;
@@ -54,7 +54,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.synchronoss.cloud.nio.multipart.BlockingIOAdapter.PartItem.Type.PART;
+import static org.synchronoss.cloud.nio.multipart.BlockingIOAdapter.ParserToken.Type.PART;
 import static org.synchronoss.cloud.nio.multipart.Multipart.multipart;
 
 /**
@@ -442,11 +442,11 @@ public class MultipartController {
         final VerificationItems verificationItems = new VerificationItems();
         Metadata metadata = null;
 
-        try (final CloseableIterator<PartItem> parts = Multipart.multipart(getMultipartContext(request)).forBlockingIO(request.getInputStream())){
+        try (final CloseableIterator<ParserToken> parts = Multipart.multipart(getMultipartContext(request)).forBlockingIO(request.getInputStream())){
             while (parts.hasNext()) {
-                PartItem partItem = parts.next();
-                if (PART.equals(partItem.getType())) {
-                    BlockingIOAdapter.Part part = (BlockingIOAdapter.Part) partItem;
+                ParserToken parserToken = parts.next();
+                if (PART.equals(parserToken.getType())) {
+                    BlockingIOAdapter.Part part = (BlockingIOAdapter.Part) parserToken;
                     final String fieldName = MultipartUtils.getFieldName(part.getHeaders());
                     if (METADATA_FIELD_NAME.equals(fieldName)) {
                         metadata = unmarshalMetadata(part.getPartBody());
@@ -456,7 +456,7 @@ public class MultipartController {
                         verificationItems.getVerificationItems().add(verificationItem);
                     }
                 } else {
-                    throw new IllegalStateException("Invalid part type " + partItem.getClass().getName());
+                    throw new IllegalStateException("Invalid part type " + parserToken.getClass().getName());
                 }
             }
         }catch (Exception e){

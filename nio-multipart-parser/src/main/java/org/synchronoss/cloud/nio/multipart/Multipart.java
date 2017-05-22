@@ -16,7 +16,7 @@
 
 package org.synchronoss.cloud.nio.multipart;
 
-import org.synchronoss.cloud.nio.multipart.BlockingIOAdapter.PartItem;
+import org.synchronoss.cloud.nio.multipart.BlockingIOAdapter.ParserToken;
 import org.synchronoss.cloud.nio.multipart.util.collect.CloseableIterator;
 import org.synchronoss.cloud.nio.stream.storage.DeferredFileStreamStorageFactory;
 
@@ -156,7 +156,7 @@ public class Multipart {
          * @param inputStream The {@code InputStream} with the multipart content.
          * @return The {@code CloseableIterator}
          */
-        public CloseableIterator<PartItem> forBlockingIO(final InputStream inputStream){
+        public CloseableIterator<ParserToken> forBlockingIO(final InputStream inputStream){
             return BlockingIOAdapter.parse(inputStream, context, partStreamsFactory(), bufferSize, headersSizeLimit, nestedMultipartsAllowed);
         }
     }

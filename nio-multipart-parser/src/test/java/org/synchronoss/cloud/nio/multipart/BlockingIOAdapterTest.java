@@ -15,7 +15,7 @@
  */
 package org.synchronoss.cloud.nio.multipart;
 
-import org.synchronoss.cloud.nio.multipart.BlockingIOAdapter.PartItem;
+import org.synchronoss.cloud.nio.multipart.BlockingIOAdapter.ParserToken;
 import org.synchronoss.cloud.nio.multipart.util.collect.CloseableIterator;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -44,17 +44,17 @@ public class BlockingIOAdapterTest {
         final MultipartContext context = mock(MultipartContext.class);
         when(context.getContentType()).thenReturn("multipart/form-data;boundary=MUEYT2qJT0_ZzYUvVQLy_DlrLeADyxzmsA");
 
-        CloseableIterator<PartItem> parts = BlockingIOAdapter.parse(inputStream, context);
+        CloseableIterator<ParserToken> parts = BlockingIOAdapter.parse(inputStream, context);
         assertNotNull(parts);
 
-        CloseableIterator<PartItem> parts1 = BlockingIOAdapter.parse(inputStream, context, 500);
+        CloseableIterator<ParserToken> parts1 = BlockingIOAdapter.parse(inputStream, context, 500);
         assertNotNull(parts1);
 
 
-        CloseableIterator<PartItem> parts2 = BlockingIOAdapter.parse(inputStream, context, partBodyStreamStorageFactory);
+        CloseableIterator<ParserToken> parts2 = BlockingIOAdapter.parse(inputStream, context, partBodyStreamStorageFactory);
         assertNotNull(parts2);
 
-        CloseableIterator<PartItem> parts3 = BlockingIOAdapter.parse(inputStream, context, partBodyStreamStorageFactory, 500, 200, 2);
+        CloseableIterator<ParserToken> parts3 = BlockingIOAdapter.parse(inputStream, context, partBodyStreamStorageFactory, 500, 200, 2);
         assertNotNull(parts3);
 
     }
