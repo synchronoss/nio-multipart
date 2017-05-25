@@ -99,6 +99,8 @@ public class MultipartController {
 
     private static final Logger log = LoggerFactory.getLogger(MultipartController.class);
     public static final String METADATA_FIELD_NAME = "metadata";
+    public static final String VERIFICATION_CONTROL_HEADER_NAME = "x-verification-control";
+    public static final String VERIFICATION_CONTROL_FORM = "form";
 
     @Autowired
     private PartBodyStreamStorageFactory partBodyStreamStorageFactory;
@@ -137,37 +139,23 @@ public class MultipartController {
                 public void onPartFinished(StreamStorage partBodyStreamStorage, Map<String, List<String>> headersFromPart) {
                     if(log.isInfoEnabled()) log.info("PARSER LISTENER - onPartFinished");
 
+                    if(log.isInfoEnabled()) log.info("PARSER LISTENER - attachment");
 
-                    if (MultipartUtils.isFormField(headersFromPart, ctx)){
-
-                        if(log.isInfoEnabled()) log.info("PARSER LISTENER - form param");
-
-                        // Metadata might be sent as a form field...
-                        final String fieldName = MultipartUtils.getFieldName(headersFromPart);
-                        final String fieldValue = MultipartUtils.readFormParameterValue(partBodyStreamStorage, headersFromPart);
-                        if(METADATA_FIELD_NAME.equals(fieldName)){
-                            metadata = unmarshalMetadataOrThrow(fieldValue);
-                        }
-
-                    }else {
-
-                        if(log.isInfoEnabled()) log.info("PARSER LISTENER - attachment");
-
-                        final ChecksumStreamStorage checksumStreamStorage = getChecksumStreamStorageOrThrow(partBodyStreamStorage);
-                        final String fieldName = MultipartUtils.getFieldName(headersFromPart);
-                        if (METADATA_FIELD_NAME.equals(fieldName)) {
-                            metadata = unmarshalMetadataOrThrow(checksumStreamStorage);
-                        } else {
-                            VerificationItem verificationItem = buildVerificationItem(checksumStreamStorage, fieldName);
-                            verificationItems.getVerificationItems().add(verificationItem);
-                        }
+                    final ChecksumStreamStorage checksumStreamStorage = getChecksumStreamStorageOrThrow(partBodyStreamStorage);
+                    final String fieldName = MultipartUtils.getFieldName(headersFromPart);
+                    if (METADATA_FIELD_NAME.equals(fieldName)) {
+                        metadata = unmarshalMetadataOrThrow(checksumStreamStorage);
+                    } else {
+                        VerificationItem verificationItem = buildVerificationItem(checksumStreamStorage, fieldName, MultipartUtils.isFormField(headersFromPart, ctx));
+                        verificationItems.getVerificationItems().add(verificationItem);
                     }
+
                 }
 
                 @Override
                 public void onAllPartsFinished() {
                     if(log.isInfoEnabled()) log.info("PARSER LISTENER - onAllPartsFinished");
-                    processVerificationItems(verificationItems, metadata, true);
+                    processVerificationItems(verificationItems, metadata, true, request.getHeader(VERIFICATION_CONTROL_HEADER_NAME));
                     sendResponseOrSkip();
                 }
 
@@ -280,29 +268,15 @@ public class MultipartController {
             public void onPartFinished(final StreamStorage partBodyStreamStorage, final Map<String, List<String>> headersFromPart) {
                 if(log.isInfoEnabled())log.info("PARSER LISTENER - onPartFinished") ;
 
-                if (MultipartUtils.isFormField(headersFromPart, ctx)) {
-
-                    if (log.isInfoEnabled()) log.info("PARSER LISTENER - form param");
-
-                    // Metadata might be sent as a form field...
-                    final String fieldName = MultipartUtils.getFieldName(headersFromPart);
-                    final String fieldValue = MultipartUtils.readFormParameterValue(partBodyStreamStorage, headersFromPart);
-                    if (METADATA_FIELD_NAME.equals(fieldName)) {
-                        metadata = unmarshalMetadataOrThrow(fieldValue);
-                    }
-                }else {
-
-                    if (log.isInfoEnabled()) log.info("PARSER LISTENER - attachment");
-
-                    final String fieldName = MultipartUtils.getFieldName(headersFromPart);
-                    final ChecksumStreamStorage checksumPartStreams = getChecksumStreamStorageOrThrow(partBodyStreamStorage);
-                    if (METADATA_FIELD_NAME.equals(fieldName)) {
-                        metadata = unmarshalMetadataOrThrow(checksumPartStreams);
-                    } else {
-                        VerificationItem verificationItem = buildVerificationItem(checksumPartStreams, fieldName);
-                        verificationItems.getVerificationItems().add(verificationItem);
-                    }
+                final String fieldName = MultipartUtils.getFieldName(headersFromPart);
+                final ChecksumStreamStorage checksumPartStreams = getChecksumStreamStorageOrThrow(partBodyStreamStorage);
+                if (METADATA_FIELD_NAME.equals(fieldName)) {
+                    metadata = unmarshalMetadataOrThrow(checksumPartStreams);
+                } else {
+                    VerificationItem verificationItem = buildVerificationItem(checksumPartStreams, fieldName, MultipartUtils.isFormField(headersFromPart, ctx));
+                    verificationItems.getVerificationItems().add(verificationItem);
                 }
+
             }
 
             @Override
@@ -318,7 +292,7 @@ public class MultipartController {
             @Override
             public void onAllPartsFinished() {
                 if(log.isInfoEnabled())log.info("PARSER LISTENER - onAllPartsFinished");
-                processVerificationItems(verificationItems, metadata, true);
+                processVerificationItems(verificationItems, metadata, true, request.getHeader(VERIFICATION_CONTROL_HEADER_NAME));
                 sendResponseOrSkip(synchronizer, asyncContext, verificationItems);
             }
 
@@ -442,7 +416,8 @@ public class MultipartController {
         final VerificationItems verificationItems = new VerificationItems();
         Metadata metadata = null;
 
-        try (final CloseableIterator<ParserToken> parts = Multipart.multipart(getMultipartContext(request)).forBlockingIO(request.getInputStream())){
+        MultipartContext ctx = getMultipartContext(request);
+        try (final CloseableIterator<ParserToken> parts = Multipart.multipart(ctx).forBlockingIO(request.getInputStream())){
             while (parts.hasNext()) {
                 ParserToken parserToken = parts.next();
                 if (PART.equals(parserToken.getType())) {
@@ -452,7 +427,7 @@ public class MultipartController {
                         metadata = unmarshalMetadata(part.getPartBody());
                     } else {
 
-                        VerificationItem verificationItem = buildVerificationItem(part.getPartBody(), fieldName);
+                        VerificationItem verificationItem = buildVerificationItem(part.getPartBody(), fieldName, MultipartUtils.isFormField(part.getHeaders(), ctx));
                         verificationItems.getVerificationItems().add(verificationItem);
                     }
                 } else {
@@ -462,7 +437,7 @@ public class MultipartController {
         }catch (Exception e){
             throw new IllegalStateException("Parsing error", e);
         }
-        processVerificationItems(verificationItems, metadata, false);
+        processVerificationItems(verificationItems, metadata, false, request.getHeader(VERIFICATION_CONTROL_HEADER_NAME));
         return verificationItems;
     }
 
@@ -491,11 +466,11 @@ public class MultipartController {
                 }
                 metadata = unmarshalMetadata(fileItemStream.openStream());
             }else {
-                VerificationItem verificationItem = buildVerificationItem(fileItemStream.openStream(), fileItemStream.getFieldName());
+                VerificationItem verificationItem = buildVerificationItem(fileItemStream.openStream(), fileItemStream.getFieldName(), fileItemStream.isFormField());
                 verificationItems.getVerificationItems().add(verificationItem);
             }
         }
-        processVerificationItems(verificationItems, metadata, false);
+        processVerificationItems(verificationItems, metadata, false, request.getHeader(VERIFICATION_CONTROL_HEADER_NAME));
         return verificationItems;
     }
 
@@ -540,7 +515,7 @@ public class MultipartController {
         return GSON.fromJson(json, Metadata.class);
     }
 
-    static VerificationItem buildVerificationItem(final ChecksumStreamStorage checksumStreamStorage, final String fieldName){
+    static VerificationItem buildVerificationItem(final ChecksumStreamStorage checksumStreamStorage, final String fieldName, boolean isFormField){
 
         final String outputStreamChecksum = ChecksumStreamUtils.digestAsHexString(checksumStreamStorage.getChecksum());
         final long outputStreamWrittenBytes = checksumStreamStorage.getWrittenBytes();
@@ -551,6 +526,7 @@ public class MultipartController {
 
         VerificationItem verificationItem = new VerificationItem();
         verificationItem.setFile(fieldName);
+        verificationItem.setFormField(isFormField);
         verificationItem.setPartInputStreamReadBytes(inputStreamReadBytes);
         verificationItem.setPartInputStreamStreamChecksum(inputStreamChecksum);
         verificationItem.setPartOutputStreamChecksum(outputStreamChecksum);
@@ -559,11 +535,12 @@ public class MultipartController {
 
     }
 
-    static VerificationItem buildVerificationItem(final InputStream inputStream, final String fieldName){
+    static VerificationItem buildVerificationItem(final InputStream inputStream, final String fieldName, boolean isFormField){
 
         ChecksumAndReadBytes checksumAndReadBytes = ChecksumStreamUtils.computeChecksumAndReadBytes(inputStream, "SHA-256");
         VerificationItem verificationItem = new VerificationItem();
         verificationItem.setFile(fieldName);
+        verificationItem.setFormField(isFormField);
         verificationItem.setPartInputStreamReadBytes(checksumAndReadBytes.getReadBytes());
         verificationItem.setPartInputStreamStreamChecksum(checksumAndReadBytes.getChecksum());
 
@@ -579,45 +556,56 @@ public class MultipartController {
         });
     }
 
-    static void processVerificationItems(final VerificationItems verificationItems, final Metadata metadata, final boolean checkOutputStream){
+    static void processVerificationItems(final VerificationItems verificationItems, final Metadata metadata, final boolean checkOutputStream, final String verificationControlHeaderValue){
 
-        if (metadata == null){
-            throw new IllegalStateException("No metadata found");
-        }
+        final boolean isFormUpload = VERIFICATION_CONTROL_FORM.equalsIgnoreCase(verificationControlHeaderValue);
+        final List<VerificationItem> verificationItemList = verificationItems.getVerificationItems();
 
-        Map<String, FileMetadata> metadataMap = metadataToFileMetadataMap(metadata);
-        List<VerificationItem> verificationItemList = verificationItems.getVerificationItems();
+        if (isFormUpload){
+            for (VerificationItem verificationItem : verificationItemList){
+                if (!verificationItem.isFormField()){
+                    throw new IllegalStateException("Expected a form field");
+                }
+            }
+        }else {
 
-        if (metadataMap.size() != verificationItemList.size()){
-            throw new IllegalStateException("The number of attachments don't match the number of items in the metadata");
-        }
-
-
-        for (VerificationItem verificationItem : verificationItemList){
-            FileMetadata fileMetadata = metadataMap.get(verificationItem.getFile());
-            if (fileMetadata == null){
-                throw new IllegalStateException("Metadata not found for file: " + verificationItem.getFile());
+            if (metadata == null) {
+                throw new IllegalStateException("No metadata found");
             }
 
-            verificationItem.setReceivedChecksum(fileMetadata.getChecksum());
-            verificationItem.setReceivedSize(fileMetadata.getSize());
+            Map<String, FileMetadata> metadataMap = metadataToFileMetadataMap(metadata);
 
-            // Verify if all hashes and sizes are matching and set the status...
-            if (checkOutputStream) {
-                if (verificationItem.getPartInputStreamReadBytes() == verificationItem.getPartOutputStreamWrittenBytes() &&
-                        verificationItem.getPartInputStreamReadBytes() == fileMetadata.getSize() &&
-                        verificationItem.getPartInputStreamStreamChecksum().equals(verificationItem.getPartOutputStreamChecksum()) &&
-                        verificationItem.getPartInputStreamStreamChecksum().equals(fileMetadata.getChecksum())) {
-                    verificationItem.setStatus("MATCHING");
-                } else {
-                    verificationItem.setStatus("NOT MATCHING");
+            if (metadataMap.size() != verificationItemList.size()) {
+                throw new IllegalStateException("The number of attachments don't match the number of items in the metadata");
+            }
+
+
+            for (VerificationItem verificationItem : verificationItemList) {
+                FileMetadata fileMetadata = metadataMap.get(verificationItem.getFile());
+                if (fileMetadata == null) {
+                    throw new IllegalStateException("Metadata not found for file: " + verificationItem.getFile());
                 }
-            }else{
-                if (verificationItem.getPartInputStreamReadBytes() ==  fileMetadata.getSize() &&
-                        verificationItem.getPartInputStreamStreamChecksum().equals(fileMetadata.getChecksum())) {
-                    verificationItem.setStatus("MATCHING");
+
+                verificationItem.setReceivedChecksum(fileMetadata.getChecksum());
+                verificationItem.setReceivedSize(fileMetadata.getSize());
+
+                // Verify if all hashes and sizes are matching and set the status...
+                if (checkOutputStream) {
+                    if (verificationItem.getPartInputStreamReadBytes() == verificationItem.getPartOutputStreamWrittenBytes() &&
+                            verificationItem.getPartInputStreamReadBytes() == fileMetadata.getSize() &&
+                            verificationItem.getPartInputStreamStreamChecksum().equals(verificationItem.getPartOutputStreamChecksum()) &&
+                            verificationItem.getPartInputStreamStreamChecksum().equals(fileMetadata.getChecksum())) {
+                        verificationItem.setStatus("MATCHING");
+                    } else {
+                        verificationItem.setStatus("NOT MATCHING");
+                    }
                 } else {
-                    verificationItem.setStatus("NOT MATCHING");
+                    if (verificationItem.getPartInputStreamReadBytes() == fileMetadata.getSize() &&
+                            verificationItem.getPartInputStreamStreamChecksum().equals(fileMetadata.getChecksum())) {
+                        verificationItem.setStatus("MATCHING");
+                    } else {
+                        verificationItem.setStatus("NOT MATCHING");
+                    }
                 }
             }
         }

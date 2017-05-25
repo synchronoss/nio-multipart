@@ -32,6 +32,7 @@ public class VerificationItem {
     private long receivedSize;
     private String receivedChecksum;
     private String status;
+    private boolean isFormField;
 
     public String getFile() {
         return file;
@@ -97,6 +98,14 @@ public class VerificationItem {
         this.status = status;
     }
 
+    public boolean isFormField() {
+        return isFormField;
+    }
+
+    public void setFormField(boolean formField) {
+        isFormField = formField;
+    }
+
     @Override
     public String toString() {
         return "VerificationItem{" +
@@ -108,6 +117,7 @@ public class VerificationItem {
                 ", receivedSize=" + receivedSize +
                 ", receivedChecksum='" + receivedChecksum + '\'' +
                 ", status='" + status + '\'' +
+                ", isFormField='" + isFormField + '\'' +
                 '}';
     }
 }

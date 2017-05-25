@@ -91,7 +91,7 @@ public class DefaultPartBodyStreamStorageFactory implements PartBodyStreamStorag
      */
     @Override
     public StreamStorage newStreamStorageForPartBody(Map<String, List<String>> partHeaders, int partIndex) {
-        return FileStreamStorage.deferred(getTempFile(partIndex), getThreshold(partHeaders));
+        return FileStreamStorage.deferred(getTempFile(partIndex), getThreshold(partHeaders)).deleteFilesOnClose().deleteFilesOnDispose();
     }
 
     protected int getThreshold(final Map<String, List<String>> partHeaders) {

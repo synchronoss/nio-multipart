@@ -39,7 +39,7 @@ public class Multipart {
         private int bufferSize = NioMultipartParser.DEFAULT_BUFFER_SIZE;
         private int headersSizeLimit = NioMultipartParser.DEFAULT_HEADERS_SECTION_SIZE;
         private int nestedMultipartsAllowed = NioMultipartParser.DEFAULT_MAX_LEVEL_OF_NESTED_MULTIPART;
-        private String tempFolder = DeferredFileStreamStorageFactory.DEFAULT_TEMP_FOLDER;
+        private String rootFolder = DeferredFileStreamStorageFactory.DEFAULT_ROOT_FOLDER;
         private int bodySizeThreshold = DeferredFileStreamStorageFactory.DEFAULT_MAX_THRESHOLD;
         private PartBodyStreamStorageFactory partBodyStreamStorageFactory;
         private MultipartContext context;
@@ -85,11 +85,11 @@ public class Multipart {
          *     If a different {@code PartBodyStreamStorageFactory} is selected using {@link #usePartBodyStreamStorageFactory(PartBodyStreamStorageFactory)}
          *     the configuration has no effect.
          *
-         * @param tempFolder The location where to store the temporary files.
+         * @param rootFolder The location where to store the temporary files.
          * @return the {@code Builder} itself.
          */
-        public Builder saveTemporaryFilesTo(final String tempFolder){
-            this.tempFolder = tempFolder;
+        public Builder saveTemporaryFilesTo(final String rootFolder){
+            this.rootFolder = rootFolder;
             return this;
         }
 
@@ -134,7 +134,7 @@ public class Multipart {
 
         private PartBodyStreamStorageFactory partStreamsFactory(){
             if (partBodyStreamStorageFactory == null){
-                return new DefaultPartBodyStreamStorageFactory(tempFolder, bodySizeThreshold);
+                return new DefaultPartBodyStreamStorageFactory(rootFolder, bodySizeThreshold);
             }else{
                 return partBodyStreamStorageFactory;
             }

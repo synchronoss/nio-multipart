@@ -231,7 +231,7 @@
 
     <profiles>
 
-        <!-- Jmeter profile, will run the jmeter tests via the jmeter-maven-plugin as pat of the integration test -->
+        <!-- Jmeter profile, will run the jmeter tests via the jmeter-maven-plugin as part of the integration test -->
         <profile>
             <id>jmeter</id>
             <activation>

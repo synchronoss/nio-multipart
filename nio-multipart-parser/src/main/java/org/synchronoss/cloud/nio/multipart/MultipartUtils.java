@@ -224,7 +224,7 @@ public class MultipartUtils {
             return false;
         }
         // By default if the Content-Type header is not specified, the content type is text/plain
-        final boolean isTextPlain = contentType == null || contentType.equals(TEXT_PLAIN);
+        final boolean isTextPlain = contentType == null || contentType.startsWith(TEXT_PLAIN);
         if (!isTextPlain){
             return false;
         }
