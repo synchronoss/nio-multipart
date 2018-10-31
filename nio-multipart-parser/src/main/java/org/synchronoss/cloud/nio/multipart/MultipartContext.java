@@ -29,7 +29,7 @@ package org.synchronoss.cloud.nio.multipart;
 public class MultipartContext {
 
     private final String contentType;
-    private final int contentLength;
+    private final long contentLength;
     private final String charEncoding;
 
     /**
@@ -39,7 +39,7 @@ public class MultipartContext {
      * @param contentLength The content length of the request
      * @param charEncoding The request char encoding.
      */
-    public MultipartContext(final String contentType, final int contentLength, final String charEncoding) {
+    public MultipartContext(final String contentType, final long contentLength, final String charEncoding) {
 
         if (!MultipartUtils.isMultipart(contentType)){
             throw new IllegalStateException("Invalid content type '" + contentType + "'. Expected a multipart request");
@@ -64,7 +64,7 @@ public class MultipartContext {
      *
      * @return the content length
      */
-    public int getContentLength() {
+    public long getContentLength() {
         return contentLength;
     }
 
