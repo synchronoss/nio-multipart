@@ -27,7 +27,7 @@ Get started
 The simplest way to get started is using the simple fluent API provided with the library. Instantiating a parser is straightforward:
 
 ```java
-NioMultipartParser parser = Multipart.multipart(context).forNio(listener);
+NioMultipartParser parser = Multipart.multipart(context).forNIO(listener);
 ```
 
 The only two mandatory arguments are a multipart *context*, holding information about the current request/response, and a *listener* that will be notified on the progress of the parsing.
@@ -197,7 +197,7 @@ NioMultipartParser parser = Multipart.multipart(context)
                 .withMaxMemoryUsagePerBodyPart(0) // Always create a temp file
                 .saveTemporaryFilesTo("/tmp/file_upload")// Different temp file location
                 .limitNestingPartsTo(2) // Allow two level of nesting
-                .forNio(listener);
+                .forNIO(listener);
 ```
 
 Alternatively the constructors can be used (useful if used along with a dependency injection framework).
@@ -290,7 +290,7 @@ The custom *PartBodyStreamStorageFactory* can be passed to the parser via the ap
 ```java
 NioMultipartParser parser = Multipart.multipart(context)
                 .usePartBodyStreamStorageFactory(dbPartStreamFactory)
-                .forNio(listener);
+                .forNIO(listener);
 ```
 
 This kind of customization can be used to achieve numerous goals. For example it might be possible to compute the file checksum on fly while data are written to the *StreamStorage*.
