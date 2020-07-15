@@ -85,6 +85,7 @@
                     <version>2.10.3</version>
                     <configuration>
                         <notimestamp>true</notimestamp>
+                        <detectJavaApiLink>false</detectJavaApiLink>
                     </configuration>
                     <executions>
                         <execution>
