@@ -14,7 +14,7 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <spring.version>4.2.1.RELEASE</spring.version>
+        <spring.version>5.2.20.RELEASE</spring.version>
         <httpcomponents.version>4.5.1</httpcomponents.version>
         <jsonpath.version>2.0.0</jsonpath.version>
         <application.server.port>8080</application.server.port>
