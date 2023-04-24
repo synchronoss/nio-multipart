@@ -27,14 +27,14 @@ Get started
 The simplest way to get started is using the simple fluent API provided with the library. Instantiating a parser is straightforward:
 
 ```java
-NioMultipartParser parser = Multipart.multipart(context).forNio(listener);
+NioMultipartParser parser = Multipart.multipart(context).forNIO(listener);
 ```
 
 The only two mandatory arguments are a multipart *context*, holding information about the current request/response, and a *listener* that will be notified on the progress of the parsing.
 The following line shows how a context can be created from an *HttpServletRequest*:
 
 ```java
-MultipartContext context = MultipartContext(request.getContentType(), request.getContentLength(), request.getCharacterEncoding())
+MultipartContext context = new MultipartContext(request.getContentType(), request.getContentLength(), request.getCharacterEncoding())
 ```
 
 The listener is where application logic starts. The parser notifies the client when something happens via several methods defined by the *NioMultipartParserListener* interface.
@@ -197,7 +197,7 @@ NioMultipartParser parser = Multipart.multipart(context)
                 .withMaxMemoryUsagePerBodyPart(0) // Always create a temp file
                 .saveTemporaryFilesTo("/tmp/file_upload")// Different temp file location
                 .limitNestingPartsTo(2) // Allow two level of nesting
-                .forNio(listener);
+                .forNIO(listener);
 ```
 
 Alternatively the constructors can be used (useful if used along with a dependency injection framework).
@@ -215,7 +215,7 @@ Following there is an example of how a user can use the utility methods provided
 String contentType = request.getContentType();
 int contentLength = request.getContentLength();
 String charEncoding = request.getCharacterEncoding();
-MultipartContext ctx = MultipartContext(contentType, contentLength, charEncoding);
+MultipartContext ctx = new MultipartContext(contentType, contentLength, charEncoding);
 
 // Create the NioMultipartParserListener with specific logic to handle form parameters.
 NioMultipartParserListener listener = new NioMultipartParserListener() {
@@ -239,7 +239,7 @@ NioMultipartParserListener listener = new NioMultipartParserListener() {
         }
     }
     // ... 
-}
+};
 ```    
 
 A powerful extension point
@@ -290,7 +290,7 @@ The custom *PartBodyStreamStorageFactory* can be passed to the parser via the ap
 ```java
 NioMultipartParser parser = Multipart.multipart(context)
                 .usePartBodyStreamStorageFactory(dbPartStreamFactory)
-                .forNio(listener);
+                .forNIO(listener);
 ```
 
 This kind of customization can be used to achieve numerous goals. For example it might be possible to compute the file checksum on fly while data are written to the *StreamStorage*.
@@ -305,7 +305,7 @@ To parse a multipart stream in a blocking fashion, the easier way is to use the 
 
 ```java
 final InputStream inputStream = request.getInputStream();
-CloseableIterator<PartToken> partTokens = Multipart.multipart(context).forBlockingIO(inputStream);
+CloseableIterator<BlockingIOAdapter.ParserToken> partTokens = Multipart.multipart(context).forBlockingIO(inputStream);
 
 while(partTokens.hasNext()){
     PartToken partToken = parts.next();
